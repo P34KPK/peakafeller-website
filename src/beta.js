@@ -112,7 +112,7 @@ window.addEventListener('scroll', () => {
   setTimeout(() => { scrollY *= 0.9; }, 50);
 });
 
-import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from './firebase.js';
+import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, ref, uploadBytes, getDownloadURL } from './firebase.js';
 
 // Beta Testing App Logic
 // Firestore Helper
@@ -752,6 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Tracks Upload
+  // Tracks Upload
   document.getElementById('tracksUpload').addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
 
@@ -759,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    console.log(`Uploading ${files.length} file(s)...`);
+    console.log(`Queued ${files.length} file(s) for upload...`);
 
     files.forEach(file => {
       if (!file.type.includes('audio')) {
@@ -767,24 +768,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const reader = new FileReader();
+      // Store File Object directly for upload later
+      uploadedTracks.push({
+        name: file.name.replace('.mp3', ''),
+        file: file, // Keep raw file
+        comments: []
+      });
 
-      reader.onload = (event) => {
-        uploadedTracks.push({
-          name: file.name.replace('.mp3', ''),
-          data: event.target.result,
-          comments: []
-        });
-        renderTracksList();
-        console.log(`Added track: ${file.name}`);
-      };
-
-      reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-        alert(`Error reading ${file.name}`);
-      };
-
-      reader.readAsDataURL(file);
+      renderTracksList();
     });
 
     // Reset input
@@ -822,6 +813,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Logic moved inside try/catch block for async upload processing
+      // Removing old sync object creation
+      /* 
       const album = {
         id: Date.now(),
         title,
@@ -829,43 +823,77 @@ document.addEventListener('DOMContentLoaded', () => {
         tracks: uploadedTracks.slice(), // Create a copy
         publishedAt: new Date().toISOString()
       };
+      */
 
       try {
-        publishBtn.textContent = 'PUBLISHING...';
+        publishBtn.textContent = 'UPLOADING TO CLOUD... (0%)';
         publishBtn.disabled = true;
 
-        // Attempt to save
-        try {
-          await DB.save(album);
-          currentAlbums.push(album);
+        const timestamp = Date.now();
+        let uploadedTrackData = [];
 
-          // Reset form
-          document.getElementById('albumTitle').value = '';
-          document.getElementById('coverPreview').innerHTML = '';
-          uploadedTracks = [];
-          coverImage = null;
-          renderTracksList();
-          loadOwnerAlbums();
+        // 1. Upload Cover
+        let coverUrl = coverImage; // Default if string (not implemented yet for file object logic here, keeping base64 for cover for now is okayish but storage better)
+        // Note: For cover, existing code reads as DataURL. For optimization, we should upload it too.
+        // Assuming coverImage is DataURL string. We can convert to blob or just keep as string for small images.
+        // Let's keep cover as is for simplicity unless it's huge, but ideally upload.
+        // For strictly following Recommendation 2, we focus on Audio which is heavy.
 
-          alert('Album published for beta testing!');
-        } catch (e) {
-          if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-            alert('Storage limit reached! Even with 20MB+ support, the browser has set a limit. Try removing old albums.');
-          } else {
-            throw e;
+        // 2. Upload Tracks to Storage
+        for (let i = 0; i < uploadedTracks.length; i++) {
+          const track = uploadedTracks[i];
+          publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length}...`;
+
+          try {
+            const storageRef = ref(storage, `albums/${timestamp}/${track.name}.mp3`);
+            const snapshot = await uploadBytes(storageRef, track.file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            uploadedTrackData.push({
+              name: track.name,
+              url: downloadURL, // Store URL instead of data
+              comments: []
+            });
+          } catch (err) {
+            console.error("Upload failed for " + track.name, err);
+            throw new Error("Upload failed for " + track.name);
           }
         }
+
+        const album = {
+          id: timestamp,
+          title,
+          cover: coverImage,
+          tracks: uploadedTrackData,
+          publishedAt: new Date().toISOString()
+        };
+
+        // 3. Save Metadata to Firestore
+        await DB.save(album);
+        currentAlbums.push(album);
+
+        // Reset form
+        document.getElementById('albumTitle').value = '';
+        document.getElementById('coverPreview').innerHTML = '';
+        uploadedTracks = [];
+        coverImage = null;
+        renderTracksList();
+        loadOwnerAlbums();
+
+        alert('Album published successfully! Tracks are hosted in the Cloud.');
       } catch (err) {
-        console.error('Publish error:', err);
-        alert('An updated unexpected error occurred: ' + err.message);
+        if (err.name === 'QuotaExceededError' || err.message.includes('quota')) {
+          alert('Storage limit reached! Even with 20MB+ support, the browser has set a limit. Try removing old albums.');
+        } else {
+          console.error('Publish error:', err);
+          alert('An updated unexpected error occurred: ' + err.message);
+        }
       } finally {
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
       }
-    });
-  } else {
-    console.error('Publish button not found!');
-  }
+    }); // Close async callback
+  } // Close if(publishBtn) check
 
 
   // Load Albums (Tester View)
