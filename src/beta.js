@@ -731,36 +731,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const album = currentAlbums.find(a => a.id === albumId);
     if (!album) return;
 
+    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
+
     const detailHTML = `
     <h2 style="font-family: var(--font-main); font-size: 2rem; font-weight: 100; margin-bottom: 2rem; color: var(--color-accent);">
       ${escapeHTML(album.title)}
     </h2>
     <img src="${escapeHTML(album.cover)}" style="width: 100%; max-width: 400px; border-radius: 8px; margin-bottom: 2rem;">
     
-    ${album.tracks.map((track, index) => `
+    ${album.tracks.map((track, index) => {
+      // Logic for Ratings
+      const myRatingObj = (track.ratings || []).find(r => r.userId === currentUser?.id);
+      const myRating = myRatingObj ? myRatingObj.rating : 0;
+
+      // Star HTML Generator
+      const starsHTML = [1, 2, 3, 4, 5].map(star => `
+        <span class="star-rating ${star <= myRating ? 'active' : ''}" 
+              onclick="rateTrack(${albumId}, ${index}, ${star})"
+              style="cursor: pointer; color: ${star <= myRating ? '#ff6600' : '#444'}; font-size: 1.5rem;">
+          ★
+        </span>
+      `).join('');
+
+      // Filter Comments: Only show MINE
+      const myComments = (track.comments || []).filter(c => c.userId === currentUser?.id);
+
+      return `
       <div class="track-player">
         <div class="track-header">
           <span class="track-title">${escapeHTML(track.name)}</span>
+          <div class="track-rating">
+            ${starsHTML}
+          </div>
         </div>
         <audio controls src="${track.data}" id="audio-${index}"></audio>
         
         <div class="comments-section">
-          <div class="comment-input">
-            <input type="text" class="timestamp-input" id="timestamp-${index}" placeholder="0:00">
-            <textarea class="comment-text" id="comment-${index}" placeholder="Add your feedback..."></textarea>
-            <button class="comment-btn" onclick="addComment(${albumId}, ${index})">POST</button>
-          </div>
-          <div id="comments-${index}">
-            ${(track.comments || []).map(c => `
-              <div class="comment-item">
-                <div class="comment-timestamp">${escapeHTML(c.timestamp)}</div>
-                <div class="comment-content">${escapeHTML(c.text)}</div>
+          <h4 style="font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 0.5rem; color: #888;">YOUR PRIVATE NOTES:</h4>
+          
+          <div id="comments-${index}" style="margin-bottom: 1rem; max-height: 200px; overflow-y: auto; background: #111; padding: 0.5rem; border: 1px solid #333;">
+            ${myComments.length === 0 ? '<div style="color:#555; text-align:center; font-size:0.8rem;">No notes yet.</div>' : ''}
+            ${myComments.map(c => `
+              <div class="comment-item" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; border-bottom: 1px solid #222; padding-bottom: 0.5rem;">
+                <div>
+                   <div class="comment-timestamp" style="color: var(--color-accent); font-size: 0.7rem;">${escapeHTML(c.timestamp)}</div>
+                   <div class="comment-content" style="font-size: 0.9rem;">${escapeHTML(c.text)}</div>
+                </div>
+                <div class="comment-actions">
+                  <button onclick="editComment(${albumId}, ${index}, '${c.id}')" style="background:none; border:none; color:#fbcece; cursor:pointer; font-size:0.7rem; margin-right:0.5rem;">EDIT</button>
+                  <button onclick="deleteComment(${albumId}, ${index}, '${c.id}')" style="background:none; border:none; color: #ff4444; cursor:pointer; font-size:0.7rem;">DEL</button>
+                </div>
               </div>
             `).join('')}
           </div>
+
+          <div class="comment-input">
+            <input type="text" class="timestamp-input" id="timestamp-${index}" placeholder="0:00">
+            <textarea class="comment-text" id="comment-${index}" placeholder="Add private feedback..."></textarea>
+            <button class="comment-btn" onclick="addComment(${albumId}, ${index})">SAVE NOTE</button>
+          </div>
         </div>
       </div>
-    `).join('')}
+      `;
+    }).join('')}
   `;
 
     document.getElementById('albumDetail').innerHTML = detailHTML;
@@ -780,24 +813,87 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
+    if (!currentUser) return;
+
     const albumIndex = currentAlbums.findIndex(a => a.id === albumId);
     if (!currentAlbums[albumIndex].tracks[trackIndex].comments) {
       currentAlbums[albumIndex].tracks[trackIndex].comments = [];
     }
 
-    currentAlbums[albumIndex].tracks[trackIndex].comments.push({
+    const newComment = {
+      id: Date.now().toString(),
+      userId: currentUser.id,
       timestamp,
       text,
       createdAt: new Date().toISOString()
-    });
+    };
 
-    // Save single album update
+    currentAlbums[albumIndex].tracks[trackIndex].comments.push(newComment);
+
+    // Save
     try {
       await DB.save(currentAlbums[albumIndex]);
-      // Refresh the modal
-      openAlbum(albumId);
+      openAlbum(albumId); // Refresh
     } catch (e) {
       alert('Failed to save comment');
+    }
+  };
+
+  // Rate Track Function
+  window.rateTrack = async (albumId, trackIndex, rating) => {
+    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
+    if (!currentUser) return;
+
+    const albumIndex = currentAlbums.findIndex(a => a.id === albumId);
+    const track = currentAlbums[albumIndex].tracks[trackIndex];
+
+    if (!track.ratings) track.ratings = [];
+
+    // Check if user already rated
+    const existingRatingIndex = track.ratings.findIndex(r => r.userId === currentUser.id);
+    if (existingRatingIndex >= 0) {
+      track.ratings[existingRatingIndex].rating = rating;
+    } else {
+      track.ratings.push({ userId: currentUser.id, rating: rating });
+    }
+
+    try {
+      await DB.save(currentAlbums[albumIndex]);
+      openAlbum(albumId); // Refresh UI
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Delete Comment Function
+  window.deleteComment = async (albumId, trackIndex, commentId) => {
+    if (!confirm('Delete this comment?')) return;
+
+    const albumIndex = currentAlbums.findIndex(a => a.id === albumId);
+    const track = currentAlbums[albumIndex].tracks[trackIndex];
+
+    track.comments = track.comments.filter(c => c.id !== commentId.toString());
+
+    try {
+      await DB.save(currentAlbums[albumIndex]);
+      openAlbum(albumId); // Refresh
+    } catch (e) {
+      alert('Failed to delete comment');
+    }
+  };
+
+  // Edit Comment Function (Simplified: Loads into input, deletes old)
+  window.editComment = (albumId, trackIndex, commentId) => {
+    const album = currentAlbums.find(a => a.id === albumId);
+    const track = album.tracks[trackIndex];
+    const comment = track.comments.find(c => c.id === commentId.toString());
+
+    if (comment) {
+      document.getElementById(`timestamp-${trackIndex}`).value = comment.timestamp;
+      document.getElementById(`comment-${trackIndex}`).value = comment.text;
+      // We delete the old one so "POST" creates the updated version
+      deleteComment(albumId, trackIndex, commentId);
     }
   };
 
