@@ -113,6 +113,7 @@ window.addEventListener('scroll', () => {
 });
 
 import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, ref, uploadBytes, getDownloadURL } from './firebase.js';
+import WaveSurfer from 'wavesurfer.js';
 
 // Beta Testing App Logic
 // Firestore Helper
@@ -963,7 +964,27 @@ document.addEventListener('DOMContentLoaded', () => {
             ${starsHTML}
           </div>
         </div>
-        <audio controls src="${track.data}" id="audio-${index}"></audio>
+        
+        <!-- WaveSurfer Container -->
+        <div class="waveform-container" style="margin: 1rem 0; position: relative;">
+            <div id="waveform-${index}" style="width: 100%;"></div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; opacity: 0.5;">
+              <span id="loading-${index}" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-accent);">LOADING WAVEFORM...</span>
+            </div>
+        </div>
+
+        <button id="playBtn-${index}" class="play-btn-custom" style="
+            background: var(--color-accent); 
+            color: #000; 
+            border: none; 
+            padding: 0.5rem 2rem; 
+            font-family: var(--font-mono); 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-bottom: 1rem;
+            width: 100%;">
+            PLAY
+        </button>
         
         <div class="comments-section">
           <h4 style="font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 0.5rem; color: #888;">YOUR PRIVATE NOTES:</h4>
@@ -997,6 +1018,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('albumDetail').innerHTML = detailHTML;
     albumModal.classList.add('active');
+
+    // Initialize WaveSurfer
+    window.activeWaveSurfers = window.activeWaveSurfers || [];
+    // Clean up old instances if any (though modal rebuilds DOM, good practice to destroy)
+    window.activeWaveSurfers.forEach(ws => ws.destroy());
+    window.activeWaveSurfers = [];
+
+    album.tracks.forEach((track, index) => {
+      const container = document.getElementById(`waveform-${index}`);
+      const playBtn = document.getElementById(`playBtn-${index}`);
+      const loadingLabel = document.getElementById(`loading-${index}`);
+
+      if (container) {
+        const wavesurfer = WaveSurfer.create({
+          container: container,
+          waveColor: '#444',
+          progressColor: '#ff6600',
+          cursorColor: '#ff6600',
+          barWidth: 2,
+          barGap: 3,
+          height: 60,
+          responsive: true
+        });
+
+        // support new URL structure (track.url) or fallback to dataURI (track.data)
+        const audioSrc = track.url || track.data;
+        wavesurfer.load(audioSrc);
+
+        wavesurfer.on('ready', () => {
+          loadingLabel.style.display = 'none';
+        });
+
+        wavesurfer.on('play', () => {
+          playBtn.textContent = 'PAUSE';
+        });
+
+        wavesurfer.on('pause', () => {
+          playBtn.textContent = 'PLAY';
+        });
+
+        playBtn.addEventListener('click', () => {
+          wavesurfer.playPause();
+        });
+
+        window.activeWaveSurfers.push(wavesurfer);
+      }
+    });
+
   };
 
   window.closeModal = () => {
