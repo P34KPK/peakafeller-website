@@ -23,7 +23,8 @@ function resizeCanvas() {
 }
 
 resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+// window.addEventListener('resize', resizeCanvas); // Handled below with debounce
 
 // Particle class
 // Mouse Tracking for Canvas
@@ -143,7 +144,21 @@ function initParticles() {
 }
 
 initParticles();
-window.addEventListener('resize', initParticles);
+initParticles();
+
+// Optimized Resize Handler
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    const oldWidth = canvas.width;
+    resizeCanvas();
+    // Only re-init if width changed (orientation change) or huge height change
+    if (Math.abs(canvas.width - oldWidth) > 50) {
+      initParticles();
+    }
+  }, 100);
+});
 
 // Beat Simulation Variables
 let lastBeatTime = 0;

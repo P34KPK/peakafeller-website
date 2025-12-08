@@ -14,7 +14,7 @@ function resizeCanvas() {
 }
 
 resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+// window.addEventListener('resize', resizeCanvas); // Handled below
 
 class Particle {
   constructor() {
@@ -75,7 +75,18 @@ function initParticles() {
 }
 
 initParticles();
-window.addEventListener('resize', initParticles);
+// Optimized Resize Handler
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    const oldWidth = canvas.width;
+    resizeCanvas();
+    if (Math.abs(canvas.width - oldWidth) > 50) {
+      initParticles();
+    }
+  }, 100);
+});
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
