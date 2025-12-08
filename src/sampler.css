@@ -355,3 +355,26 @@ body {
     transform: translate(-5px, -5px);
     transition: all 0.1s;
 }
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+    .app-container {
+        height: 100dvh;
+        /* Dynamic viewport height for mobile browsers */
+        border: none;
+        max-width: 100%;
+    }
+
+    .app-header {
+        padding: 0 0.5rem;
+    }
+
+    /* Stack or scale controls if needed, but flex should handle it */
+    .control-unit label {
+        font-size: 0.55rem;
+    }
+
+    .control-unit {
+        /* Reduce width slightly or let flex handle it */
+    }
+}
