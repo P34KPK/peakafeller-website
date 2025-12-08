@@ -1548,4 +1548,35 @@ body.hovering #cursor-border {
     border-radius: 0;
     margin: 0;
   }
+
+  /* Force 2-column grid for Albums/Singles/Remixes on Mobile */
+  .grid-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem !important;
+  }
+
+  /* Adjust card style for smaller grid */
+  .spotify-card {
+    max-width: 100%;
+    padding: 0.8rem;
+    min-width: 0;
+    /* Allow shrinking */
+  }
+
+  .spotify-title {
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .spotify-subtitle {
+    font-size: 0.65rem !important;
+  }
+
+  .btn-buy {
+    font-size: 0.6rem !important;
+    padding: 0.2rem 0.5rem !important;
+  }
 }
