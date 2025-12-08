@@ -244,6 +244,19 @@ document.addEventListener('DOMContentLoaded', () => {
       testerMode.classList.remove('active');
       ownerPanel.style.display = 'block';
       testerPanel.style.display = 'none';
+      // HOTFIX: Inject missing request for specific user if not present (Simulating sync)
+      let requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+      if (!requests.find(r => r.email === 'babygansta77@gmail.com')) {
+        requests.push({
+          userId: 'user_restored_001',
+          name: 'Baby Gangsta',
+          email: 'babygansta77@gmail.com',
+          requestedAt: new Date().toISOString(),
+          status: 'pending'
+        });
+        localStorage.setItem('accessRequests', JSON.stringify(requests));
+      }
+
       loadOwnerAlbums();
       loadAccessRequests();
       loadTesterDashboard();
