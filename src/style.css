@@ -986,11 +986,13 @@ body.hovering #cursor-border {
 
   /* Hero */
   .hero-title {
-    font-size: 16vw;
+    font-size: 13vw;
     line-height: 0.9;
-    white-space: normal;
-    word-break: break-word;
-    hyphens: auto;
+    white-space: nowrap;
+    /* Force single line */
+    overflow: hidden;
+    /* Hide overflow if any */
+    text-overflow: clip;
   }
 
   .hero-subtitle {
@@ -1108,7 +1110,7 @@ body.hovering #cursor-border {
 /* Extra small devices */
 @media (max-width: 480px) {
   .hero-title {
-    font-size: 18vw;
+    font-size: 12vw;
   }
 
   .hero-socials {
