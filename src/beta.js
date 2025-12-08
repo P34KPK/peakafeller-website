@@ -113,7 +113,55 @@ window.addEventListener('scroll', () => {
 });
 
 // Beta Testing App Logic
-let currentAlbums = JSON.parse(localStorage.getItem('betaAlbums')) || [];
+// IndexedDB Helper for >5MB storage
+const dbReq = indexedDB.open('PeakafellerBetaDB', 1);
+let db = null;
+dbReq.onupgradeneeded = (e) => {
+  db = e.target.result;
+  if (!db.objectStoreNames.contains('albums')) db.createObjectStore('albums', { keyPath: 'id' });
+};
+dbReq.onsuccess = (e) => { db = e.target.result; };
+dbReq.onerror = (e) => { console.error("DB Error", e); };
+
+const DB = {
+  async ensureDB() {
+    if (db) return db;
+    return new Promise(resolve => {
+      const check = setInterval(() => {
+        if (db) { clearInterval(check); resolve(db); }
+      }, 50);
+    });
+  },
+  async getAll() {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('albums', 'readonly');
+      const req = tx.objectStore('albums').getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async save(album) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('albums', 'readwrite');
+      const req = tx.objectStore('albums').put(album);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async delete(id) {
+    await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('albums', 'readwrite');
+      const req = tx.objectStore('albums').delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+};
+
+let currentAlbums = [];
 let uploadedTracks = [];
 let coverImage = null;
 
@@ -451,9 +499,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Load Owner Albums
-  function loadOwnerAlbums() {
+  async function loadOwnerAlbums() {
     const ownerAlbumsList = document.getElementById('ownerAlbumsList');
-    currentAlbums = JSON.parse(localStorage.getItem('betaAlbums')) || [];
+    try {
+      currentAlbums = await DB.getAll();
+    } catch (e) {
+      console.error('Failed to load albums', e);
+      currentAlbums = [];
+    }
+
 
     if (currentAlbums.length === 0) {
       ownerAlbumsList.innerHTML = '<p style="color: #666; font-family: var(--font-mono); font-size: 0.8rem;">No albums published yet</p>';
@@ -476,15 +530,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Delete Album
-  window.deleteAlbum = (albumId) => {
+  window.deleteAlbum = async (albumId) => {
     if (!confirm('Are you sure you want to delete this album? All comments will be lost.')) {
       return;
     }
 
-    currentAlbums = currentAlbums.filter(a => a.id !== albumId);
-    localStorage.setItem('betaAlbums', JSON.stringify(currentAlbums));
-    loadOwnerAlbums();
-    alert('Album deleted successfully');
+    try {
+      await DB.delete(albumId);
+      currentAlbums = currentAlbums.filter(a => a.id !== albumId);
+      loadOwnerAlbums();
+      alert('Album deleted successfully');
+    } catch (e) {
+      alert('Error deleting album');
+    }
   };
 
 
@@ -585,31 +643,26 @@ document.addEventListener('DOMContentLoaded', () => {
         publishBtn.disabled = true;
 
         // Attempt to save
-        currentAlbums.push(album);
         try {
-          localStorage.setItem('betaAlbums', JSON.stringify(currentAlbums));
+          await DB.save(album);
+          currentAlbums.push(album);
+
+          // Reset form
+          document.getElementById('albumTitle').value = '';
+          document.getElementById('coverPreview').innerHTML = '';
+          uploadedTracks = [];
+          coverImage = null;
+          renderTracksList();
+          loadOwnerAlbums();
+
+          alert('Album published for beta testing!');
         } catch (e) {
-          if (e.name === 'QuotaExceededError' || e.code === 22) {
-            alert('Storage limit exceeded! LocalStorage is limited to ~5MB. Try uploading smaller files or fewer tracks. This is a browser limitation for this beta version.');
-            // Revert changes
-            currentAlbums.pop();
-            publishBtn.textContent = 'PUBLISH FOR TESTING';
-            publishBtn.disabled = false;
-            return;
+          if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
+            alert('Storage limit reached! Even with 20MB+ support, the browser has set a limit. Try removing old albums.');
           } else {
             throw e;
           }
         }
-
-        // Reset form
-        document.getElementById('albumTitle').value = '';
-        document.getElementById('coverPreview').innerHTML = '';
-        uploadedTracks = [];
-        coverImage = null;
-        renderTracksList();
-        loadOwnerAlbums();
-
-        alert('Album published for beta testing!');
       } catch (err) {
         console.error('Publish error:', err);
         alert('An updated unexpected error occurred: ' + err.message);
@@ -624,8 +677,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // Load Albums (Tester View)
-  function loadAlbums() {
-    currentAlbums = JSON.parse(localStorage.getItem('betaAlbums')) || [];
+  async function loadAlbums() {
+    try {
+      currentAlbums = await DB.getAll();
+    } catch (e) {
+      currentAlbums = [];
+    }
 
     if (currentAlbums.length === 0) {
       albumsGrid.innerHTML = `
@@ -693,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
     albumModal.classList.remove('active');
   };
 
-  window.addComment = (albumId, trackIndex) => {
+  window.addComment = async (albumId, trackIndex) => {
     const timestamp = document.getElementById(`timestamp-${trackIndex}`).value;
     const text = document.getElementById(`comment-${trackIndex}`).value;
 
@@ -713,10 +770,14 @@ document.addEventListener('DOMContentLoaded', () => {
       createdAt: new Date().toISOString()
     });
 
-    localStorage.setItem('betaAlbums', JSON.stringify(currentAlbums));
-
-    // Refresh the modal
-    openAlbum(albumId);
+    // Save single album update
+    try {
+      await DB.save(currentAlbums[albumIndex]);
+      // Refresh the modal
+      openAlbum(albumId);
+    } catch (e) {
+      alert('Failed to save comment');
+    }
   };
 
   // Initial load
