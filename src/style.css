@@ -1641,12 +1641,15 @@ body.hovering #cursor-border {
 /* Mobile adjust for new list */
 @media (max-width: 480px) {
   .terminal-social-container {
-    align-items: center;
+    align-items: flex-start;
+    /* Keep left alignment */
     width: 100%;
+    padding-left: 1rem;
+    /* Add some padding so it's not glued to edge */
   }
 
   .terminal-social-list {
-    align-items: center;
+    align-items: flex-start;
   }
 
   .term-line-header {
