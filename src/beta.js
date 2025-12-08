@@ -246,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
       testerPanel.style.display = 'none';
       loadOwnerAlbums();
       loadAccessRequests();
+      loadTesterDashboard();
       initShareLink();
     });
   }
@@ -426,8 +427,123 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('accessRequests', JSON.stringify(accessRequests));
 
     loadAccessRequests();
-    alert('User denied');
+    loadTesterDashboard();
+    alert('User denied/ejected');
   };
+
+  // --- Tester Dashboard Logic ---
+
+  window.loadTesterDashboard = () => {
+    const dashboardList = document.getElementById('testerDashboardList');
+    if (!dashboardList) return;
+
+    const accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+    const approvedTesters = accessRequests.filter(r => r.status === 'approved');
+
+    if (approvedTesters.length === 0) {
+      dashboardList.innerHTML = '<p style="color:#666; font-family:var(--font-mono); font-size:0.8rem;">No active testers found.</p>';
+      return;
+    }
+
+    dashboardList.innerHTML = approvedTesters.map(tester => `
+      <div class="tester-item" style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:1rem; border-bottom:1px solid #333; margin-bottom:0.5rem;">
+        <div style="cursor:pointer;" onclick="openTesterStats('${tester.userId}')">
+          <div style="font-weight:bold; color:var(--color-accent);">${escapeHTML(tester.name)}</div>
+          <div style="font-size:0.8rem; color:#888;">${escapeHTML(tester.email)}</div>
+          <div style="font-size:0.7rem; color:#555;">Joined: ${new Date(tester.approvedAt).toLocaleDateString()}</div>
+        </div>
+        <button class="delete-album-btn" style="padding:0.5rem; font-size:0.7rem;" onclick="ejectTester('${tester.userId}')">EJECT</button>
+      </div>
+    `).join('');
+  };
+
+  window.ejectTester = (userId) => {
+    if (!confirm("Are you sure you want to eject this tester? They will lose access immediately.")) return;
+
+    // Deny request
+    window.denyRequest(userId);
+
+    // Remove individual approval token (simulate logout for them)
+    localStorage.removeItem('approvalData_' + userId);
+  };
+
+  window.openTesterStats = async (userId) => {
+    try {
+      const albums = await DB.getAll();
+      const accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+      const tester = accessRequests.find(r => r.userId === userId);
+
+      if (!tester) return;
+
+      let activityHTML = '';
+      let totalRatings = 0;
+      let totalComments = 0;
+
+      albums.forEach(album => {
+        let albumActivity = '';
+        album.tracks.forEach(track => {
+          const ratingObj = (track.ratings || []).find(r => r.userId === userId);
+          const userComments = (track.comments || []).filter(c => c.userId === userId);
+
+          if (ratingObj || userComments.length > 0) {
+            totalRatings += ratingObj ? 1 : 0;
+            totalComments += userComments.length;
+
+            const starStr = ratingObj ? '★'.repeat(ratingObj.rating) + '☆'.repeat(5 - ratingObj.rating) : 'Unrated';
+
+            albumActivity += `
+                 <div style="margin-bottom:1rem; padding:0.5rem; background:#222; border-radius:4px;">
+                    <div style="font-weight:bold; color:#fff; font-size:0.9rem;">${escapeHTML(track.name)}</div>
+                    <div style="font-size:0.8rem; color:#ff6600; margin:0.2rem 0;">Rating: ${starStr}</div>
+                    ${userComments.length > 0 ? `
+                      <div style="font-size:0.8rem; color:#aaa; margin-top:0.5rem;">Comments:</div>
+                      <ul style="padding-left:1rem; margin:0; list-style:none;">
+                        ${userComments.map(c => `<li style="font-size:0.8rem; border-left:2px solid #555; padding-left:0.5rem; margin-top:0.2rem; color:#ccc;">"${escapeHTML(c.text)}"</li>`).join('')}
+                      </ul>
+                    ` : ''}
+                 </div>
+               `;
+          }
+        });
+
+        if (albumActivity) {
+          activityHTML += `<h4 style="color:var(--color-accent); margin-top:1.5rem; border-bottom:1px solid #333; padding-bottom:0.5rem;">${escapeHTML(album.title)}</h4>` + albumActivity;
+        }
+      });
+
+      if (!activityHTML) {
+        activityHTML = '<p style="color:#666;">No activity recorded for this tester yet.</p>';
+      }
+
+      const statsContent = `
+         <h2 style="font-family:var(--font-main); color:var(--color-accent); margin-bottom:0.5rem;">${escapeHTML(tester.name)}</h2>
+         <p style="color:#888; font-family:var(--font-mono); font-size:0.8rem; margin-bottom:2rem;">${escapeHTML(tester.email)}</p>
+         
+         <div style="display:flex; gap:2rem; margin-bottom:2rem; background:#111; padding:1rem;">
+            <div>
+              <div style="font-size:1.5rem; font-weight:bold; color:#fff;">${totalRatings}</div>
+              <div style="font-size:0.7rem; color:#666;">RATINGS</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem; font-weight:bold; color:#fff;">${totalComments}</div>
+              <div style="font-size:0.7rem; color:#666;">COMMENTS</div>
+            </div>
+         </div>
+
+         <div style="max-height:400px; overflow-y:auto;">
+           ${activityHTML}
+         </div>
+       `;
+
+      document.getElementById('testerStatsContent').innerHTML = statsContent;
+      document.getElementById('testerStatsModal').classList.add('active');
+
+    } catch (e) {
+      console.error(e);
+      alert('Error loading stats');
+    }
+  };
+
 
   // Copy link handler
   document.getElementById('copyLinkBtn')?.addEventListener('click', () => {

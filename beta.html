@@ -85,6 +85,12 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tester Dashboard Section -->
+            <div class="manage-section">
+                <h2>/TESTER DASHBOARD</h2>
+                <div id="testerDashboardList" class="tester-list"></div>
+            </div>
         </div>
 
         <!-- Tester Panel -->
@@ -190,6 +196,15 @@
             <div class="modal-content">
                 <button class="modal-close" onclick="closeModal()">×</button>
                 <div id="albumDetail"></div>
+            </div>
+        </div>
+
+        <!-- Tester Stats Modal -->
+        <div id="testerStatsModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close"
+                    onclick="document.getElementById('testerStatsModal').classList.remove('active')">×</button>
+                <div id="testerStatsContent"></div>
             </div>
         </div>
     </div>
