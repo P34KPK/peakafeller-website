@@ -9,12 +9,12 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "fire
 // 2. Add a Web App
 // 3. Copy the 'firebaseConfig' object
 const firebaseConfig = {
-    apiKey: "API_KEY_HERE",
-    authDomain: "PROJECT_ID.firebaseapp.com",
-    projectId: "PROJECT_ID",
-    storageBucket: "PROJECT_ID.firebasestorage.app",
-    messagingSenderId: "SENDER_ID",
-    appId: "APP_ID"
+    apiKey: "AIzaSyADapmzaJaw5AWqG0e2Oy9RdBuYUCntv-U",
+    authDomain: "peakafeller-beta.firebaseapp.com",
+    projectId: "peakafeller-beta",
+    storageBucket: "peakafeller-beta.firebasestorage.app",
+    messagingSenderId: "177943684632",
+    appId: "1:177943684632:web:6822f7c55ab874a268056d"
 };
 
 // Initialize Firebase
