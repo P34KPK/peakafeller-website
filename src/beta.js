@@ -1,4 +1,4 @@
-import './beta.css';
+// import './beta.css';
 
 // Same background animation as main site
 const canvas = document.getElementById('bg-canvas');
@@ -712,21 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAccess();
 
   // Custom Cursor Logic
-  const cursor = document.getElementById('cursor');
-  const cursorBorder = document.getElementById('cursor-border');
 
-  if (cursor && cursorBorder) {
-    document.addEventListener('mousemove', (e) => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top = e.clientY + 'px';
-
-      // Slight delay for the border to create drag effect
-      setTimeout(() => {
-        cursorBorder.style.left = e.clientX + 'px';
-        cursorBorder.style.top = e.clientY + 'px';
-      }, 50);
-    });
-  }
 
   // Hover Effect for interactive elements
   // Use event delegation for dynamic content
@@ -739,3 +725,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 }); // End DOMContentLoaded
+
+// Custom Cursor Logic
+const cursor = document.getElementById('cursor');
+const cursorBorder = document.getElementById('cursor-border');
+
+if (cursor && cursorBorder) {
+  document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+
+    // Slight delay for the border to create drag effect
+    setTimeout(() => {
+      cursorBorder.style.left = e.clientX + 'px';
+      cursorBorder.style.top = e.clientY + 'px';
+    }, 50);
+  });
+}
