@@ -112,7 +112,7 @@ window.addEventListener('scroll', () => {
   setTimeout(() => { scrollY *= 0.9; }, 50);
 });
 
-import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, ref, uploadBytes, getDownloadURL } from './firebase.js';
+import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from './firebase.js';
 import WaveSurfer from 'wavesurfer.js';
 
 // Beta Testing App Logic
@@ -827,38 +827,25 @@ document.addEventListener('DOMContentLoaded', () => {
       */
 
       try {
-        publishBtn.textContent = 'UPLOADING TO CLOUD... (0%)';
+        publishBtn.textContent = 'SAVING ALBUM...';
         publishBtn.disabled = true;
 
         const timestamp = Date.now();
         let uploadedTrackData = [];
 
-        // 1. Upload Cover
-        let coverUrl = coverImage; // Default if string (not implemented yet for file object logic here, keeping base64 for cover for now is okayish but storage better)
-        // Note: For cover, existing code reads as DataURL. For optimization, we should upload it too.
-        // Assuming coverImage is DataURL string. We can convert to blob or just keep as string for small images.
-        // Let's keep cover as is for simplicity unless it's huge, but ideally upload.
-        // For strictly following Recommendation 2, we focus on Audio which is heavy.
-
-        // 2. Upload Tracks to Storage
+        // 1. Process Tracks (No Upload, just linking)
         for (let i = 0; i < uploadedTracks.length; i++) {
           const track = uploadedTracks[i];
-          publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length}...`;
+          // Create a clean filename reference
+          // Users must place files in public/music/
+          const cleanName = track.name.replace(/[^a-zA-Z0-9-_]/g, '');
+          const fileName = `${track.name}.mp3`; // Use original name for simplicity or enforce clean? Let's use name.
 
-          try {
-            const storageRef = ref(storage, `albums/${timestamp}/${track.name}.mp3`);
-            const snapshot = await uploadBytes(storageRef, track.file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-
-            uploadedTrackData.push({
-              name: track.name,
-              url: downloadURL, // Store URL instead of data
-              comments: []
-            });
-          } catch (err) {
-            console.error("Upload failed for " + track.name, err);
-            throw new Error("Upload failed for " + track.name);
-          }
+          uploadedTrackData.push({
+            name: track.name,
+            url: `/music/${track.file.name}`, // Reference local file in public folder
+            comments: []
+          });
         }
 
         const album = {
@@ -869,7 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
           publishedAt: new Date().toISOString()
         };
 
-        // 3. Save Metadata to Firestore
+        // 2. Save Metadata to Firestore
         await DB.save(album);
         currentAlbums.push(album);
 
@@ -881,14 +868,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTracksList();
         loadOwnerAlbums();
 
-        alert('Album published successfully! Tracks are hosted in the Cloud.');
+        alert('Album Saved! \n\n⚠️ IMPORTANT ACTION REQUIRED:\n\nPlease manually move these MP3 files into the "public/music" folder of your project folder. Then commit/push to GitHub.');
       } catch (err) {
-        if (err.name === 'QuotaExceededError' || err.message.includes('quota')) {
-          alert('Storage limit reached! Even with 20MB+ support, the browser has set a limit. Try removing old albums.');
-        } else {
-          console.error('Publish error:', err);
-          alert('An updated unexpected error occurred: ' + err.message);
-        }
+        console.error('Publish error:', err);
+        alert('An unexpected error occurred: ' + err.message);
       } finally {
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
