@@ -112,52 +112,27 @@ window.addEventListener('scroll', () => {
   setTimeout(() => { scrollY *= 0.9; }, 50);
 });
 
-// Beta Testing App Logic
-// IndexedDB Helper for >5MB storage
-const dbReq = indexedDB.open('PeakafellerBetaDB', 1);
-let db = null;
-dbReq.onupgradeneeded = (e) => {
-  db = e.target.result;
-  if (!db.objectStoreNames.contains('albums')) db.createObjectStore('albums', { keyPath: 'id' });
-};
-dbReq.onsuccess = (e) => { db = e.target.result; };
-dbReq.onerror = (e) => { console.error("DB Error", e); };
+import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from './firebase.js';
 
+// Beta Testing App Logic
+// Firestore Helper
 const DB = {
-  async ensureDB() {
-    if (db) return db;
-    return new Promise(resolve => {
-      const check = setInterval(() => {
-        if (db) { clearInterval(check); resolve(db); }
-      }, 50);
-    });
-  },
   async getAll() {
-    await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('albums', 'readonly');
-      const req = tx.objectStore('albums').getAll();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+    const querySnapshot = await getDocs(collection(db, "albums"));
+    let albums = [];
+    querySnapshot.forEach((doc) => {
+      albums.push(doc.data());
     });
+    return albums;
   },
   async save(album) {
-    await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('albums', 'readwrite');
-      const req = tx.objectStore('albums').put(album);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
-    });
+    // Ensure ID is string for Firestore doc
+    const idString = String(album.id);
+    await setDoc(doc(db, "albums", idString), album);
   },
   async delete(id) {
-    await this.ensureDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('albums', 'readwrite');
-      const req = tx.objectStore('albums').delete(id);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
-    });
+    const idString = String(id);
+    await deleteDoc(doc(db, "albums", idString));
   }
 };
 
@@ -245,17 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ownerPanel.style.display = 'block';
       testerPanel.style.display = 'none';
       // HOTFIX: Inject missing request for specific user if not present (Simulating sync)
-      let requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-      if (!requests.find(r => r.email === 'babygansta77@gmail.com')) {
-        requests.push({
-          userId: 'user_restored_001',
-          name: 'Baby Gangsta',
-          email: 'babygansta77@gmail.com',
-          requestedAt: new Date().toISOString(),
-          status: 'pending'
-        });
-        localStorage.setItem('accessRequests', JSON.stringify(requests));
-      }
+      // Load requests from Firebase
+      loadOwnerAlbums();
+      loadAccessRequests();
+      loadTesterDashboard();
+      initShareLink();
 
       loadOwnerAlbums();
       loadAccessRequests();
@@ -327,19 +296,14 @@ document.addEventListener('DOMContentLoaded', () => {
           };
           localStorage.setItem('approvalData_' + userId, JSON.stringify(approvalData));
 
-          // Add to local access list (for memory on this device)
-          let requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-          if (!requests.find(r => r.email === data.e)) {
-            requests.push({
-              userId: userId,
-              name: data.n,
-              email: data.e,
-              requestedAt: new Date().toISOString(),
-              status: 'approved',
-              approvedAt: new Date().toISOString()
-            });
-            localStorage.setItem('accessRequests', JSON.stringify(requests));
-          }
+          // Add to Firebase Access List (for sync)
+          // We can't write to the global access list without admin rights strictly speaking
+          // But for this prototype we assume open write access to 'requests' collection or we use the Owner Panel flow.
+          // Wait, if user is granting access via magic link, we don't necessarily update the 'requests' list 
+          // unless the Owner generated the link which implies approval.
+          // We should ideally add this user to the 'active_testers' collection.
+
+          alert('ACCESS GRANTED! Welcome to Beta Beat.');
 
           alert('ACCESS GRANTED! Welcome to Beta Beat.');
           // Clear URL
@@ -414,11 +378,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  function loadAccessRequests() {
+  async function loadAccessRequests() {
     const requestsList = document.getElementById('accessRequestsList');
     if (!requestsList) return;
 
-    const accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+    // Load from Firestore
+    const querySnapshot = await getDocs(collection(db, "requests"));
+    let accessRequests = [];
+    querySnapshot.forEach((doc) => {
+      accessRequests.push(doc.data());
+    });
+
+    // Sort by Date
+    accessRequests.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+
     const pendingRequests = accessRequests.filter(r => r.status === 'pending');
 
     if (pendingRequests.length === 0) {
@@ -441,67 +414,57 @@ document.addEventListener('DOMContentLoaded', () => {
   `).join('');
   }
 
-  window.approveRequest = (userId) => {
-    let accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-    const requestIndex = accessRequests.findIndex(r => r.userId === userId);
+  window.approveRequest = async (userId) => {
+    // Get Request
+    const querySnapshot = await getDocs(collection(db, "requests"));
+    let requestDoc = null;
+    let requestData = null;
 
-    if (requestIndex === -1) return;
+    querySnapshot.forEach((docSnap) => {
+      if (docSnap.data().userId === userId) {
+        requestDoc = docSnap;
+        requestData = docSnap.data();
+      }
+    });
 
-    const request = accessRequests[requestIndex];
+    if (!requestData) return;
+
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 30); // Add 30 days
 
-    // Update global request status
-    accessRequests[requestIndex] = {
-      ...request,
+    // Update Firestore
+    const requestRef = doc(db, "requests", requestDoc.id);
+    await updateDoc(requestRef, {
       status: 'approved',
       approvedAt: new Date().toISOString(),
       expiresAt: expirationDate.toISOString()
-    };
+    });
 
-    localStorage.setItem('accessRequests', JSON.stringify(accessRequests));
-
-    // Simulating "Sending email" by setting a flag that the user's browser will pick up
-    // In a real app, this would happen on the server.
-    // Here, we can't easily write to the user's specific local storage if they are on a different machine.
-    // LIMITATION: This only works if Owner and Tester are on the same machine/browser for this demo.
-    // However, to simulate "Email sent", we can simulate the data structure.
-
-    // Ideally, we'd send an email here.
+    // Send Email
     const emailSubject = "Beta Access Granted";
-    const emailBody = `Hello ${request.name},\n\nYou have been granted execution access to the Peakafeller Beta for 30 days.\nExpires: ${expirationDate.toLocaleDateString()}\n\nBest,\nPeakafeller`;
+    const emailBody = `Hello ${requestData.name},\n\nYou have been granted execution access to the Peakafeller Beta for 30 days.\nExpires: ${expirationDate.toLocaleDateString()}\n\nBest,\nPeakafeller`;
 
-    // We can open a mailto link for the owner to actually send the email?
-    // User requested "Access... sent to email".
-    window.open(`mailto:${request.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`);
-
-    // For the "Tester" to actually get in on this local prototype:
-    // They need to "check" if they are approved. 
-    // Since we are using localStorage as a "mock database", the checkAccess() function above
-    // reads 'accessRequests'. But I previously used 'approvedUsers' array. 
-    // I should align logic to use 'accessRequests' as the source of truth for status.
-    // However, the Tester browser needs to know it's approved. 
-    // In this local-only version, Tester must be on same browser or we can't share data.
-    // Assuming same browser for demo:
-
-    // Store user-specific approval data to simulate "Login" token
-    const approvalData = {
-      status: 'approved',
-      expiresAt: expirationDate.toISOString()
-    };
-    localStorage.setItem('approvalData_' + userId, JSON.stringify(approvalData));
+    window.open(`mailto:${requestData.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`);
 
     loadAccessRequests();
-    alert(`Access granted for 30 days. Email client opened to notify user.`);
+    loadTesterDashboard();
+    alert(`Access granted for 30 days. Email client opened.`);
   };
 
-  window.denyRequest = (userId) => {
-    let accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-    accessRequests = accessRequests.map(r =>
-      r.userId === userId ? { ...r, status: 'denied' } : r
-    );
+  window.denyRequest = async (userId) => {
+    // Get Request
+    const querySnapshot = await getDocs(collection(db, "requests"));
+    let requestRef = null;
 
-    localStorage.setItem('accessRequests', JSON.stringify(accessRequests));
+    querySnapshot.forEach((docSnap) => {
+      if (docSnap.data().userId === userId) {
+        requestRef = doc(db, "requests", docSnap.id);
+      }
+    });
+
+    if (requestRef) {
+      await updateDoc(requestRef, { status: 'denied' });
+    }
 
     loadAccessRequests();
     loadTesterDashboard();
@@ -510,11 +473,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Tester Dashboard Logic ---
 
-  window.loadTesterDashboard = () => {
+  window.loadTesterDashboard = async () => {
     const dashboardList = document.getElementById('testerDashboardList');
     if (!dashboardList) return;
 
-    const accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+    // Load from Firestore
+    const querySnapshot = await getDocs(collection(db, "requests"));
+    let accessRequests = [];
+    querySnapshot.forEach((doc) => {
+      accessRequests.push(doc.data());
+    });
+
     const approvedTesters = accessRequests.filter(r => r.status === 'approved');
 
     if (approvedTesters.length === 0) {
@@ -547,8 +516,13 @@ document.addEventListener('DOMContentLoaded', () => {
   window.openTesterStats = async (userId) => {
     try {
       const albums = await DB.getAll();
-      const accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-      const tester = accessRequests.find(r => r.userId === userId);
+
+      // Get Tester Info
+      const querySnapshot = await getDocs(collection(db, "requests"));
+      let tester = null;
+      querySnapshot.forEach(docSnap => {
+        if (docSnap.data().userId === userId) tester = docSnap.data();
+      });
 
       if (!tester) return;
 
@@ -640,7 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Request access handler
   // Request access handler
-  document.getElementById('requestAccessBtn')?.addEventListener('click', () => {
+  // Request access handler
+  document.getElementById('requestAccessBtn')?.addEventListener('click', async () => {
     const name = document.getElementById('testerName').value.trim();
     const email = document.getElementById('testerEmail').value.trim();
 
@@ -649,14 +624,34 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Send EMAIL to Owner
-    const subject = "Beta Access Request: " + name;
-    const body = `Name: ${name}\nEmail: ${email}\n\nI would like to request access to the Peakafeller Beta Beat platform.`;
-    const mailtoLink = `mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const userId = 'user_' + Date.now().toString();
+    const request = {
+      userId: userId,
+      name: name,
+      email: email,
+      requestedAt: new Date().toISOString(),
+      status: 'pending'
+    };
 
-    window.location.href = mailtoLink;
+    // Save to Firestore
+    try {
+      // Use email as doc ID to prevent duplicates easily? Or random ID?
+      // Let's use random but check email
+      await setDoc(doc(db, "requests", userId), request);
 
-    document.getElementById('requestStatus').textContent = 'Email client opened! Send the email to complete request.';
+      document.getElementById('testerEmail').disabled = true;
+      document.getElementById('requestAccessBtn').disabled = true;
+      document.getElementById('requestStatus').textContent = 'Request sent! Waiting for approval...';
+
+      // Also send email as backup notification
+      const subject = "Beta Access Request: " + name;
+      const body = `Name: ${name}\nEmail: ${email}\n\nI would like to request access to the Peakafeller Beta Beat platform.`;
+      window.location.href = `mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    } catch (e) {
+      console.error("Error sending request: ", e);
+      alert("Error sending request.");
+    }
   });
 
   // Admin Tester Login

@@ -12,6 +12,7 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
-    "@huggingface/inference": "^4.13.4"
+    "@huggingface/inference": "^4.13.4",
+    "firebase": "^12.6.0"
   }
 }
