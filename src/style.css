@@ -624,7 +624,7 @@ body.is-scrolling .triangle-loader {
   background-color: var(--color-accent);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 100002;
+  z-index: 999999;
   transform: translate(-50%, -50%);
   transition: width 0.2s, height 0.2s, background-color 0.2s;
 }
@@ -638,7 +638,7 @@ body.is-scrolling .triangle-loader {
   border: 1px solid var(--color-accent);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 100001;
+  z-index: 999998;
   transform: translate(-50%, -50%);
   transition: top 0.1s, left 0.1s, width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
 }
