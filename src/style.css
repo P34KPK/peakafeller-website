@@ -1021,20 +1021,21 @@ body.hovering #cursor-border {
   }
 
   .bottom-controls {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .hero-socials {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    /* Clean grid */
-    justify-items: center;
-    gap: 0.8rem;
-    font-size: 0.65rem;
+    flex-direction: row;
+    /* Keep row on mobile if possible, or allow wrap */
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
     width: 100%;
   }
+
+  /* Reset hero-socials grid from previous step, use the new list style */
+  .hero-socials {
+    display: block;
+    width: auto;
+  }
+
+
 
   .scramble-link {
     font-size: 0.7rem;
