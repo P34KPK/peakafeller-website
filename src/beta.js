@@ -165,6 +165,27 @@ let currentAlbums = [];
 let uploadedTracks = [];
 let coverImage = null;
 
+// Security: Escape HTML to prevent XSS
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>'"]/g,
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag]));
+}
+
+// Security: SHA-256 Hash for password (better than plain text)
+async function checkPassword(input) {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex === '94f7188ada6d383c589a8066f29c7f3772f6e6132fd55b30056dd5896fc2e8bc';
+}
+
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, initializing beta app...');
@@ -209,9 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    ownerPasswordSubmit.addEventListener('click', () => {
+    ownerPasswordSubmit.addEventListener('click', async () => {
       const password = ownerPasswordInput.value;
-      if (password !== 'sebasPK123') {
+      if (!await checkPassword(password)) {
         alert('Incorrect password');
         return;
       }
@@ -330,13 +351,13 @@ document.addEventListener('DOMContentLoaded', () => {
     requestsList.innerHTML = pendingRequests.map(request => `
     <div class="access-request-item">
       <div class="request-info">
-        <div class="request-name">${request.name}</div>
-        <div class="request-email" style="font-size: 0.8rem; color: #888;">${request.email}</div>
+        <div class="request-name">${escapeHTML(request.name)}</div>
+        <div class="request-email" style="font-size: 0.8rem; color: #888;">${escapeHTML(request.email)}</div>
         <div class="request-time">Requested ${new Date(request.requestedAt).toLocaleString()}</div>
       </div>
       <div class="request-actions">
-        <button class="approve-btn" onclick="approveRequest('${request.userId}')">APPROVE</button>
-        <button class="deny-btn" onclick="denyRequest('${request.userId}')">DENY</button>
+        <button class="approve-btn" onclick="approveRequest('${escapeHTML(request.userId)}')">APPROVE</button>
+        <button class="deny-btn" onclick="denyRequest('${escapeHTML(request.userId)}')">DENY</button>
       </div>
     </div>
   `).join('');
@@ -463,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Admin Tester Login
-  document.getElementById('adminTesterLogin')?.addEventListener('click', (e) => {
+  document.getElementById('adminTesterLogin')?.addEventListener('click', async (e) => {
     e.preventDefault();
     const modal = document.getElementById('ownerPasswordModal');
 
@@ -473,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Let's use prompt for the "Admin Access" link to keep it simple as requested "simple password entry".
 
     const password = prompt("Enter Owner Password:");
-    if (password === 'sebasPK123') {
+    if (await checkPassword(password)) {
       const userId = 'admin_user';
       const user = { id: userId, name: 'Administrator', email: 'admin@peakafeller.com' };
 
@@ -516,9 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ownerAlbumsList.innerHTML = currentAlbums.map(album => `
     <div class="owner-album-item">
-      <img src="${album.cover}" class="owner-album-cover" alt="${album.title}">
+      <img src="${escapeHTML(album.cover)}" class="owner-album-cover" alt="${escapeHTML(album.title)}">
       <div class="owner-album-info">
-        <div class="owner-album-title">${album.title}</div>
+        <div class="owner-album-title">${escapeHTML(album.title)}</div>
         <div class="owner-album-meta">
           ${album.tracks.length} tracks • Published ${new Date(album.publishedAt).toLocaleDateString()}
           ${album.tracks.reduce((total, track) => total + (track.comments?.length || 0), 0)} comments
@@ -603,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tracksList = document.getElementById('tracksList');
     tracksList.innerHTML = uploadedTracks.map((track, index) => `
     <div class="track-item">
-      <span class="track-name">${track.name}</span>
+      <span class="track-name">${escapeHTML(track.name)}</span>
       <button class="track-remove" onclick="removeTrack(${index})">×</button>
     </div>
   `).join('');
@@ -696,9 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     albumsGrid.innerHTML = currentAlbums.map(album => `
     <div class="album-card" onclick="openAlbum(${album.id})">
-      <img src="${album.cover}" alt="${album.title}" class="album-cover">
+      <img src="${escapeHTML(album.cover)}" alt="${escapeHTML(album.title)}" class="album-cover">
       <div class="album-info">
-        <h3 class="album-title">${album.title}</h3>
+        <h3 class="album-title">${escapeHTML(album.title)}</h3>
         <p class="album-meta">${album.tracks.length} tracks • ${new Date(album.publishedAt).toLocaleDateString()}</p>
       </div>
     </div>
@@ -712,14 +733,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const detailHTML = `
     <h2 style="font-family: var(--font-main); font-size: 2rem; font-weight: 100; margin-bottom: 2rem; color: var(--color-accent);">
-      ${album.title}
+      ${escapeHTML(album.title)}
     </h2>
-    <img src="${album.cover}" style="width: 100%; max-width: 400px; border-radius: 8px; margin-bottom: 2rem;">
+    <img src="${escapeHTML(album.cover)}" style="width: 100%; max-width: 400px; border-radius: 8px; margin-bottom: 2rem;">
     
     ${album.tracks.map((track, index) => `
       <div class="track-player">
         <div class="track-header">
-          <span class="track-title">${track.name}</span>
+          <span class="track-title">${escapeHTML(track.name)}</span>
         </div>
         <audio controls src="${track.data}" id="audio-${index}"></audio>
         
@@ -732,8 +753,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div id="comments-${index}">
             ${(track.comments || []).map(c => `
               <div class="comment-item">
-                <div class="comment-timestamp">${c.timestamp}</div>
-                <div class="comment-content">${c.text}</div>
+                <div class="comment-timestamp">${escapeHTML(c.timestamp)}</div>
+                <div class="comment-content">${escapeHTML(c.text)}</div>
               </div>
             `).join('')}
           </div>
