@@ -248,6 +248,29 @@ document.addEventListener('DOMContentLoaded', () => {
       loadAccessRequests();
       loadTesterDashboard();
       initShareLink();
+
+      // Init Manual Invite
+      document.getElementById('sendInviteBtn')?.addEventListener('click', () => {
+        const name = document.getElementById('inviteName').value;
+        const email = document.getElementById('inviteEmail').value;
+        if (!name || !email) { alert('Enter name and email'); return; }
+
+        // Generate Token
+        const data = {
+          n: name,
+          e: email,
+          x: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+          s: 'approved' // Secret status
+        };
+
+        const token = btoa(JSON.stringify(data));
+        const link = `${window.location.origin}${window.location.pathname}?token=${token}`;
+
+        const subject = "Welcome to PEAKAFELLER Beta Beat";
+        const body = `Hello ${name},\n\nYou have been granted access to the Peakafeller Beta Testing program.\n\nCLICK HERE TO ACCESS:\n${link}\n\nEnjoy,\nPeakafeller`;
+
+        window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+      });
     });
   }
 
@@ -271,8 +294,53 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function checkAccess() {
+    // Check for Magic Link Token
     const urlParams = new URLSearchParams(window.location.search);
-    const isInvite = urlParams.get('invite') === 'true';
+    const token = urlParams.get('token');
+
+    if (token) {
+      try {
+        const data = JSON.parse(atob(token));
+        if (data.s === 'approved') {
+          // Auto-register user
+          const userId = 'user_' + Date.now();
+          const user = { id: userId, name: data.n, email: data.e };
+
+          localStorage.setItem('betaUser', JSON.stringify(user));
+
+          const approvalData = {
+            status: 'approved',
+            expiresAt: new Date(data.x).toISOString()
+          };
+          localStorage.setItem('approvalData_' + userId, JSON.stringify(approvalData));
+
+          // Add to local access list (for memory on this device)
+          let requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+          if (!requests.find(r => r.email === data.e)) {
+            requests.push({
+              userId: userId,
+              name: data.n,
+              email: data.e,
+              requestedAt: new Date().toISOString(),
+              status: 'approved',
+              approvedAt: new Date().toISOString()
+            });
+            localStorage.setItem('accessRequests', JSON.stringify(requests));
+          }
+
+          alert('ACCESS GRANTED! Welcome to Beta Beat.');
+          // Clear URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+
+          // Reload to refresh view
+          window.location.reload();
+          return;
+        }
+      } catch (e) {
+        console.error('Invalid token', e);
+      }
+    }
+
     const currentUser = JSON.parse(localStorage.getItem('betaUser')) || null;
     const approvalData = JSON.parse(localStorage.getItem('approvalData_' + (currentUser ? currentUser.id : ''))) || null;
 
@@ -281,10 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (new Date() > new Date(approvalData.expiresAt)) {
         alert('Your beta access has expired (30 days limit). Please request access again.');
         localStorage.removeItem('approvalData_' + currentUser.id);
-        const accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-        // Reset status to pending or removed? Let's just reset local state for now so they see the form
-        // Realistically we should update the central request list, but local storage sync is tricky without backend.
-        // We will just show the form again.
       }
     }
 
@@ -562,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Request access handler
+  // Request access handler
   document.getElementById('requestAccessBtn')?.addEventListener('click', () => {
     const name = document.getElementById('testerName').value.trim();
     const email = document.getElementById('testerEmail').value.trim();
@@ -571,32 +636,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const userId = 'user_' + Date.now().toString(); // Simple ID
-    const user = { id: userId, name: name, email: email };
+    // Send EMAIL to Owner
+    const subject = "Beta Access Request: " + name;
+    const body = `Name: ${name}\nEmail: ${email}\n\nI would like to request access to the Peakafeller Beta Beat platform.`;
+    const mailtoLink = `mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    const request = {
-      userId: userId,
-      name: name,
-      email: email,
-      requestedAt: new Date().toISOString(),
-      status: 'pending'
-    };
+    window.location.href = mailtoLink;
 
-    let accessRequests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-    // Check if email already requested
-    if (accessRequests.some(r => r.email === email && r.status === 'pending')) {
-      alert('A request for this email is already pending.');
-      return;
-    }
-
-    accessRequests.push(request);
-
-    localStorage.setItem('betaUser', JSON.stringify(user));
-    localStorage.setItem('accessRequests', JSON.stringify(accessRequests));
-
-    document.getElementById('testerEmail').disabled = true;
-    document.getElementById('requestAccessBtn').disabled = true;
-    document.getElementById('requestStatus').textContent = 'Request sent! Waiting for approval...';
+    document.getElementById('requestStatus').textContent = 'Email client opened! Send the email to complete request.';
   });
 
   // Admin Tester Login
