@@ -407,16 +407,27 @@ document.addEventListener('DOMContentLoaded', () => {
       albumsGrid.style.display = 'none';
       if (donationSection) donationSection.style.display = 'none';
 
-      // If pending
-      const requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-      const myRequest = currentUser ? requests.find(r => r.userId === currentUser.id) : null;
-      if (myRequest && myRequest.status === 'pending') {
-        document.getElementById('testerName').value = myRequest.name;
-        document.getElementById('testerEmail').value = myRequest.email;
+      // If pending (Check new local storage key)
+      const pendingRequest = JSON.parse(localStorage.getItem('pendingBetaRequest'));
+      if (pendingRequest) {
+        document.getElementById('testerName').value = pendingRequest.name;
+        document.getElementById('testerEmail').value = pendingRequest.email;
         document.getElementById('testerName').disabled = true;
         document.getElementById('testerEmail').disabled = true;
-        document.getElementById('requestAccessBtn').disabled = true;
-        document.getElementById('requestStatus').textContent = 'Request sent! Waiting for approval...';
+        const btn = document.getElementById('requestAccessBtn');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'REQUEST SENT';
+        }
+        const status = document.getElementById('requestStatus');
+        if (status) status.textContent = 'Request sent! Waiting for approval...';
+      } else {
+        // Legacy check (can remove later)
+        const requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
+        const myRequest = currentUser ? requests.find(r => r.userId === currentUser.id) : null;
+        if (myRequest && myRequest.status === 'pending') {
+          // ... legacy logic ...
+        }
       }
     }
   }
@@ -667,46 +678,69 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Request access handler
-  // Request access handler
-  // Request access handler
-  document.getElementById('requestAccessBtn')?.addEventListener('click', async () => {
-    const name = document.getElementById('testerName').value.trim();
-    const email = document.getElementById('testerEmail').value.trim();
+  const requestBtn = document.getElementById('requestAccessBtn');
+  if (requestBtn) {
+    requestBtn.addEventListener('click', async () => {
+      console.log('Request Access Clicked');
+      const nameInput = document.getElementById('testerName');
+      const emailInput = document.getElementById('testerEmail');
+      const statusLabel = document.getElementById('requestStatus');
 
-    if (!name || !email) {
-      alert('Please enter your name and email');
-      return;
-    }
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
 
-    const userId = 'user_' + Date.now().toString();
-    const request = {
-      userId: userId,
-      name: name,
-      email: email,
-      requestedAt: new Date().toISOString(),
-      status: 'pending'
-    };
+      if (!name || !email) {
+        alert('Please enter your name and email');
+        return;
+      }
 
-    // Save to Firestore
-    try {
-      // Use email as doc ID to prevent duplicates easily? Or random ID?
-      // Let's use random but check email
-      await setDoc(doc(db, "requests", userId), request);
+      requestBtn.disabled = true;
+      requestBtn.textContent = 'SENDING REQUEST...';
 
-      document.getElementById('testerEmail').disabled = true;
-      document.getElementById('requestAccessBtn').disabled = true;
-      document.getElementById('requestStatus').textContent = 'Request sent! Waiting for approval...';
+      const userId = 'user_' + Date.now().toString();
+      const request = {
+        userId: userId,
+        name: name,
+        email: email,
+        requestedAt: new Date().toISOString(),
+        status: 'pending'
+      };
 
-      // Also send email as backup notification
-      const subject = "Beta Access Request: " + name;
-      const body = `Name: ${name}\nEmail: ${email}\n\nI would like to request access to the Peakafeller Beta Beat platform.`;
-      window.location.href = `mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      // Save to Firestore
+      try {
+        await setDoc(doc(db, "requests", userId), request);
+        console.log('Request saved to Firestore');
 
-    } catch (e) {
-      console.error("Error sending request: ", e);
-      alert("Error sending request.");
-    }
-  });
+        // Save local state for UI persistence
+        localStorage.setItem('pendingBetaRequest', JSON.stringify({
+          userId: userId,
+          name: name,
+          email: email,
+          timestamp: Date.now()
+        }));
+
+        nameInput.disabled = true;
+        emailInput.disabled = true;
+        statusLabel.textContent = 'Request sent! Waiting for approval...';
+
+        requestBtn.textContent = 'REQUEST SENT';
+
+        // Also send email as backup notification (new tab)
+        const subject = "Beta Access Request: " + name;
+        const body = `Name: ${name}\nEmail: ${email}\n\nI would like to request access to the Peakafeller Beta Beat platform.`;
+        // window.open(`mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        setTimeout(() => {
+          window.location.href = `mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }, 1000);
+
+      } catch (e) {
+        console.error("Error sending request: ", e);
+        alert("Error sending request: " + e.message);
+        requestBtn.disabled = false;
+        requestBtn.textContent = 'REQUEST ACCESS';
+      }
+    });
+  }
 
   // Admin Tester Login
   document.getElementById('adminTesterLogin')?.addEventListener('click', async (e) => {
