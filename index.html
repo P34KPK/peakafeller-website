@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PEAKAFELLER | Electronic Music Producer & Visual Artist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/src/rawbeat.css">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div id="app">
+    <!-- Boot Sequence Overlay -->
+    <div id="boot-overlay"
+      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; padding: 2rem; font-family: 'Courier New', monospace; font-size: 14px; color: var(--color-accent); display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; overflow: hidden;">
+      <div id="boot-text" style="white-space: pre-wrap; line-height: 1.5;"></div>
+      <div class="boot-cursor"
+        style="display: inline-block; width: 10px; height: 18px; background: var(--color-accent); animation: blink 0.8s infinite; margin-top: 5px;">
+      </div>
+    </div>
+
+    <style>
+      @keyframes blink {
+
+        0%,
+        100% {
+          opacity: 1;
+        }
+
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .boot-line {
+        opacity: 0;
+        animation: fadeIn 0.1s forwards;
+      }
+
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Hide scrollbar during boot */
+      body.booting {
+        overflow: hidden;
+      }
+    </style>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const bootText = document.getElementById('boot-text');
+        const overlay = document.getElementById('boot-overlay');
+        const lines = [
+          "> BIOS CHECK... OK",
+          "> LOADING KERNEL... 100%",
+          "> MOUNTING VOLUMES...",
+          "> /VOL/MUSIC... MOUNTED",
+          "> /VOL/VIDEO... MOUNTED",
+          "> CHECKING AUDIO DRIVERS... OK",
+          "> INITIALIZING PEAKAFELLER_OS...",
+          "> CONNECTING TO SERVER...",
+          "> CONNECTION ESTABLISHED."
+        ];
+
+        let lineIndex = 0;
+        document.body.classList.add('booting');
+
+        function typeLine() {
+          if (lineIndex < lines.length) {
+            const div = document.createElement('div');
+            div.className = 'boot-line';
+            div.textContent = lines[lineIndex];
+            bootText.appendChild(div);
+
+            // Random delay between lines to simulate processing
+            const delay = Math.random() * 300 + 100;
+            lineIndex++;
+            setTimeout(typeLine, delay);
+          } else {
+            // Sequence finished
+            setTimeout(() => {
+              overlay.style.transition = "opacity 0.5s ease";
+              overlay.style.opacity = "0";
+              setTimeout(() => {
+                overlay.remove();
+                document.body.classList.remove('booting');
+                // Trigger main logo animation if it exists
+                document.body.classList.remove('loading');
+              }, 500);
+            }, 800);
+          }
+        }
+
+        // Start sequence
+        setTimeout(typeLine, 500);
+      });
+    </script>
+    <!-- Floating Centered Header -->
+    <header class="floating-header">
+      <div class="header-inner">
+        <div class="header-logo">
+          <img src="/logo.png" alt="PEAKAFELLER" />
+        </div>
+        <nav class="header-nav">
+          <div class="nav-dropdown">
+            <a href="#music" class="nav-item nav-trigger" data-text="MUSIC">MUSIC</a>
+            <div class="nav-submenu">
+              <a href="#latest-releases" class="nav-subitem">LATEST RELEASES</a>
+              <a href="#album" class="nav-subitem">ALBUM</a>
+              <a href="#single" class="nav-subitem">SINGLE</a>
+              <a href="#remix" class="nav-subitem">REMIX</a>
+              <a href="#video" class="nav-subitem">VIDEO</a>
+            </div>
+          </div>
+          <a href="#visuals" class="nav-item" data-text="VISUALS">VISUALS</a>
+          <a href="#recycleur" class="nav-item" data-text="LE RECYCLEUR">LE RECYCLEUR</a>
+          <a href="#about" class="nav-item" data-text="ABOUT">ABOUT</a>
+        </nav>
+        <div class="header-menu-icon">=</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-content">
+          <h1 class="hero-title" data-scramble>PΞΛKΛFΞLLΞR</h1>
+          <p class="hero-subtitle">SONIC ARCHITECT & VISUAL ALCHEMIST</p>
+        </div>
+
+        <!-- Bottom Hero UI -->
+        <!-- Bottom Hero UI -->
+        <div class="hero-bottom-ui">
+          <div class="scroll-indicator">[SCROLL]</div>
+          <div class="bottom-controls">
+            <!-- Compact Socials -->
+            <div class="hero-socials" style="display: flex; gap: 0.8rem; flex-wrap: wrap; flex: 1;">
+              <a href="https://www.youtube.com/peakpk" target="_blank" class="scramble-link" data-text="[ YT ]">[ YT
+                ]</a>
+              <a href="https://x.com/peakafeller" target="_blank" class="scramble-link" data-text="[ X ]">[ X ]</a>
+              <a href="https://www.instagram.com/peakafeller" target="_blank" class="scramble-link" data-text="[ IG ]">[
+                IG ]</a>
+              <a href="https://open.spotify.com/intl-fr/artist/7asuXHs3Z97oQtE7HKed2R?si=X_mTVeOGRLiJZYgOuwg6JA"
+                target="_blank" class="scramble-link" data-text="[ SP ]">[ SP ]</a>
+              <a href="https://on.soundcloud.com/qDvlMMuqe6ZoAZ4ySC" target="_blank" class="scramble-link"
+                data-text="[ SC ]">[ SC ]</a>
+              <a href="https://music.apple.com/ca/artist/peakafeller/258876691" target="_blank" class="scramble-link"
+                data-text="[ AM ]">[ AM ]</a>
+              <a href="https://www.facebook.com/PeakafellerMusic" target="_blank" class="scramble-link"
+                data-text="[ FB ]">[ FB ]</a>
+              <a href="https://www.tiktok.com/@peakafeller_lerecycleur?_r=1&_t=ZS-91yh1gJZF9I" target="_blank"
+                class="scramble-link" data-text="[ TT ]">[ TT ]</a>
+            </div>
+
+            <!-- Restored Elements -->
+            <a href="#" class="rabbit-link">
+              <img src="/rabbit-logo.jpg" alt="Rabbit Logo" class="rabbit-logo">
+            </a>
+            <a href="/sampler.html" class="btn-smplr">SMPLR</a>
+            <a href="/beta.html" class="btn-beta">
+              <span class="beta-line">BETA</span>
+              <span class="beta-line">BEAT</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Hero Visual Removed for pure black + grid look -->
+        <div class="hero-visual parallax-layer" data-speed="0.5">
+          <!-- Image removed as requested, grid comes from body background -->
+        </div>
+      </section>
+
+      <section id="music" class="section latest-release-redesign" style="padding: 0;">
+        <div class="lr-grid-container">
+          <!-- Top Left -->
+          <div class="lr-header-left">
+            <h2 class="lr-title" data-scramble>/ LATEST RELEASE</h2>
+          </div>
+          <!-- Top Right -->
+          <div class="lr-header-right">
+            <div class="triangle-loader loader-black">
+              <div class="dot dot-1"></div>
+              <div class="dot dot-2"></div>
+              <div class="dot dot-3"></div>
+            </div>
+          </div>
+
+          <!-- Middle/Bottom Left: Feature Release (Left Column) -->
+          <div class="lr-main-feature">
+            <div class="lr-feature-label">/ COMMING SOON</div>
+            <div class="lr-feature-content">
+              <div class="lr-image-wrapper">
+                <img src="/forget-you.jpg" alt="Forget You Cover" class="lr-main-img"
+                  onerror="this.src='/rabbit-logo.jpg'">
+                <button class="card-play-btn" data-source="soundcloud" data-track-id="2215643903"></button>
+              </div>
+              <div class="lr-feature-info">
+                <h3 class="lr-song-title">/ FORGET YOU</h3>
+                <p class="lr-song-desc">
+                  The latest sonic exploration. A journey into deep bass and ethereal synths.
+                  Listen now on all platforms.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Right: Release List (Right Column) -->
+          <div class="lr-release-list">
+            <!-- Item 01 -->
+            <div class="lr-item">
+              <div>
+                <div class="lr-item-num">01.</div>
+                <h3 class="lr-item-title">/ FADED & NAKED</h3>
+                <p class="lr-item-desc">
+                  Ft. Æphrødyte<br>
+                  A raw emotional track.
+                </p>
+              </div>
+              <div class="lr-item-cover-placeholder">
+                <a href="https://soundcloud.com/user-905285639/faded-and-naked" target="_blank"
+                  style="display:block;width:100%;height:100%">
+                  <img
+                    src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/84/31/5e/84315ed5-4a15-188d-9d95-b3d152abf8e4/artwork.jpg/600x600bb.jpg"
+                    class="lr-img" onerror="this.style.display='none'; this.parentNode.innerText='COVER'">
+                </a>
+                <button class="card-play-btn" data-source="soundcloud"
+                  data-track-id="https://soundcloud.com/user-905285639/faded-and-naked"></button>
+              </div>
+            </div>
+            <!-- Item 02 -->
+            <div class="lr-item">
+              <div>
+                <div class="lr-item-num">02.</div>
+                <h3 class="lr-item-title">/ CHILL CONTROL</h3>
+                <p class="lr-item-desc">
+                  Laid back beats.<br>
+                  Relax and unwind.
+                </p>
+              </div>
+              <div class="lr-item-cover-placeholder">
+                <a href="https://soundcloud.com/peakafeller/chill-control-peakafeller" target="_blank"
+                  style="display:block;width:100%;height:100%">
+                  <img src="/chill-control.jpg" class="lr-img"
+                    onerror="this.style.display='none'; this.parentNode.innerText='COVER'">
+                </a>
+                <button class="card-play-btn" data-source="soundcloud" data-track-id="2183181483"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- SoundCloud Widget API -->
+      <script src="https://w.soundcloud.com/player/api.js"></script>
+      <section id="album" class="section music-section">
+        <div class="title-with-loader">
+          <h2 class="section-title" data-scramble>/ALBUMS</h2>
+          <div class="triangle-loader">
+            <div class="dot dot-1"></div>
+            <div class="dot dot-2"></div>
+            <div class="dot dot-3"></div>
+          </div>
+        </div>
+        <div class="grid-container" style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+          <!-- Safety Deluxe Album -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/album/safety-deluxe" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/safety-deluxe.jpg" alt="Safety Deluxe Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/000/fff?text=NO+IMAGE'">
+              </a>
+              <button class="card-play-btn" data-album-id="2427839118"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/album/safety-deluxe" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Safety Deluxe</div>
+              <div class="spotify-subtitle">2010 • Album</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- The Unforgotten Ones -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/album/the-unforgotten-ones" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/unforgotten-ones.jpg" alt="The Unforgotten Ones Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/000/fff?text=NO+IMAGE'">
+              </a>
+              <button class="card-play-btn" data-album-id="1243042075"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/album/the-unforgotten-ones" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">The Unforgotten Ones</div>
+              <div class="spotify-subtitle">Album</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- Soulstice -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/album/soulstice" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/soulstice.jpg" alt="Soulstice Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/000/fff?text=NO+IMAGE'">
+              </a>
+              <button class="card-play-btn" data-album-id="3182317746"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/album/soulstice" target="_blank" style="text-decoration: none;">
+              <div class="spotify-title">Soulstice</div>
+              <div class="spotify-subtitle">Album</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- Safety -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/album/safety" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/safety.jpg" alt="Safety Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/000/fff?text=NO+IMAGE'">
+              </a>
+              <button class="card-play-btn" data-album-id="1457324289"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/album/safety" target="_blank" style="text-decoration: none;">
+              <div class="spotify-title">Safety</div>
+              <div class="spotify-subtitle">Album</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- Outside the box -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/album/outside-the-box" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/outside-the-box.jpg" alt="Outside the box Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/000/fff?text=NO+IMAGE'">
+              </a>
+              <button class="card-play-btn" data-album-id="187188874"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/album/outside-the-box" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Outside the box</div>
+              <div class="spotify-subtitle">Album</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="single" class="section music-section">
+        <div class="title-with-loader">
+          <h2 class="section-title" data-scramble>/SINGLES</h2>
+          <div class="triangle-loader">
+            <div class="dot dot-1"></div>
+            <div class="dot dot-2"></div>
+            <div class="dot dot-3"></div>
+          </div>
+        </div>
+        <div class="grid-container" style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+
+          <!-- Blinded Ft Aira -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/track/blinded-ft-aira" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="https://f4.bcbits.com/img/a1663499619_10.jpg" alt="Blinded Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/333/fff?text=BLINDED'">
+              </a>
+              <button class="card-play-btn" data-bc-track-id="4102649804"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/track/blinded-ft-aira" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Blinded Ft. Aira</div>
+              <div class="spotify-subtitle">Single • Bandcamp</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- Copy Paste -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/track/copy-paste" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="https://f4.bcbits.com/img/a1870106325_10.jpg" alt="Copy Paste Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/333/fff?text=COPY+PASTE'">
+              </a>
+              <button class="card-play-btn" data-bc-track-id="1331222728"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/track/copy-paste" target="_blank" style="text-decoration: none;">
+              <div class="spotify-title">Copy Paste</div>
+              <div class="spotify-subtitle">Single • Bandcamp</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- A la plage -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/track/a-la-plage" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="https://f4.bcbits.com/img/a3040351750_10.jpg" alt="A la plage Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/333/fff?text=A+LA+PLAGE'">
+              </a>
+              <button class="card-play-btn" data-bc-track-id="1483905064"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/track/a-la-plage" target="_blank" style="text-decoration: none;">
+              <div class="spotify-title">À la plage</div>
+              <div class="spotify-subtitle">Single • Bandcamp</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- She's a Bitch (EP) -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/album/shes-a-bitch-ep-remix" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="https://f4.bcbits.com/img/a3992518231_10.jpg" alt="She's a Bitch Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/333/fff?text=EP+REMIX'">
+              </a>
+              <button class="card-play-btn" data-album-id="1766122153"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/album/shes-a-bitch-ep-remix" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">She's a bitch (EP)</div>
+              <div class="spotify-subtitle">EP Remix • Bandcamp</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- Thatz Jazz -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/track/thatz-jazz" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="https://f4.bcbits.com/img/a0557196469_10.jpg" alt="Thatz Jazz Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/333/fff?text=THATZ+JAZZ'">
+              </a>
+              <button class="card-play-btn" data-bc-track-id="3596624421"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/track/thatz-jazz" target="_blank" style="text-decoration: none;">
+              <div class="spotify-title">Thatz Jazz</div>
+              <div class="spotify-subtitle">Single • Bandcamp</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+          <!-- Can't stop this music -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://peakafeller.bandcamp.com/track/cant-stop-this-music-by-lorren-g-peakafeller-remix"
+                target="_blank" style="display: block; width: 100%; height: 100%;">
+                <img src="https://f4.bcbits.com/img/a4073616168_10.jpg" alt="Can't Stop Cover" class="spotify-cover"
+                  onerror="this.src='https://placehold.co/400x400/333/fff?text=REMIX'">
+              </a>
+              <button class="card-play-btn" data-bc-track-id="169725907"></button>
+            </div>
+            <a href="https://peakafeller.bandcamp.com/track/cant-stop-this-music-by-lorren-g-peakafeller-remix"
+              target="_blank" style="text-decoration: none;">
+              <div class="spotify-title">Can't stop this music</div>
+              <div class="spotify-subtitle">Remix • Bandcamp</div>
+              <span class="btn-buy">BUY</span>
+            </a>
+          </div>
+
+        </div>
+      </section>
+
+      <section id="remix" class="section music-section">
+        <div class="title-with-loader">
+          <h2 class="section-title" data-scramble>/REMIXES</h2>
+          <div class="triangle-loader">
+            <div class="dot dot-1"></div>
+            <div class="dot dot-2"></div>
+            <div class="dot dot-3"></div>
+          </div>
+        </div>
+        <div class="grid-container" style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+          <!-- Waterfalls (James Hype Remix) -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://soundcloud.com/peakafeller/waterfalls-feat-sam-harper" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/remix-placeholder.svg" alt="Waterfalls Cover" class="spotify-cover"
+                  onerror="this.src='/remix-placeholder.svg'">
+              </a>
+              <button class="card-play-btn" data-source="soundcloud"
+                data-track-id="https://soundcloud.com/peakafeller/waterfalls-feat-sam-harper"></button>
+            </div>
+            <a href="https://soundcloud.com/peakafeller/waterfalls-feat-sam-harper" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Waterfalls (James Hype Remix)</div>
+              <div class="spotify-subtitle">Remix • SoundCloud</div>
+            </a>
+          </div>
+
+          <!-- My Sharona (2025 Remix) -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://soundcloud.com/peakafeller/my-sharona-peakafeller-myremix-2025" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/remix-placeholder.svg" alt="My Sharona Cover" class="spotify-cover"
+                  onerror="this.src='/remix-placeholder.svg'">
+              </a>
+              <button class="card-play-btn" data-source="soundcloud"
+                data-track-id="https://soundcloud.com/peakafeller/my-sharona-peakafeller-myremix-2025"></button>
+            </div>
+            <a href="https://soundcloud.com/peakafeller/my-sharona-peakafeller-myremix-2025" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">My Sharona (2025 Remix)</div>
+              <div class="spotify-subtitle">Remix • SoundCloud</div>
+            </a>
+          </div>
+
+          <!-- Alors on Danse -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://open.spotify.com/intl-fr/track/4i3oKrpMXbuCTH1oJG4bzd" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/remix-placeholder.svg" alt="Alors on Danse Cover" class="spotify-cover"
+                  onerror="this.src='/remix-placeholder.svg'">
+              </a>
+              <button class="card-play-btn" data-source="spotify" data-track-id="4i3oKrpMXbuCTH1oJG4bzd"></button>
+            </div>
+            <a href="https://open.spotify.com/intl-fr/track/4i3oKrpMXbuCTH1oJG4bzd" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Alors on Danse (Pk Dubstep)</div>
+              <div class="spotify-subtitle">Remix • Spotify</div>
+            </a>
+          </div>
+
+          <!-- Blinded PK Remix -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://open.spotify.com/intl-fr/track/68CSDv68PetNLhvqhox1Ho" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/remix-placeholder.svg" alt="Blinded Remix Cover" class="spotify-cover"
+                  onerror="this.src='/remix-placeholder.svg'">
+              </a>
+              <button class="card-play-btn" data-source="spotify" data-track-id="68CSDv68PetNLhvqhox1Ho"></button>
+            </div>
+            <a href="https://open.spotify.com/intl-fr/track/68CSDv68PetNLhvqhox1Ho" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Blinded (PK Remix)</div>
+              <div class="spotify-subtitle">Remix • Spotify</div>
+            </a>
+          </div>
+
+          <!-- Rocket Roller Coaster -->
+          <div class="spotify-card" style="position: relative;">
+            <div class="spotify-cover-wrap" style="position: relative;">
+              <a href="https://open.spotify.com/intl-fr/track/6cfuwc8ewwE3rk2qtC5jcF" target="_blank"
+                style="display: block; width: 100%; height: 100%;">
+                <img src="/remix-placeholder.svg" alt="Rocket Roller Coaster Cover" class="spotify-cover"
+                  onerror="this.src='/remix-placeholder.svg'">
+              </a>
+              <button class="card-play-btn" data-source="spotify" data-track-id="6cfuwc8ewwE3rk2qtC5jcF"></button>
+            </div>
+            <a href="https://open.spotify.com/intl-fr/track/6cfuwc8ewwE3rk2qtC5jcF" target="_blank"
+              style="text-decoration: none;">
+              <div class="spotify-title">Rocket Roller Coaster (Remix)</div>
+              <div class="spotify-subtitle">Remix • Spotify</div>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="video" class="section music-section">
+        <div class="title-with-loader">
+          <h2 class="section-title" data-scramble>/VIDEOS</h2>
+          <div class="triangle-loader">
+            <div class="dot dot-1"></div>
+            <div class="dot dot-2"></div>
+            <div class="dot dot-3"></div>
+          </div>
+        </div>
+
+        <div class="video-terminal-layout" style="display: flex; gap: 2rem; flex-wrap: wrap;">
+          <!-- Main Monitor -->
+          <div class="video-monitor" style="flex: 2; min-width: 300px;">
+            <div class="monitor-frame" style="border: 1px solid #333; background: #000; padding: 4px;">
+              <div id="mainVideoDisplay" class="video-facade" data-video-id="RMajgGRRUvM" style="margin-bottom: 0;">
+                <img src="https://img.youtube.com/vi/RMajgGRRUvM/hqdefault.jpg" id="mainVideoThumb">
+                <div class="play-btn-overlay">▶</div>
+              </div>
+            </div>
+            <div class="monitor-status"
+              style="display: flex; justify-content: space-between; font-family: 'Courier New', monospace; font-size: 0.8rem; color: var(--color-accent); margin-top: 0.5rem;">
+              <span id="videoStatus">> STATUS: READY</span>
+              <span id="videoTitleDisplay">FORGET YOU - PEAKAFELLER</span>
+            </div>
+          </div>
+
+          <!-- Playlist Terminal -->
+          <div class="video-playlist-term"
+            style="flex: 1; min-width: 250px; background: rgba(0,0,0,0.5); border: 1px solid #333; height: 400px; display: flex; flex-direction: column;">
+            <div class="playlist-header"
+              style="background: #111; padding: 0.5rem; border-bottom: 1px solid #333; font-family: monospace; color: #888; font-size: 0.8rem;">
+              > DIR: /ROOT/VIDEOS/ARCHIVE
+            </div>
+            <ul class="playlist-files"
+              style="list-style: none; padding: 0.5rem; margin: 0; overflow-y: auto; flex-grow: 1; font-family: 'Courier New', monospace;">
+              <!-- Playlist Items -->
+              <li class="term-file active" data-id="RMajgGRRUvM" data-title="FORGET YOU - PEAKAFELLER">> FORGET_YOU.mp4
+              </li>
+              <li class="term-file" data-id="ZVBvTQk-KOE" data-title="Blinded Ft.Aira">> BLINDED.mp4</li>
+              <li class="term-file" data-id="jadSpy0L8j0" data-title="Noize (Official Video)">> NOIZE_OFFICIAL.mp4</li>
+              <li class="term-file" data-id="c5iBlZHHVls" data-title="Viva las vegas ft Machine">> VIVA_LAS_VEGAS.mp4
+              </li>
+              <li class="term-file" data-id="Oakta46lARc" data-title="Mixed Elements">> MIXED_ELEMENTS.mp4</li>
+              <li class="term-file" data-id="ecr5hCNRzcg" data-title="Wings ft.Nao Cover Remix">> WINGS_REMIX.mp4</li>
+              <li class="term-file" data-id="2hH7oiF56XY" data-title="Time 2 Move">> TIME_2_MOVE.mp4</li>
+              <li class="term-file" data-id="yDRFsZgGqv4" data-title="Fck That">> FCK_THAT.mp4</li>
+              <li class="term-file" data-id="gk8KeG5tRuw" data-title="Live@FestivalLorettain2016">>
+                LIVE_FESTIVAL_2016.mp4</li>
+              <li class="term-file" data-id="ncPhOmzqNzA" data-title="Another awesome remix">> AWESOME_REMIX.mp4</li>
+              <li class="term-file" data-id="oAL-AEX4MNw" data-title="I WISH I HAD WON A TRIP...">> TRIP_DOWN_SOUTH.mp4
+              </li>
+              <li class="term-file" data-id="pgkfZ32pvwI" data-title="ThatGirl BadGirl (Short)">> TG_BG_SHORT.mp4</li>
+              <li class="term-file" data-id="jdGnvnOQw-Q" data-title="That Girl Bad Girl">> THATGIRL_BADGIRL.mp4</li>
+              <li class="term-file" data-id="Qcz57uUZiwc" data-title="La fille a papa feat.Sam">> FILLE_A_PAPA.mp4</li>
+              <li class="term-file" data-id="aT8RJbyTQsg" data-title="Everything is all right">> EVERYTHING_OK.mp4</li>
+              <li class="term-file" data-id="Z0DrVGgDWcU" data-title="Love After All - Remix">> LOVE_AFTER_ALL.mp4</li>
+              <li class="term-file" data-id="iEaGyoGT6po" data-title="I don't care">> IDONT_CARE.mp4</li>
+              <li class="term-file" data-id="pEcPWwEYlB8" data-title="THE QUEENS KING">> QUEENS_KING.mp4</li>
+              <li class="term-file" data-id="Hv0MkBeMTms" data-title="Everybody knows it">> EVERYBODY_KNOWS.mp4</li>
+              <li class="term-file" data-id="3hlPc3yai3k" data-title="Super Hippopotamus">> SUPER_HIPPO.mp4</li>
+              <li class="term-file" data-id="J6DODr4BRgg" data-title="My Electro">> MY_ELECTRO.mp4</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      <section id="visuals" class="section visuals-section">
+        <div class="title-with-loader">
+          <h2 class="section-title" data-scramble style="position: relative; z-index: 10;">/VISUAL WORKS</h2>
+          <div class="visual-loader">
+            <div class="scan-line"></div>
+            <div class="pixel-bar bar-1"></div>
+            <div class="pixel-bar bar-2"></div>
+            <div class="pixel-bar bar-3"></div>
+          </div>
+        </div>
+        <div class="gallery" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+          <!-- Visual 1 -->
+          <div class="gallery-card zoomable"
+            style="flex: 1 1 300px; height: 300px; position: relative; overflow: hidden; border-radius: 4px; border: 1px solid #333;">
+            <img src="https://placehold.co/600x600/111/fff?text=GENESIS"
+              style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
+            <div class="visual-overlay"
+              style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 1rem; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+              <h3 class="visual-title" style="font-size: 1rem; margin: 0;">PROJECT_GENESIS</h3>
+              <p class="visual-desc terminal-text" style="font-size: 0.7rem; color: #888;">> RENDER_COMPLETE</p>
+            </div>
+          </div>
+
+          <!-- Visual 2 -->
+          <div class="gallery-card zoomable"
+            style="flex: 1 1 300px; height: 300px; position: relative; overflow: hidden; border-radius: 4px; border: 1px solid #333;">
+            <img src="https://placehold.co/600x800/111/fff?text=NEURAL"
+              style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
+            <div class="visual-overlay"
+              style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 1rem; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+              <h3 class="visual-title" style="font-size: 1rem; margin: 0;">NEURAL_NET</h3>
+              <p class="visual-desc terminal-text" style="font-size: 0.7rem; color: #888;">> MODEL_TRAINED</p>
+            </div>
+          </div>
+
+          <!-- Visual 3 -->
+          <div class="gallery-card zoomable"
+            style="flex: 1 1 300px; height: 300px; position: relative; overflow: hidden; border-radius: 4px; border: 1px solid #333;">
+            <img src="https://placehold.co/800x600/111/fff?text=VOID"
+              style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
+            <div class="visual-overlay"
+              style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 1rem; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+              <h3 class="visual-title" style="font-size: 1rem; margin: 0;">VOID_STRUCTURE</h3>
+              <p class="visual-desc terminal-text" style="font-size: 0.7rem; color: #888;">> ANOMALY_DETECTED</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="about" class="section about-section">
+        <div class="about-container"
+          style="max-width: 900px; margin: 0 auto; display: flex; gap: 3rem; flex-wrap: wrap;">
+
+          <!-- Column 1: ID Card -->
+          <div class="profile-card"
+            style="flex: 1 1 250px; border: 1px solid var(--color-accent); padding: 1rem; background: rgba(0,20,0,0.3);">
+            <div class="profile-image-frame"
+              style="width: 100%; aspect-ratio: 1; border: 1px dashed #333; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+              <!-- ASCII or Glitch Image Placeholder -->
+              <img src="/profile.png"
+                style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9; filter: grayscale(0.8) contrast(1.2);">
+              <div class="scan-line"
+                style="position: absolute; top:0; left:0; width:100%; height:2px; background:rgba(0,255,65,0.5); animation: scan 3s linear infinite;">
+              </div>
+            </div>
+
+            <div class="profile-stats"
+              style="font-family: 'Courier New', monospace; font-size: 0.8rem; line-height: 1.6;">
+              <div style="border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="color: #666;">ID:</span> <span style="color: var(--color-accent);">PKFLR_001</span>
+              </div>
+              <div style="border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="color: #666;">CLASS:</span> PRODUCER / ARTIST
+              </div>
+              <div style="border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+                <span style="color: #666;">ORIGIN:</span> UNKNOWN_SECTOR
+              </div>
+              <div>
+                <span style="color: #666;">STATUS:</span> <span style="color: var(--color-accent);">ONLINE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Data Logs (Bio) -->
+          <div class="profile-data" style="flex: 2 1 400px; font-family: 'Courier New', monospace;">
+            <h2 class="section-title" data-scramble style="margin-bottom: 1rem; font-size: 2rem;">/USER_PROFILE</h2>
+
+            <div class="terminal-log-entry"
+              style="margin-bottom: 1.5rem; border-left: 2px solid #333; padding-left: 1rem;">
+              <div style="color: #666; font-size: 0.7rem; margin-bottom: 0.2rem;">> ACCESSING BIO_DATA.TXT...</div>
+              <p style="color: #ccc; font-size: 0.9rem; line-height: 1.6;">
+                Peakafeller is a multi-disciplinary entity operating across audio and visual spectrums. Renowned
+                electronic music producer, DJ, and filmmaker. Proficient in guitar, piano, and synthesis.
+              </p>
+            </div>
+
+            <div class="terminal-log-entry"
+              style="margin-bottom: 1.5rem; border-left: 2px solid #333; padding-left: 1rem;">
+              <div style="color: #666; font-size: 0.7rem; margin-bottom: 0.2rem;">> DECRYPTING ARTISTIC_VISION...</div>
+              <p style="color: #ccc; font-size: 0.9rem; line-height: 1.6;">
+                Versatility is key. Merging traditional instrumentation with cutting-edge electronic production.
+                Creating immersive soundscapes that challenge the boundary between digital and organic.
+              </p>
+            </div>
+
+            <div class="terminal-log-entry"
+              style="margin-bottom: 2rem; border-left: 2px solid #333; padding-left: 1rem;">
+              <div style="color: #666; font-size: 0.7rem; margin-bottom: 0.2rem;">> VISUAL_MODULE_STATUS...</div>
+              <p style="color: #ccc; font-size: 0.9rem; line-height: 1.6;">
+                Establishing a legacy in the contemporary art scene through unique filmmaking and visual styling.
+                Inspiring audiences globally.
+              </p>
+            </div>
+
+            <!-- Contact Terminal -->
+            <div class="contact-terminal" style="background: #050505; border: 1px solid #333; padding: 1rem;">
+              <div style="color: #888; border-bottom: 1px solid #333; margin-bottom: 0.5rem; font-size: 0.8rem;">>
+                COMM_CHANNELS ESTABLISHED:</div>
+              <div style="display: grid; gap: 0.5rem; font-size: 0.85rem;">
+                <div><span style="color: var(--color-accent);">> MNGMT:</span> <a
+                    href="mailto:p34k.productions@gmail.com" class="term-link"
+                    style="color: #fff; text-decoration: none;">p34k.productions@gmail.com</a></div>
+                <div><span style="color: var(--color-accent);">> QC_BOOKING:</span> <a
+                    href="mailto:francois@ovalrepresentation.com" class="term-link"
+                    style="color: #fff; text-decoration: none;">francois@ovalrepresentation.com</a></div>
+                <div><span style="color: var(--color-accent);">> GLOBAL:</span> <a href="mailto:peakafeller@me.com"
+                    class="term-link" style="color: #fff; text-decoration: none;">peakafeller@me.com</a></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer id="contact" class="footer">
+      <div class="footer-content">
+        <h2 class="footer-title">LET'S CREATE</h2>
+        <p class="copyright">&copy; 2025 PEAKAFELLER. ALL RIGHTS RESERVED.</p>
+      </div>
+    </footer>
+  </div>
+  <!-- Sticky Music Player Overlay -->
+  <div class="sticky-player-bar" id="stickyPlayer">
+    <button class="close-player-btn" id="closePlayer">[ x ] CLOSE_STREAM</button>
+    <div id="bandcamp-embed-container" style="width: 100%; max-width: 700px;"></div>
+  </div>
+
+  <!-- RAWBEAT Modal -->
+  <div id="rawbeat-modal" class="rawbeat-modal">
+    <div class="rawbeat-terminal">
+      <div class="rawbeat-header">
+        <div class="rawbeat-title">RAWBEAT_RECORDS // V.1.0</div>
+        <button id="rawbeat-close" class="rawbeat-close">[X]</button>
+      </div>
+      <div class="rawbeat-content">
+        <div class="rawbeat-intro">
+          <p style="color: var(--color-accent); margin-bottom: 0.5rem;">> SYSTEM_MESSAGE: WELCOME TO RAWBEAT</p>
+          <p>The digital frontier of sound. Establishing connection to the underground catalog...</p>
+        </div>
+
+        <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">> CATALOG_INDEX</h3>
+
+        <div class="rawbeat-catalog">
+          <!-- Placeholder Items -->
+          <div class="catalog-item">
+            <div class="catalog-placeholder-img">RWB_001</div>
+            <div style="font-size: 0.9rem; color: #fff;">HYPER_REALITY</div>
+            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
+          </div>
+          <div class="catalog-item">
+            <div class="catalog-placeholder-img">RWB_002</div>
+            <div style="font-size: 0.9rem; color: #fff;">DATA_CRASH</div>
+            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
+          </div>
+          <div class="catalog-item">
+            <div class="catalog-placeholder-img">RWB_003</div>
+            <div style="font-size: 0.9rem; color: #fff;">NEON_DREAMS</div>
+            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
+          </div>
+          <div class="catalog-item">
+            <div class="catalog-placeholder-img">RWB_004</div>
+            <div style="font-size: 0.9rem; color: #fff;">SYSTEM_OVERLOAD</div>
+            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
+          </div>
+        </div>
+      </div>
+      <div class="rawbeat-status-bar">
+        <span>STATUS: ONLINE</span>
+        <span>MEM: 64TB</span>
+        <span>USER: GUEST</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Cursor Elements -->
+  <div id="cursor"></div>
+  <div id="cursor-border"></div>
+
+  <script type="module" defer src="/src/main.js"></script>
+</body>
+
+</html>
+```

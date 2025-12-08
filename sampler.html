@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PEAKAFELLER | SAMPLER</title>
+    <link rel="stylesheet" href="/src/style.css"> <!-- Base styles -->
+    <link rel="stylesheet" href="/src/sampler.css"> <!-- Interface styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Top Header -->
+        <div class="app-header">
+            <a href="/" class="icon-btn back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </a>
+            <div class="preset-name">Basic Jupo Bass*</div>
+            <div class="icon-btn edit-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6" />
+                </svg>
+            </button>
+            <button class="tab-btn active" data-tab="osc">Osc</button>
+            <button class="tab-btn" data-tab="filter">Filter</button>
+            <button class="tab-btn" data-tab="env">Env</button>
+            <button class="tab-btn" data-tab="lfo">LFO</button>
+            <button class="tab-btn" data-tab="mod">Mod</button>
+            <button class="tab-btn" data-tab="global">Global</button>
+        </div>
+
+        <!-- Oscillators Section (Active View) -->
+        <div class="control-panel" id="panel-osc">
+            <!-- Row 1: Osc 1 -->
+            <div class="knob-row">
+                <div class="control-unit">
+                    <label>Osc 1 Wave</label>
+                    <div class="arc-knob" id="osc1-wave" data-param="osc1wave" data-type="select">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" stroke-linecap="round" />
+                            <path class="val-arc" d="M20,80 A40,40 0 0,1 50,20" fill="none" stroke="#4dabf7"
+                                stroke-width="8" stroke-linecap="round" />
+                        </svg>
+                        <div class="knob-icon">
+                            <svg width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
+                                <path d="M2 18L10 2L18 18" />
+                            </svg> <!-- Sawtooth -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-unit">
+                    <label>Octave</label>
+                    <div class="arc-knob" id="osc1-oct" data-param="osc1oct" data-type="value">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" />
+                            <path class="val-arc" d="M20,80 A40,40 0 0,1 60,30" fill="none" stroke="#4dabf7"
+                                stroke-width="8" />
+                        </svg>
+                        <div class="knob-value">1</div>
+                    </div>
+                </div>
+
+                <div class="control-unit">
+                    <label>Shape</label>
+                    <div class="arc-knob" id="osc1-shape" data-param="osc1shape">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" />
+                            <path class="val-arc" d="M20,80 A40,40 0 0,1 30,70" fill="none" stroke="#4dabf7"
+                                stroke-width="8" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="control-unit">
+                    <label>Shape Mod</label>
+                    <div class="arc-knob">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" />
+                        </svg>
+                        <div class="knob-label-small">Press</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Osc 2 -->
+            <div class="knob-row">
+                <div class="control-unit">
+                    <label>Osc 2 Wave</label>
+                    <div class="arc-knob" id="osc2-wave" data-param="osc2wave" data-type="select">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" />
+                            <path class="val-arc" d="M20,80 A40,40 0 0,1 35,60" fill="none" stroke="#4dabf7"
+                                stroke-width="8" />
+                        </svg>
+                        <div class="knob-icon">
+                            <svg width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
+                                <path d="M2 10 Q 5 2 10 10 T 18 10" />
+                            </svg> <!-- Sine -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-unit">
+                    <label>Octave</label>
+                    <div class="arc-knob" id="osc2-oct" data-param="osc2oct" data-type="value">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" />
+                            <path class="val-arc" d="M20,80 A40,40 0 0,1 50,20" fill="none" stroke="#4dabf7"
+                                stroke-width="8" />
+                        </svg>
+                        <div class="knob-value">0</div>
+                    </div>
+                </div>
+
+                <div class="control-unit">
+                    <label>Detune</label>
+                    <div class="arc-knob" id="osc2-detune" data-param="detune">
+                        <svg viewBox="0 0 100 100">
+                            <path class="bg-arc" d="M20,80 A40,40 0 1,1 80,80" fill="none" stroke="#333"
+                                stroke-width="8" />
+                            <path class="val-arc" d="M20,80 A40,40 0 0,1 50,20" fill="none" stroke="#4dabf7"
+                                stroke-width="8" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="control-unit">
+                    <div class="mini-viz" id="mini-viz">
+                        <canvas id="scopeCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Strip (Visual Filler) -->
+        <div class="timeline-strip">
+            <div class="strip-seg filled"></div>
+            <div class="strip-seg filled"></div>
+            <div class="strip-seg filled"></div>
+            <div class="strip-seg filled"></div>
+            <div class="strip-seg"></div>
+            <!-- ... dots ... -->
+        </div>
+
+        <!-- Main Performance Area -->
+        <div class="performance-area">
+            <!-- Sidebar -->
+            <div class="side-toolbar">
+                <button class="tool-btn active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z" />
+                    </svg>
+                    <span>Pads</span>
+                </button>
+                <button class="tool-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM4 18V6h3v7h2V6h3v7h2V6h3v7h2V6h1v12H4z" />
+                    </svg>
+                    <span>Clav.</span>
+                </button>
+                <div class="tool-spacer"></div>
+                <div class="octave-control">
+                    <div class="oct-val">2</div>
+                    <span>Octave</span>
+                </div>
+                <div class="tool-spacer"></div>
+                <button class="tool-btn">
+                    <span>OFF</span>
+                    <span style="font-size: 0.6rem; opacity: 0.7;">Répét.</span>
+                </button>
+            </div>
+
+            <!-- Notes Grid -->
+            <div class="notes-grid" id="notes-grid">
+                <!-- Row 1 (High) -->
+                <div class="grid-pad" data-note="G4">G4</div>
+                <div class="grid-pad" data-note="A4">A4</div>
+                <div class="grid-pad" data-note="B4">B4</div>
+                <div class="grid-pad active-blue" data-note="C5">C5</div> <!-- Highlighted in ref -->
+                <div class="grid-pad" data-note="D5">D5</div>
+
+                <!-- Row 2 -->
+                <div class="grid-pad" data-note="D4">D4</div>
+                <div class="grid-pad" data-note="E4">E4</div>
+                <div class="grid-pad" data-note="F4">F4</div>
+                <div class="grid-pad" data-note="G4">G4</div>
+                <div class="grid-pad" data-note="A4">A4</div>
+
+                <!-- Row 3 -->
+                <div class="grid-pad" data-note="A3">A3</div>
+                <div class="grid-pad" data-note="B3">B3</div>
+                <div class="grid-pad" data-note="C4">C4</div>
+                <div class="grid-pad" data-note="D4">D4</div>
+                <div class="grid-pad" data-note="E4">E4</div>
+
+                <!-- Row 4 (Low) -->
+                <div class="grid-pad" data-note="E3">E3</div>
+                <div class="grid-pad" data-note="F3">F3</div>
+                <div class="grid-pad" data-note="G3">G3</div>
+                <div class="grid-pad" data-note="A3">A3</div>
+                <div class="grid-pad" data-note="B3">B3</div>
+
+                <!-- Row 5 (Lowest - Bottom in ref) -->
+                <div class="grid-pad" data-note="B2">B2</div>
+                <div class="grid-pad" data-note="C3">C3</div>
+                <div class="grid-pad" data-note="D3">D3</div>
+                <div class="grid-pad" data-note="E3">E3</div>
+                <div class="grid-pad" data-note="F3">F3</div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="bottom-bar">
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M9 14L4 9l5-5" />
+                </svg></button>
+            <button class="icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M15 14l5-5-5-5" />
+                </svg></button>
+            <div class="spacer"></div>
+            <button class="play-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- AI Panel (Keeping it hidden/overlay or integrating it?) 
+             The user asked for "options fonctionnel".
+             I should probably put the AI stuff in the "Edit" menu or a popup if I strictly follow the screenshot.
+             But the user previously asked for the AI button. 
+             I will add a small "AI" button in the Top Header.
+        -->
+        <div class="ai-overlay" id="ai-overlay" style="display:none;">
+            <div class="ai-box">
+                <h3>AI GENERATOR</h3>
+                <input type="text" id="ai-prompt" placeholder="Generate new sound...">
+                <button id="generate-btn">GENERATE</button>
+                <div id="gen-status">READY</div>
+                <button onclick="document.getElementById('ai-overlay').style.display='none'">CLOSE</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Mouse Trail -->
+    <div id="cursor"></div>
+    <div id="cursor-border"></div>
+
+    <script type="module" src="/src/sampler.js"></script>
+</body>
+
+</html>

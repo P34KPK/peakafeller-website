@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BETA Testing - PEAKAFELLER</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/src/beta.css">
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="app">
+        <!-- Header -->
+        <header class="beta-header">
+            <a href="/" class="back-link">← BACK</a>
+            <h1 class="beta-title">BETA TESTING</h1>
+            <div class="mode-toggle">
+                <button id="ownerMode" class="mode-btn">OWNER</button>
+                <button id="testerMode" class="mode-btn active">TESTER</button>
+            </div>
+        </header>
+
+        <!-- Owner Panel (Hidden by default) -->
+        <div id="ownerPanel" class="panel" style="display: none;">
+            <div class="upload-section">
+                <h2>/UPLOAD NEW ALBUM</h2>
+
+                <div class="form-group">
+                    <label>Album Title</label>
+                    <input type="text" id="albumTitle" placeholder="Enter album title..." class="input-field">
+                </div>
+
+                <div class="form-group">
+                    <label>Album Cover</label>
+                    <div class="file-upload">
+                        <input type="file" id="coverUpload" accept="image/*" hidden>
+                        <button onclick="document.getElementById('coverUpload').click()" class="upload-btn">
+                            + UPLOAD COVER
+                        </button>
+                        <div id="coverPreview" class="cover-preview"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tracks (MP3)</label>
+                    <div class="file-upload">
+                        <input type="file" id="tracksUpload" accept="audio/mp3" multiple hidden>
+                        <button onclick="document.getElementById('tracksUpload').click()" class="upload-btn">
+                            + ADD TRACKS
+                        </button>
+                        <div id="tracksList" class="tracks-list"></div>
+                    </div>
+                </div>
+
+                <button id="publishBtn" class="publish-btn">PUBLISH FOR TESTING</button>
+            </div>
+
+            <!-- Manage Albums Section -->
+            <div class="manage-section">
+                <h2>/MANAGE ALBUMS</h2>
+                <div id="ownerAlbumsList" class="owner-albums-list"></div>
+            </div>
+
+            <!-- Access Requests Section -->
+            <div class="manage-section">
+                <h2>/ACCESS REQUESTS</h2>
+                <div id="accessRequestsList" class="access-requests-list"></div>
+            </div>
+
+            <!-- Share Invite Section -->
+            <div class="manage-section">
+                <h2>/SHARE INVITE</h2>
+                <div class="share-section">
+                    <p class="share-description">Share this link with beta testers:</p>
+                    <div class="share-link-container">
+                        <input type="text" id="shareLink" class="share-link-input" readonly>
+                        <button id="copyLinkBtn" class="copy-btn">COPY</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tester Panel -->
+        <div id="testerPanel" class="panel">
+            <!-- Access Request Form (shown if not approved) -->
+            <div id="accessRequestForm" class="access-request-form" style="display: none;">
+                <h2>/REQUEST ACCESS</h2>
+                <p>Enter your name and email to request access to beta testing:</p>
+                <div class="request-input-group" style="flex-direction: column;">
+                    <input type="text" id="testerName" placeholder="Your Name" class="input-field">
+                    <input type="email" id="testerEmail" placeholder="Your Email" class="input-field">
+                    <button id="requestAccessBtn" class="request-btn" style="width: 100%; margin-top: 1rem;">REQUEST
+                        ACCESS</button>
+                    <a href="#" id="adminTesterLogin"
+                        style="color: #444; text-decoration: none; font-size: 0.7rem; margin-top: 1rem; font-family: var(--font-mono); display: inline-block;">[
+                        ADMIN ACCESS ]</a>
+                </div>
+                <p class="request-status" id="requestStatus"></p>
+            </div>
+
+            <!-- Albums Grid (shown if approved) -->
+            <div class="albums-grid" id="albumsGrid">
+                <!-- Albums will be dynamically loaded here -->
+                <div class="empty-state">
+                    <p>NO ALBUMS IN BETA TESTING</p>
+                    <p class="hint">Check back later for new releases</p>
+                </div>
+            </div>
+
+            <!-- Donation Section (shown if approved) -->
+            <div id="donationSection" class="donation-section"
+                style="display: none; margin-top: 4rem; padding-top: 4rem; border-top: 1px solid var(--color-border);">
+                <h2
+                    style="font-family: var(--font-main); color: var(--color-accent); font-size: 1.5rem; margin-bottom: 2rem;">
+                    /SUPPORT THE PROJECT</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+
+                    <!-- PayPal -->
+                    <div class="donation-card">
+                        <h3 class="donation-title">PAYPAL</h3>
+                        <p class="donation-desc">Support via PayPal donation</p>
+                        <a href="https://www.paypal.com/donate/?business=p34k.productions@gmail.com&no_recurring=0&currency_code=USD"
+                            target="_blank" class="donate-btn">DONATE WITH
+                            PAYPAL</a>
+                    </div>
+
+                    <!-- Crypto -->
+                    <div class="donation-card">
+                        <h3 class="donation-title">CRYPTO</h3>
+
+                        <div class="crypto-item">
+                            <span class="crypto-label">BITCOIN (BTC)</span>
+                            <div class="crypto-address-group">
+                                <input type="text" readonly
+                                    value="bc1qm64t0d5k5kj757avejs2j8n36c7dh350k8guc9jhfsa3na2c7a6qqm8et3"
+                                    class="crypto-input" onclick="this.select()">
+                                <button class="copy-small-btn"
+                                    onclick="copyToClipboard(this, 'bc1qm64t0d5k5kj757avejs2j8n36c7dh350k8guc9jhfsa3na2c7a6qqm8et3')">COPY</button>
+                            </div>
+                        </div>
+
+                        <div class="crypto-item">
+                            <span class="crypto-label">ETHEREUM (ETH)</span>
+                            <div class="crypto-address-group">
+                                <input type="text" readonly value="0x6904A7E49af3507F7D697EC03afdeD76D5d45cDC"
+                                    class="crypto-input" onclick="this.select()">
+                                <button class="copy-small-btn"
+                                    onclick="copyToClipboard(this, '0x6904A7E49af3507F7D697EC03afdeD76D5d45cDC')">COPY</button>
+                            </div>
+                        </div>
+
+                        <div class="crypto-item">
+                            <span class="crypto-label">XRP</span>
+                            <div class="crypto-address-group">
+                                <input type="text" readonly value="rpNF4938Y8zCrqFP2owDHjMUdpAxMs49JD"
+                                    class="crypto-input" onclick="this.select()">
+                                <button class="copy-small-btn"
+                                    onclick="copyToClipboard(this, 'rpNF4938Y8zCrqFP2owDHjMUdpAxMs49JD')">COPY</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Owner Password Modal -->
+        <div id="ownerPasswordModal" class="modal" style="display:none;">
+            <div class="modal-content"
+                style="background:#000;padding:2rem;border:1px solid var(--color-border);border-radius:8px;max-width:400px;margin:auto;position:relative;">
+                <button id="closeOwnerModal" class="modal-close" style="top:0.5rem;right:0.5rem;"
+                    onclick="document.getElementById('ownerPasswordModal').style.display='none'">×</button>
+                <h2 style="font-family:var(--font-main);color:var(--color-accent);margin-bottom:1rem;font-size:1.5rem;">
+                    Enter Owner Password</h2>
+                <input type="password" id="ownerPasswordInput" placeholder="Password"
+                    style="width:100%;padding:0.8rem;margin-bottom:1rem;background:rgba(0,0,0,0.5);border:1px solid var(--color-border);color:#fff;font-family:var(--font-mono);" />
+                <button id="ownerPasswordSubmit" class="btn-beta"
+                    style="background:var(--color-accent);color:#000;padding:0.8rem 1.5rem;border:none;border-radius:4px;font-family:var(--font-mono);font-weight:600;cursor:pointer;width:100%;">ENTER</button>
+            </div>
+        </div>
+
+        <!-- Album Detail Modal -->
+        <div id="albumModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <div id="albumDetail"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Custom Cursor Elements -->
+    <div id="cursor"></div>
+    <div id="cursor-border"></div>
+
+    <script type="module" src="/src/beta.js"></script>
+</body>
+
+</html>

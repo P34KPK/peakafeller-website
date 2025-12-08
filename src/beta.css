@@ -1,0 +1,779 @@
+@import './style.css';
+
+/* Beta Page Specific Styles */
+.beta-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem 4rem;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+}
+
+.back-link {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: var(--color-accent);
+}
+
+.beta-title {
+    font-family: var(--font-main);
+    font-size: 1.5rem;
+    font-weight: 100;
+    letter-spacing: 0.2em;
+    color: #fff;
+}
+
+.mode-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.3rem;
+    border-radius: 4px;
+}
+
+.mode-btn {
+    padding: 0.5rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: #666;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+}
+
+.mode-btn.active {
+    background: var(--color-accent);
+    color: #000;
+}
+
+.panel {
+    margin-top: 100px;
+    padding: 4rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Upload Section */
+.upload-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 3rem;
+}
+
+.upload-section h2 {
+    font-family: var(--font-main);
+    font-size: 2rem;
+    font-weight: 100;
+    margin-bottom: 2rem;
+    color: var(--color-accent);
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.upload-btn {
+    padding: 0.8rem 2rem;
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upload-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.cover-preview {
+    margin-top: 1rem;
+    max-width: 300px;
+}
+
+.cover-preview img {
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+}
+
+.tracks-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.track-item {
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.track-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #fff;
+}
+
+.track-remove {
+    background: none;
+    border: none;
+    color: #ff4444;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.publish-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: #000;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 2rem;
+}
+
+.publish-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+}
+
+/* Manage Albums Section */
+.manage-section {
+    margin-top: 3rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.manage-section h2 {
+    font-family: var(--font-main);
+    font-size: 2rem;
+    font-weight: 100;
+    margin-bottom: 2rem;
+    color: var(--color-accent);
+}
+
+.owner-albums-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.owner-album-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+.owner-album-item:hover {
+    border-color: var(--color-accent);
+}
+
+.owner-album-cover {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.owner-album-info {
+    flex: 1;
+}
+
+.owner-album-title {
+    font-family: var(--font-main);
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 0.3rem;
+}
+
+.owner-album-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #666;
+}
+
+.delete-album-btn {
+    padding: 0.6rem 1.2rem;
+    background: transparent;
+    border: 1px solid #ff4444;
+    border-radius: 4px;
+    color: #ff4444;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-album-btn:hover {
+    background: #ff4444;
+    color: #000;
+}
+
+/* Access Requests */
+.access-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.access-request-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem;
+    background: rgba(255, 102, 0, 0.05);
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+}
+
+.request-info {
+    font-family: var(--font-mono);
+    color: #fff;
+}
+
+.request-name {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.request-time {
+    font-size: 0.7rem;
+    color: #666;
+}
+
+.request-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.approve-btn,
+.deny-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.approve-btn {
+    background: var(--color-accent);
+    color: #000;
+}
+
+.approve-btn:hover {
+    transform: translateY(-2px);
+}
+
+.deny-btn {
+    background: transparent;
+    border: 1px solid #666;
+    color: #666;
+}
+
+.deny-btn:hover {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+/* Share Section */
+.share-section {
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+}
+
+.share-description {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 1rem;
+}
+
+.share-link-container {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.share-link-input {
+    flex: 1;
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.copy-btn {
+    padding: 0.8rem 1.5rem;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: #000;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Access Request Form */
+.access-request-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 3rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.access-request-form h2 {
+    font-family: var(--font-main);
+    font-size: 2rem;
+    font-weight: 100;
+    color: var(--color-accent);
+    margin-bottom: 1rem;
+}
+
+.access-request-form p {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 2rem;
+}
+
+.request-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.request-btn {
+    padding: 0.8rem 1.5rem;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: #000;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.request-btn:hover {
+    transform: translateY(-2px);
+}
+
+.request-status {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    margin-top: 1rem;
+}
+
+/* Albums Grid */
+.albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.album-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.album-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--color-accent);
+}
+
+.album-cover {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: #111;
+}
+
+.album-info {
+    padding: 1.5rem;
+}
+
+.album-title {
+    font-family: var(--font-main);
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.album-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #666;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem;
+    color: #666;
+}
+
+.empty-state p {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem !important;
+    color: #444 !important;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    overflow-y: auto;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #000;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 3rem;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--color-accent);
+}
+
+/* Track Player */
+.track-player {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+}
+
+.track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.track-title {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.track-duration {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #666;
+}
+
+audio {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+/* Comments */
+.comments-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.comment-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.timestamp-input {
+    width: 80px;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.comment-text {
+    flex: 1;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    resize: vertical;
+}
+
+.comment-btn {
+    padding: 0.5rem 1rem;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: #000;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.comment-btn:hover {
+    transform: translateY(-2px);
+}
+
+.comment-item {
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 2px solid var(--color-accent);
+    margin-bottom: 0.5rem;
+    border-radius: 2px;
+}
+
+.comment-timestamp {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-accent);
+    margin-bottom: 0.3rem;
+}
+
+.comment-content {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #ccc;
+}
+
+/* Donation Section */
+.donation-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.donation-card:hover {
+    border-color: var(--color-accent);
+}
+
+.donation-title {
+    font-family: var(--font-main);
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.donation-desc {
+    font-family: var(--font-mono);
+    color: #888;
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.donate-btn {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: #0070ba;
+    /* PayPal Blue */
+    color: #fff;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.donate-btn:hover {
+    opacity: 0.9;
+}
+
+.crypto-item {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.crypto-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-accent);
+    margin-bottom: 0.5rem;
+}
+
+.crypto-address-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.crypto-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-border);
+    padding: 0.5rem;
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    border-radius: 4px;
+}
+
+.copy-small-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.copy-small-btn:hover {
+    background: var(--color-accent);
+    color: #000;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .beta-header {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .panel {
+        padding: 2rem 1.5rem;
+    }
+
+    .upload-section {
+        padding: 2rem 1.5rem;
+    }
+
+    .albums-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        padding: 2rem 1.5rem;
+    }
+}
