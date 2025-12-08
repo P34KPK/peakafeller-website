@@ -1,3 +1,6 @@
+import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc } from './firebase.js';
+import WaveSurfer from 'wavesurfer.js';
+
 // import './beta.css';
 
 // Same background animation as main site
@@ -107,15 +110,65 @@ window.addEventListener('scroll', () => {
   if (scrollVelocity > 0) {
     vortexStrength = Math.min(vortexStrength + scrollVelocity * 0.05, 3);
   }
-  scrollY = scrollVelocity;
-  lastScrollY = currentScrollY;
   setTimeout(() => { scrollY *= 0.9; }, 50);
 });
 
-import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from './firebase.js';
-import WaveSurfer from 'wavesurfer.js';
-
 // Beta Testing App Logic
+
+// === FIRESTORE AUDIO CHUNKING SYSTEM ===
+// Google Firestore allows 1MB per document. We split files into chunks.
+const CHUNK_SIZE = 800 * 1024; // ~800KB to be safe (Base64 overhead)
+
+async function saveAudioFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async (event) => {
+      try {
+        const fullDataUrl = event.target.result;
+        const totalLength = fullDataUrl.length;
+        const totalChunks = Math.ceil(totalLength / CHUNK_SIZE);
+        const fileId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const chunkIds = [];
+
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, totalLength);
+          const chunkData = fullDataUrl.substring(start, end);
+          const chunkId = `${fileId}_chunk_${i}`;
+
+          await setDoc(doc(db, "audio_chunks", chunkId), {
+            data: chunkData,
+            index: i,
+            fileId: fileId
+          });
+          chunkIds.push(chunkId);
+        }
+        resolve(chunkIds);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    reader.onerror = (e) => reject(e);
+  });
+}
+
+async function loadAudioFile(chunkIds) {
+  // Fetch all chunks in parallel for speed
+  const chunkPromises = chunkIds.map(id => getDoc(doc(db, "audio_chunks", id)));
+  const chunkSnaps = await Promise.all(chunkPromises);
+
+  // Reconstruct sorted by index (though ids should be sorted by creation, we trust the array order)
+  let fullDataUrl = '';
+  chunkSnaps.forEach(snap => {
+    if (snap.exists()) {
+      fullDataUrl += snap.data().data;
+    }
+  });
+  return fullDataUrl;
+}
+// ===================================
+
 // Firestore Helper
 const DB = {
   async getAll() {
@@ -827,25 +880,31 @@ document.addEventListener('DOMContentLoaded', () => {
       */
 
       try {
-        publishBtn.textContent = 'SAVING ALBUM...';
+        publishBtn.textContent = 'ENCODING & UPLOADING... (Step 1/2)';
         publishBtn.disabled = true;
 
         const timestamp = Date.now();
         let uploadedTrackData = [];
 
-        // 1. Process Tracks (No Upload, just linking)
+        // 1. Process Tracks (Chunking Upload)
         for (let i = 0; i < uploadedTracks.length; i++) {
           const track = uploadedTracks[i];
-          // Create a clean filename reference
-          // Users must place files in public/music/
-          const cleanName = track.name.replace(/[^a-zA-Z0-9-_]/g, '');
-          const fileName = `${track.name}.mp3`; // Use original name for simplicity or enforce clean? Let's use name.
+          publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length}...`;
 
-          uploadedTrackData.push({
-            name: track.name,
-            url: `/music/${track.file.name}`, // Reference local file in public folder
-            comments: []
-          });
+          try {
+            // Use our new Chunking System
+            const chunkIds = await saveAudioFile(track.file);
+
+            uploadedTrackData.push({
+              name: track.name,
+              chunkIds: chunkIds, // Store reference to chunks
+              // url: ... we don't use URL anymore, we reconstruct from chunks
+              comments: []
+            });
+          } catch (err) {
+            console.error("Chunk upload failed for " + track.name, err);
+            throw new Error("Upload failed for " + track.name);
+          }
         }
 
         const album = {
@@ -868,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTracksList();
         loadOwnerAlbums();
 
-        alert('Album Saved! \n\n⚠️ IMPORTANT ACTION REQUIRED:\n\nPlease manually move these MP3 files into the "public/music" folder of your project folder. Then commit/push to GitHub.');
+        alert('Album published successfully! Audio is stored in High-Speed Database Chunks.');
       } catch (err) {
         console.error('Publish error:', err);
         alert('An unexpected error occurred: ' + err.message);
@@ -1008,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.activeWaveSurfers.forEach(ws => ws.destroy());
     window.activeWaveSurfers = [];
 
-    album.tracks.forEach((track, index) => {
+    album.tracks.forEach(async (track, index) => { // Made async
       const container = document.getElementById(`waveform-${index}`);
       const playBtn = document.getElementById(`playBtn-${index}`);
       const loadingLabel = document.getElementById(`loading-${index}`);
@@ -1025,8 +1084,23 @@ document.addEventListener('DOMContentLoaded', () => {
           responsive: true
         });
 
-        // support new URL structure (track.url) or fallback to dataURI (track.data)
-        const audioSrc = track.url || track.data;
+        // Determine Source: Chunked (New) vs URL (Github) vs Data (Legacy)
+        let audioSrc = '';
+
+        if (track.chunkIds && track.chunkIds.length > 0) {
+          // Load from chunks
+          loadingLabel.textContent = 'DOWNLOADING CHUNKS...';
+          try {
+            audioSrc = await loadAudioFile(track.chunkIds);
+          } catch (e) {
+            console.error(e);
+            loadingLabel.textContent = 'ERROR LOADING';
+            return;
+          }
+        } else {
+          audioSrc = track.url || track.data;
+        }
+
         wavesurfer.load(audioSrc);
 
         wavesurfer.on('ready', () => {
