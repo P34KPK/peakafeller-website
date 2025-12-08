@@ -1580,3 +1580,32 @@ body.hovering #cursor-border {
     padding: 0.2rem 0.5rem !important;
   }
 }
+
+/* Social Icons with Coding Aesthetic */
+.social-bracket-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.social-bracket-link:hover {
+  color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.social-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.bracket {
+  opacity: 0.5;
+  font-weight: 300;
+  font-size: 1.1rem;
+}
