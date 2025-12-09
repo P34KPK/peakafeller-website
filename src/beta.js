@@ -73,11 +73,17 @@ class Particle {
       this.x -= Math.cos(this.angle) * zoomSpeed;
       this.y -= Math.sin(this.angle) * zoomSpeed;
 
-      // Anti-Clumping: If too close to center, push out randomly or reset
-      if (distance < 50 && zoomSpeed < 0) {
-        // If zooming IN and hitting center, teleport to edge to create loop
-        if (Math.random() > 0.5) this.x = Math.random() > 0.5 ? -10 : canvas.width + 10;
-        else this.y = Math.random() > 0.5 ? -10 : canvas.height + 10;
+      // STRONG Anti-Clumping / Black Hole Exclusion Zone
+      // If too close to center (150px radius), respawn at edges immediately
+      // This prevents the "pile up" effect when scrolling up
+      if (distance < 150) {
+        if (Math.random() > 0.5) {
+          this.x = Math.random() > 0.5 ? -50 : canvas.width + 50;
+          this.y = Math.random() * canvas.height;
+        } else {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() > 0.5 ? -50 : canvas.height + 50;
+        }
       }
     } else {
       // Anti-Gravity Mode (Idle)
