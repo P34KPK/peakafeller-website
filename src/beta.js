@@ -49,8 +49,12 @@ class Particle {
       this.x += Math.cos(spiralAngle) * 0.5;
       this.y += Math.sin(spiralAngle) * 0.5;
     } else {
-      this.x += this.speedX + scrollY * 0.01;
-      this.y += this.speedY;
+      // Anti-Gravity Mode (Idle)
+      // Float upwards slowly
+      this.y -= 0.4;
+      this.x += this.speedX;
+      // Add "weaving" motion
+      this.x += Math.sin(this.y * 0.02 + Date.now() * 0.002) * 0.3;
     }
 
     if (this.x > canvas.width + 50) this.x = -50;
