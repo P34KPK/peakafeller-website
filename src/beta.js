@@ -24,27 +24,23 @@ if (cursor && cursorBorder) {
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
-let scrollY = 0;
-let scrollVelocity = 0;
-let vortexStrength = 0;
+let momentumY = 0; // Scroll velocity/momentum
+let lastScrollY = window.scrollY;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
-
 resizeCanvas();
-// window.addEventListener('resize', resizeCanvas); // Handled below
 
 class Particle {
   constructor() {
     this.x = Math.random() * canvas.width;
     this.y = Math.random() * canvas.height;
     this.size = Math.random() * 2 + 0.5;
-    this.speedX = (Math.random() - 0.5) * 0.5;
-    this.speedY = (Math.random() - 0.5) * 0.5;
-    this.opacity = Math.random() * 0.5 + 0.1;
-    this.angle = 0;
+    this.baseSpeedX = (Math.random() - 0.5) * 1; // More volatile base speed
+    this.baseSpeedY = (Math.random() - 0.5) * 1;
+    this.opacity = Math.random() * 0.5 + 0.3;
   }
 
   update() {
@@ -52,116 +48,100 @@ class Particle {
     const centerY = canvas.height / 2;
     const dx = centerX - this.x;
     const dy = centerY - this.y;
+    const angle = Math.atan2(dy, dx);
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (vortexStrength > 0.1) {
-      // Rotation (Spin)
-      this.angle = Math.atan2(dy, dx);
-      // Reduce rotation force slightly
-      const rotationForce = vortexStrength * 0.02;
+    // 1. VOLATILITY (Always active jitter)
+    this.x += (Math.random() - 0.5) * 1.5;
+    this.y += (Math.random() - 0.5) * 1.5;
 
-      this.x += -Math.sin(this.angle) * rotationForce;
-      this.y += Math.cos(this.angle) * rotationForce;
+    // 2. SCROLL INTERACTION (Zoom)
+    if (Math.abs(momentumY) > 0.5) {
+      // Multiplier for speed. 
+      // momentumY > 0 (Down) -> Positive -> Moves TOWARDS center (+= cos)
+      // momentumY < 0 (Up) -> Negative -> Moves AWAY from center (-= cos effectively)
+      const speed = momentumY * 0.8;
 
-      // Radial Zoom (Directional)
-      // scrollY > 0 (Down) -> Approach Center (Converge)
-      // scrollY < 0 (Up) -> Move Away (Expand)
-      // We use += to specificially move TOWARDS center when zoomSpeed is positive
-      const zoomSpeed = scrollY * 0.4;
+      this.x += Math.cos(angle) * speed;
+      this.y += Math.sin(angle) * speed;
 
-      this.x += Math.cos(this.angle) * zoomSpeed;
-      this.y += Math.sin(this.angle) * zoomSpeed;
+      // Spin effect during scroll
+      this.x -= Math.sin(angle) * (Math.abs(momentumY) * 0.1);
+      this.y += Math.cos(angle) * (Math.abs(momentumY) * 0.1);
 
-      // Anti-Clumping & Visual Cleanup
-      // 1. Fade out as they get close to center to avoid "messy clump" visual
-      if (distance < 300) {
-        this.opacity = Math.max(0, (distance - 50) / 250);
-      } else {
-        this.opacity = Math.random() * 0.5 + 0.1;
+      // RESPWAN / LOOP LOGIC
+      // If moving IN (Down) and too close to center, respawn at edge
+      if (momentumY > 0 && distance < 100) {
+        this.x = Math.random() > 0.5 ? 0 : canvas.width;
+        this.y = Math.random() * canvas.height;
       }
-
-      // 2. Event Horizon: Respawn if too close
-      if (distance < 50) {
-        if (Math.random() > 0.5) {
-          this.x = Math.random() > 0.5 ? -100 : canvas.width + 100;
-          this.y = Math.random() * canvas.height;
-        } else {
-          this.x = Math.random() * canvas.width;
-          this.y = Math.random() > 0.5 ? -100 : canvas.height + 100;
-        }
-        this.opacity = 0; // Reset opacity for spawn
-      }
+      // If moving OUT (Up) and too far, wrap around could be nice, but default boundary checks handle it
     } else {
-      // Anti-Gravity Mode (Idle)
-      // Faster Float upwards
-      this.y -= 1.5;
-      this.x += this.speedX;
-      // Add "weaving" motion
-      this.x += Math.sin(this.y * 0.02 + Date.now() * 0.002) * 0.3;
+      // 3. ANTI-GRAVITY (Idle)
+      // Float UP
+      this.y -= 2.0;
+      this.x += this.baseSpeedX;
+      // Wavy float
+      this.x += Math.sin(this.y * 0.01 + Date.now() * 0.002);
     }
 
-    if (this.x > canvas.width + 50) this.x = -50;
-    if (this.x < -50) this.x = canvas.width + 50;
-    if (this.y > canvas.height + 50) this.y = -50;
-    if (this.y < -50) this.y = canvas.height + 50;
+    // Boundary Wrap
+    if (this.x > canvas.width) this.x = 0;
+    if (this.x < 0) this.x = canvas.width;
+    if (this.y > canvas.height) this.y = 0;
+    if (this.y < 0) this.y = canvas.height;
   }
 
   draw() {
-    const vortexOpacity = this.opacity + (vortexStrength * 0.3);
-    const vortexSize = this.size * (1 + vortexStrength * 0.5);
-    ctx.fillStyle = `rgba(255, 102, 0, ${Math.min(vortexOpacity, 1)})`;
+    ctx.fillStyle = `rgba(255, 102, 0, ${this.opacity})`;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, vortexSize, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
 function initParticles() {
   particles = [];
-  const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+  const particleCount = Math.floor((canvas.width * canvas.height) / 10000); // More particles
   for (let i = 0; i < particleCount; i++) {
     particles.push(new Particle());
   }
 }
-
 initParticles();
-// Optimized Resize Handler
+
+// Resize Handler
 let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    const oldWidth = canvas.width;
     resizeCanvas();
-    if (Math.abs(canvas.width - oldWidth) > 50) {
-      initParticles();
-    }
+    initParticles();
   }, 100);
 });
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  vortexStrength *= 0.95;
+  // Friction / Dampening for Scroll Momentum
+  momentumY *= 0.95;
+  if (Math.abs(momentumY) < 0.1) momentumY = 0;
+
   particles.forEach(particle => {
     particle.update();
     particle.draw();
   });
   requestAnimationFrame(animate);
 }
-
 animate();
 
-let lastScrollY = 0;
+// Scroll Handler
 window.addEventListener('scroll', () => {
   const currentScrollY = window.scrollY;
-  scrollVelocity = currentScrollY - lastScrollY;
-  if (Math.abs(scrollVelocity) > 0) {
-    vortexStrength = Math.min(vortexStrength + Math.abs(scrollVelocity) * 0.05, 3);
-  }
-  scrollY = scrollVelocity;
-  lastScrollY = currentScrollY;
+  const velocity = currentScrollY - lastScrollY;
 
-  // Dampen effect
-  setTimeout(() => { scrollY *= 0.9; }, 50);
+  // Directly set momentum
+  momentumY = velocity;
+
+  lastScrollY = currentScrollY;
 });
 
 // Beta Testing App Logic
