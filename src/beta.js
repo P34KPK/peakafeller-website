@@ -55,20 +55,34 @@ class Particle {
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (vortexStrength > 0.1) {
-      const pullForce = vortexStrength * 0.02;
-      const rotationForce = vortexStrength * 0.05;
+      // Rotation (Spin)
       this.angle = Math.atan2(dy, dx);
-      this.x += Math.cos(this.angle) * pullForce * (distance / 100);
-      this.y += Math.sin(this.angle) * pullForce * (distance / 100);
+      // Reduce rotation force slightly
+      const rotationForce = vortexStrength * 0.02;
+
       this.x += -Math.sin(this.angle) * rotationForce;
       this.y += Math.cos(this.angle) * rotationForce;
-      const spiralAngle = this.angle + (vortexStrength * 0.1);
-      this.x += Math.cos(spiralAngle) * 0.5;
-      this.y += Math.sin(spiralAngle) * 0.5;
+
+      // Radial Zoom (Directional) based on scrollY (Velocity)
+      // scrollY > 0 (Down) -> repel/move away
+      // scrollY < 0 (Up) -> attract/move closer
+      // We use -= because dx/dy point TO center. 
+      // Subtracting positive moves AWAY. Subtracting negative (adding) moves TOWARDS.
+      const zoomSpeed = scrollY * 0.2;
+
+      this.x -= Math.cos(this.angle) * zoomSpeed;
+      this.y -= Math.sin(this.angle) * zoomSpeed;
+
+      // Anti-Clumping: If too close to center, push out randomly or reset
+      if (distance < 50 && zoomSpeed < 0) {
+        // If zooming IN and hitting center, teleport to edge to create loop
+        if (Math.random() > 0.5) this.x = Math.random() > 0.5 ? -10 : canvas.width + 10;
+        else this.y = Math.random() > 0.5 ? -10 : canvas.height + 10;
+      }
     } else {
       // Anti-Gravity Mode (Idle)
-      // Float upwards slowly
-      this.y -= 0.4;
+      // Faster Float upwards
+      this.y -= 1.5;
       this.x += this.speedX;
       // Add "weaving" motion
       this.x += Math.sin(this.y * 0.02 + Date.now() * 0.002) * 0.3;
