@@ -63,27 +63,33 @@ class Particle {
       this.x += -Math.sin(this.angle) * rotationForce;
       this.y += Math.cos(this.angle) * rotationForce;
 
-      // Radial Zoom (Directional) based on scrollY (Velocity)
-      // scrollY > 0 (Down) -> repel/move away
-      // scrollY < 0 (Up) -> attract/move closer
-      // We use -= because dx/dy point TO center. 
-      // Subtracting positive moves AWAY. Subtracting negative (adding) moves TOWARDS.
-      const zoomSpeed = scrollY * 0.2;
+      // Radial Zoom (Directional)
+      // scrollY > 0 (Down) -> Approach Center (Converge)
+      // scrollY < 0 (Up) -> Move Away (Expand)
+      // We use += to specificially move TOWARDS center when zoomSpeed is positive
+      const zoomSpeed = scrollY * 0.4;
 
-      this.x -= Math.cos(this.angle) * zoomSpeed;
-      this.y -= Math.sin(this.angle) * zoomSpeed;
+      this.x += Math.cos(this.angle) * zoomSpeed;
+      this.y += Math.sin(this.angle) * zoomSpeed;
 
-      // STRONG Anti-Clumping / Black Hole Exclusion Zone
-      // If too close to center (150px radius), respawn at edges immediately
-      // This prevents the "pile up" effect when scrolling up
-      if (distance < 150) {
+      // Anti-Clumping & Visual Cleanup
+      // 1. Fade out as they get close to center to avoid "messy clump" visual
+      if (distance < 300) {
+        this.opacity = Math.max(0, (distance - 50) / 250);
+      } else {
+        this.opacity = Math.random() * 0.5 + 0.1;
+      }
+
+      // 2. Event Horizon: Respawn if too close
+      if (distance < 50) {
         if (Math.random() > 0.5) {
-          this.x = Math.random() > 0.5 ? -50 : canvas.width + 50;
+          this.x = Math.random() > 0.5 ? -100 : canvas.width + 100;
           this.y = Math.random() * canvas.height;
         } else {
           this.x = Math.random() * canvas.width;
-          this.y = Math.random() > 0.5 ? -50 : canvas.height + 50;
+          this.y = Math.random() > 0.5 ? -100 : canvas.height + 100;
         }
+        this.opacity = 0; // Reset opacity for spawn
       }
     } else {
       // Anti-Gravity Mode (Idle)
