@@ -673,13 +673,14 @@ if (mainDisplay && playlistItems.length > 0) {
   });
 }
 
-// RAWBEAT Modal Logic
+// LE RECYCLEUR Modal Logic (Formerly RAWBEAT)
 const rawbeatModal = document.getElementById('rawbeat-modal');
 const rawbeatClose = document.getElementById('rawbeat-close');
-const rabbitLink = document.querySelector('.rabbit-link');
+// Target the menu link instead of the rabbit
+const recycleurLink = document.querySelector('a[href="#recycleur"]');
 
-if (rawbeatModal && rabbitLink) {
-  rabbitLink.addEventListener('click', (e) => {
+if (rawbeatModal && recycleurLink) {
+  recycleurLink.addEventListener('click', (e) => {
     e.preventDefault();
     rawbeatModal.classList.add('active');
   });
