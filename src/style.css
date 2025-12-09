@@ -2593,3 +2593,21 @@ body.hovering #cursor-border {
         /* Allow scroll on short screens */
     }
 }
+@media (max-width: 768px) {
+  /* HOTFIX: Force Burger Menu to Top Right */
+  .header-menu-icon {
+    position: fixed !important;
+    top: 1.5rem !important;
+    right: 1.5rem !important;
+    left: auto !important;
+    transform: none !important; /* Reset any centering transforms if present */
+    z-index: 20005 !important; /* Ensure on top of everything */
+  }
+}
+
+/* Footer Rabbit Logo Hover Effect */
+.footer-rabbit-logo:hover {
+  filter: grayscale(0%) !important;
+  transform: scale(1.1);
+  cursor: pointer;
+}

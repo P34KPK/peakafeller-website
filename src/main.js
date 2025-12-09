@@ -564,7 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const trackId = btn.getAttribute('data-track-id');
         let scApiUrl = '';
 
-        // Check if trackId is numeric (ID) or a full URL
         if (/^\d+$/.test(trackId)) {
           scApiUrl = `https%3A//api.soundcloud.com/tracks/${trackId}`;
         } else {
@@ -573,30 +572,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
 
-        embedContainer.innerHTML = `<iframe width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay" src="${embedUrl}"></iframe>`;
+        embedContainer.innerHTML = `<iframe width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
       } else if (source === 'spotify') {
         // Spotify Logic
         const trackId = btn.getAttribute('data-track-id');
-        const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
-        embedContainer.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        // Add autoplay=1
+        const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0&autoplay=1`;
+        embedContainer.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay *; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
       } else {
         // Bandcamp Logic (Default)
         const albumId = btn.getAttribute('data-album-id');
-        const bcTrackId = btn.getAttribute('data-bc-track-id'); // Specific for Bandcamp tracks
+        const bcTrackId = btn.getAttribute('data-bc-track-id');
 
         let embedUrl = '';
 
         if (bcTrackId) {
-          // Track Embed
-          embedUrl = `https://bandcamp.com/EmbeddedPlayer/track=${bcTrackId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/`;
+          // Track Embed - Add autoplay=true
+          embedUrl = `https://bandcamp.com/EmbeddedPlayer/track=${bcTrackId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
         } else if (albumId) {
-          // Album Embed
-          embedUrl = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/`;
+          // Album Embed - Add autoplay=true
+          embedUrl = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
         }
 
         // Inject Iframe
         if (embedUrl) {
-          embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless></iframe>`;
+          embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless allow="autoplay *"></iframe>`;
         }
       }
     });
