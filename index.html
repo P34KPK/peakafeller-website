@@ -818,53 +818,84 @@
     <div id="bandcamp-embed-container" style="width: 100%; max-width: 700px;"></div>
   </div>
 
-  <!-- RAWBEAT Modal -->
+  <!-- LE RECYCLEUR Modal (Formerly RAWBEAT) -->
   <div id="rawbeat-modal" class="rawbeat-modal">
-    <div class="rawbeat-terminal">
-      <div class="rawbeat-header">
-        <div class="rawbeat-title">RAWBEAT_RECORDS // V.1.0</div>
-        <button id="rawbeat-close" class="rawbeat-close">[X]</button>
+    <div class="recycleur-layout">
+
+      <!-- CLOSE BUTTON (Top Right of container) -->
+      <button id="rawbeat-close" class="rawbeat-close">X</button>
+
+      <!-- 1. LOGO -->
+      <div class="recycleur-logo-container">
+        <img src="./public/le-recycleur-logo.jpg" alt="LE RECYCLEUR" class="recycleur-logo-img">
       </div>
-      <div class="rawbeat-content">
-        <div class="rawbeat-intro">
-          <p style="color: var(--color-accent); margin-bottom: 0.5rem;">> SYSTEM_MESSAGE: WELCOME TO RAWBEAT</p>
-          <p>The digital frontier of sound. Establishing connection to the underground catalog...</p>
-        </div>
 
-        <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">> CATALOG_INDEX</h3>
+      <!-- 2. TV SET (Left) -->
+      <div class="tv-set">
+        <div class="tv-screen">
+          <div class="tv-content">
+            <h2 style="color: #ff0055; font-size: 2rem; margin-bottom: 1rem;">> NO SIGNAL...</h2>
+            <p style="color: #fff; margin-bottom: 2rem;">Searching for broadcast frequency...</p>
 
-        <div class="rawbeat-catalog">
-          <!-- Placeholder Items -->
-          <div class="catalog-item">
-            <div class="catalog-placeholder-img">RWB_001</div>
-            <div style="font-size: 0.9rem; color: #fff;">HYPER_REALITY</div>
-            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
-          </div>
-          <div class="catalog-item">
-            <div class="catalog-placeholder-img">RWB_002</div>
-            <div style="font-size: 0.9rem; color: #fff;">DATA_CRASH</div>
-            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
-          </div>
-          <div class="catalog-item">
-            <div class="catalog-placeholder-img">RWB_003</div>
-            <div style="font-size: 0.9rem; color: #fff;">NEON_DREAMS</div>
-            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
-          </div>
-          <div class="catalog-item">
-            <div class="catalog-placeholder-img">RWB_004</div>
-            <div style="font-size: 0.9rem; color: #fff;">SYSTEM_OVERLOAD</div>
-            <div style="font-size: 0.7rem; color: #666;">COMING_SOON</div>
+            <div style="border: 2px dashed #333; padding: 2rem; text-align: center;">
+              <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📺</span>
+              <p>SELECT A PROGRAM FROM THE GUIDE -></p>
+            </div>
+
+            <!-- Debug content for dev -->
+            <div style="margin-top: 4rem; opacity: 0.5; font-size: 0.8rem;">
+              <p>SYSTEM_STATUS: ONLINE</p>
+              <p>BUFFER: 0%</p>
+            </div>
           </div>
         </div>
+        <!-- TV Knobs/Speaker grille visual could go here -->
       </div>
-      <div class="rawbeat-status-bar">
-        <span>STATUS: ONLINE</span>
-        <span>MEM: 64TB</span>
-        <span>USER: GUEST</span>
+
+      <!-- 3. TV GUIDE (Right) -->
+      <div class="tv-guide-column">
+        <div class="tv-guide-header">
+          <span>TV GUIDE</span>
+          <span style="font-size: 0.8rem; opacity: 0.7;">CH 03</span>
+        </div>
+        <div class="tv-guide-list">
+          <!-- Guide Item 1 -->
+          <div class="guide-item">
+            <div class="guide-time">NOW</div>
+            <div class="guide-info">
+              <div class="guide-title">HYPER_REALITY</div>
+              <div class="guide-desc">The genesis of the signal.</div>
+            </div>
+          </div>
+          <!-- Guide Item 2 -->
+          <div class="guide-item">
+            <div class="guide-time">NEXT</div>
+            <div class="guide-info">
+              <div class="guide-title">DATA_CRASH</div>
+              <div class="guide-desc">System failure imminent.</div>
+            </div>
+          </div>
+          <!-- Guide Item 3 -->
+          <div class="guide-item">
+            <div class="guide-time">22:00</div>
+            <div class="guide-info">
+              <div class="guide-title">NEON_DREAMS</div>
+              <div class="guide-desc">Late night smooth synth.</div>
+            </div>
+          </div>
+          <!-- Guide Item 4 -->
+          <div class="guide-item">
+            <div class="guide-time">00:00</div>
+            <div class="guide-info">
+              <div class="guide-title">STATIC_NOISE</div>
+              <div class="guide-desc">Off air.</div>
+            </div>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
-
   <!-- Custom Cursor Elements -->
   <div id="cursor"></div>
   <div id="cursor-border"></div>
