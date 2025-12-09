@@ -107,9 +107,13 @@ let lastScrollY = 0;
 window.addEventListener('scroll', () => {
   const currentScrollY = window.scrollY;
   scrollVelocity = currentScrollY - lastScrollY;
-  if (scrollVelocity > 0) {
-    vortexStrength = Math.min(vortexStrength + scrollVelocity * 0.05, 3);
+  if (Math.abs(scrollVelocity) > 0) {
+    vortexStrength = Math.min(vortexStrength + Math.abs(scrollVelocity) * 0.05, 3);
   }
+  scrollY = scrollVelocity;
+  lastScrollY = currentScrollY;
+
+  // Dampen effect
   setTimeout(() => { scrollY *= 0.9; }, 50);
 });
 
