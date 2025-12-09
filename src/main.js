@@ -673,28 +673,23 @@ if (mainDisplay && playlistItems.length > 0) {
   });
 }
 
-// LE RECYCLEUR Modal Logic (Formerly RAWBEAT)
-const rawbeatModal = document.getElementById('rawbeat-modal');
-const rawbeatClose = document.getElementById('rawbeat-close');
-// Target the menu link instead of the rabbit
-const recycleurLink = document.querySelector('a[href="#recycleur"]');
 
-if (rawbeatModal && recycleurLink) {
-  recycleurLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    rawbeatModal.classList.add('active');
+// Mobile Menu Toggle
+const menuIcon = document.querySelector('.header-menu-icon');
+const headerNav = document.querySelector('.header-nav');
+
+if (menuIcon && headerNav) {
+  menuIcon.addEventListener('click', () => {
+    headerNav.classList.toggle('active');
+    menuIcon.classList.toggle('is-open');
   });
 
-  if (rawbeatClose) {
-    rawbeatClose.addEventListener('click', () => {
-      rawbeatModal.classList.remove('active');
+  // Close menu when a link is clicked
+  const navLinks = headerNav.querySelectorAll('a');
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      headerNav.classList.remove('active');
+      menuIcon.textContent = '=';
     });
-  }
-
-  // Close on outside click
-  rawbeatModal.addEventListener('click', (e) => {
-    if (e.target === rawbeatModal) {
-      rawbeatModal.classList.remove('active');
-    }
   });
 }

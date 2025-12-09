@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PEAKAFELLER | LE RECYCLEUR</title>
+    <meta name="description"
+        content="Watch 'Le Recycleur' series by Peakafeller. Remixing reality into electronic beats.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400&family=JetBrains+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./src/style.css">
+    <style>
+        body {
+            overflow-x: hidden;
+            background-color: #000;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 1001;
+            color: var(--color-accent);
+            font-family: var(--font-mono);
+            text-decoration: none;
+            border: 1px solid var(--color-accent);
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--color-accent);
+            color: #000;
+        }
+
+        .term-file {
+            cursor: pointer;
+            color: #888;
+            padding: 0.3rem 0;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .term-file:hover {
+            color: #fff;
+            padding-left: 0.5rem;
+        }
+
+        .term-file.active {
+            color: #000;
+            background-color: var(--color-accent);
+            padding-left: 0.5rem;
+            font-weight: bold;
+        }
+
+        .term-file.active::before {
+            content: '> ';
+        }
+
+        /* Ensure footer stays at bottom if content short */
+        #app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 6rem 4rem;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                padding: 4rem 1rem;
+            }
+
+            .back-btn {
+                top: 1rem;
+                left: 1rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .section-title {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div id="app">
+        <a href="index.html" class="back-btn">
+            < BACK TO MAIN</a>
+
+                <main>
+                    <div class="title-with-loader" style="justify-content: center; margin-bottom: 3rem;">
+                        <h2 class="section-title" data-scramble>/LE RECYCLEUR</h2>
+                        <div class="triangle-loader">
+                            <div class="dot dot-1"></div>
+                            <div class="dot dot-2"></div>
+                            <div class="dot dot-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- VIDEO TERMINAL LAYOUT -->
+                    <div class="video-terminal-layout"
+                        style="display: flex; gap: 2rem; flex-wrap: wrap; width: 100%; max-width: 1400px; margin: 0 auto;">
+
+                        <!-- Monitor -->
+                        <div class="video-monitor" style="flex: 2; min-width: 300px;">
+                            <div class="monitor-frame" style="border: 1px solid #333; background: #000; padding: 4px;">
+                                <!-- ID must match main.js logic -->
+                                <div id="mainVideoDisplay" class="video-facade"
+                                    data-video-id="videoseries?list=PLefbKEpllfz6EBZAIvRZEzGsvu_qapZ-l"
+                                    style="margin-bottom: 0; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #050505;">
+                                    <!-- Initial content: Playlist Iframe -->
+                                    <iframe width="100%" height="100%"
+                                        src="https://www.youtube.com/embed/videoseries?list=PLefbKEpllfz6EBZAIvRZEzGsvu_qapZ-l"
+                                        frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope;"
+                                        allowfullscreen
+                                        style="position: absolute; top:0; left:0; width:100%; height:100%;"></iframe>
+                                </div>
+                            </div>
+                            <div class="monitor-status"
+                                style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--color-accent); margin-top: 0.5rem;">
+                                <span id="videoStatus">> STATUS: ONLINE</span>
+                                <span id="videoTitleDisplay">LE RECYCLEUR PLAYLIST</span>
+                            </div>
+                        </div>
+
+                        <!-- Playlist Terminal -->
+                        <div class="video-playlist-term"
+                            style="flex: 1; min-width: 280px; background: rgba(10,10,10,0.8); border: 1px solid #333; height: 500px; display: flex; flex-direction: column;">
+                            <div class="playlist-header"
+                                style="background: #111; padding: 0.8rem; border-bottom: 1px solid #333; font-family: 'JetBrains Mono', monospace; color: #666; font-size: 0.8rem; display: flex; justify-content: space-between;">
+                                <span>> DIR: /ROOT/RECYCLEUR</span>
+                                <span>[--]</span>
+                            </div>
+                            <ul class="playlist-files"
+                                style="list-style: none; padding: 1rem; margin: 0; overflow-y: auto; flex-grow: 1; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">
+
+
+
+                                <!-- Item 2: The Driller -->
+                                <li class="term-file active" data-id="btBRJXsDCYI"
+                                    data-title="LE RECYCLEUR / THE DRILLER">
+                                    THE_DRILLER.mp4
+                                </li>
+
+                                <!-- Item 3: 1 Hour Rush -->
+                                <li class="term-file" data-id="SD7QuorF7lk" data-title="1 HOUR RUSH - LE RECYCLEUR">
+                                    1_HOUR_RUSH.mp4
+                                </li>
+
+                                <!-- Item 4: Ricardo -->
+                                <li class="term-file" data-id="cLQBHkzorUI" data-title="RICARDO IN MY BOWL">
+                                    RICARDO_BOWL.mp4
+                                </li>
+
+                                <!-- Item 5: Italian Brainrot -->
+                                <li class="term-file" data-id="_8sQRLbCqLw" data-title="ITALIAN BRAINROT (REMIX)">
+                                    ITALIAN_BRAINROT.mp4
+                                </li>
+
+                            </ul>
+                            <div class="playlist-footer"
+                                style="padding: 0.5rem; font-family: monospace; font-size: 0.7rem; color: #444; border-top: 1px solid #333;">
+                                > 4 FILES FOUND.
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Footer -->
+                <footer class="footer" style="padding: 2rem;">
+                    <div class="footer-content">
+                        <p class="copyright">&copy; 2025 PEAKAFELLER. ALL RIGHTS RESERVED.</p>
+                    </div>
+                </footer>
+    </div>
+
+    <!-- Custom Cursor Elements -->
+    <div id="cursor"></div>
+    <div id="cursor-border"></div>
+
+    <!-- Re-use main.js for cursor, loader, and video logic -->
+    <script type="module" src="./src/main.js"></script>
+</body>
+
+</html>

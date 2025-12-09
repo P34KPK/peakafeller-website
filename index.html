@@ -147,10 +147,28 @@
             </div>
           </div>
           <a href="#visuals" class="nav-item" data-text="VISUALS">VISUALS</a>
-          <a href="#recycleur" class="nav-item" data-text="LE RECYCLEUR">LE RECYCLEUR</a>
           <a href="#about" class="nav-item" data-text="ABOUT">ABOUT</a>
+          <div class="mobile-socials"
+            style="display: none; width: 100%; border-top: 1px solid #222; padding-top: 1rem; margin-top: auto;">
+            <div class="nav-trigger" style="border:none; margin-bottom: 0.5rem; color: #666 !important;">:: COMM_LINKS
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <a href="https://www.instagram.com/peakafeller" target="_blank" class="nav-subitem"
+                style="padding: 0.5rem !important;">INSTAGRAM</a>
+              <a href="https://www.facebook.com/PeakafellerMusic" target="_blank" class="nav-subitem"
+                style="padding: 0.5rem !important;">FACEBOOK</a>
+              <a href="https://on.soundcloud.com/qDvlMMuqe6ZoAZ4ySC" target="_blank" class="nav-subitem"
+                style="padding: 0.5rem !important;">SOUNDCLOUD</a>
+              <a href="https://open.spotify.com/intl-fr/artist/7asuXHs3Z97oQtE7HKed2R" target="_blank"
+                class="nav-subitem" style="padding: 0.5rem !important;">SPOTIFY</a>
+              <a href="https://www.youtube.com/peakpk" target="_blank" class="nav-subitem"
+                style="padding: 0.5rem !important;">YOUTUBE</a>
+              <a href="https://www.tiktok.com/@peakafeller_lerecycleur" target="_blank" class="nav-subitem"
+                style="padding: 0.5rem !important;">TIKTOK</a>
+            </div>
+          </div>
         </nav>
-        <div class="header-menu-icon">=</div>
+        <div class="header-menu-icon"><span></span></div>
       </div>
     </header>
 
@@ -194,7 +212,7 @@
               <a href="#" class="rabbit-link">
                 <img src="./rabbit-logo.jpg" alt="Rabbit Logo" class="rabbit-logo">
               </a>
-              <a href="sampler.html" class="btn-smplr">SMPLR</a>
+              <a href="recycleur.html" class="btn-smplr">RECYCLEUR</a>
               <a href="beta.html" class="btn-beta">
                 <span class="beta-line">BETA</span>
                 <span class="beta-line">BEAT</span>
@@ -818,84 +836,7 @@
     <div id="bandcamp-embed-container" style="width: 100%; max-width: 700px;"></div>
   </div>
 
-  <!-- LE RECYCLEUR Modal (Formerly RAWBEAT) -->
-  <div id="rawbeat-modal" class="rawbeat-modal">
-    <div class="recycleur-layout">
 
-      <!-- CLOSE BUTTON (Top Right of container) -->
-      <button id="rawbeat-close" class="rawbeat-close">X</button>
-
-      <!-- 1. LOGO -->
-      <div class="recycleur-logo-container">
-        <img src="./public/le-recycleur-logo.jpg" alt="LE RECYCLEUR" class="recycleur-logo-img">
-      </div>
-
-      <!-- 2. TV SET (Left) -->
-      <div class="tv-set">
-        <div class="tv-screen">
-          <div class="tv-content">
-            <h2 style="color: #ff0055; font-size: 2rem; margin-bottom: 1rem;">> NO SIGNAL...</h2>
-            <p style="color: #fff; margin-bottom: 2rem;">Searching for broadcast frequency...</p>
-
-            <div style="border: 2px dashed #333; padding: 2rem; text-align: center;">
-              <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📺</span>
-              <p>SELECT A PROGRAM FROM THE GUIDE -></p>
-            </div>
-
-            <!-- Debug content for dev -->
-            <div style="margin-top: 4rem; opacity: 0.5; font-size: 0.8rem;">
-              <p>SYSTEM_STATUS: ONLINE</p>
-              <p>BUFFER: 0%</p>
-            </div>
-          </div>
-        </div>
-        <!-- TV Knobs/Speaker grille visual could go here -->
-      </div>
-
-      <!-- 3. TV GUIDE (Right) -->
-      <div class="tv-guide-column">
-        <div class="tv-guide-header">
-          <span>TV GUIDE</span>
-          <span style="font-size: 0.8rem; opacity: 0.7;">CH 03</span>
-        </div>
-        <div class="tv-guide-list">
-          <!-- Guide Item 1 -->
-          <div class="guide-item">
-            <div class="guide-time">NOW</div>
-            <div class="guide-info">
-              <div class="guide-title">HYPER_REALITY</div>
-              <div class="guide-desc">The genesis of the signal.</div>
-            </div>
-          </div>
-          <!-- Guide Item 2 -->
-          <div class="guide-item">
-            <div class="guide-time">NEXT</div>
-            <div class="guide-info">
-              <div class="guide-title">DATA_CRASH</div>
-              <div class="guide-desc">System failure imminent.</div>
-            </div>
-          </div>
-          <!-- Guide Item 3 -->
-          <div class="guide-item">
-            <div class="guide-time">22:00</div>
-            <div class="guide-info">
-              <div class="guide-title">NEON_DREAMS</div>
-              <div class="guide-desc">Late night smooth synth.</div>
-            </div>
-          </div>
-          <!-- Guide Item 4 -->
-          <div class="guide-item">
-            <div class="guide-time">00:00</div>
-            <div class="guide-info">
-              <div class="guide-title">STATIC_NOISE</div>
-              <div class="guide-desc">Off air.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
   <!-- Custom Cursor Elements -->
   <div id="cursor"></div>
   <div id="cursor-border"></div>

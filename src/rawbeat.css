@@ -160,8 +160,23 @@
     transition: background 0.2s;
 }
 
-.guide-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+.guide-item:hover,
+.guide-item.active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.guide-item.active {
+    background: #fff;
+    color: #000;
+}
+
+.guide-item.active .guide-time,
+.guide-item.active .guide-desc {
+    color: #333;
+}
+
+.guide-item.active .guide-title {
+    color: #000;
 }
 
 .guide-time {
