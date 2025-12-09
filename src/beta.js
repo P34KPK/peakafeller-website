@@ -3,6 +3,23 @@ import WaveSurfer from 'wavesurfer.js';
 
 // import './beta.css';
 
+// Custom Cursor Logic (Moved to top for reliability)
+const cursor = document.getElementById('cursor');
+const cursorBorder = document.getElementById('cursor-border');
+
+if (cursor && cursorBorder) {
+  document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+
+    // Slight delay for the border to create drag effect
+    setTimeout(() => {
+      cursorBorder.style.left = e.clientX + 'px';
+      cursorBorder.style.top = e.clientY + 'px';
+    }, 50);
+  });
+}
+
 // Same background animation as main site
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
@@ -1282,19 +1299,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }); // End DOMContentLoaded
 
-// Custom Cursor Logic
-const cursor = document.getElementById('cursor');
-const cursorBorder = document.getElementById('cursor-border');
 
-if (cursor && cursorBorder) {
-  document.addEventListener('mousemove', (e) => {
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
-
-    // Slight delay for the border to create drag effect
-    setTimeout(() => {
-      cursorBorder.style.left = e.clientX + 'px';
-      cursorBorder.style.top = e.clientY + 'px';
-    }, 50);
-  });
-}
