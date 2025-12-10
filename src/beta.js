@@ -1,9 +1,7 @@
 import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc } from './firebase.js';
 import WaveSurfer from 'wavesurfer.js';
 
-// import './beta.css';
-
-// Custom Cursor Logic (Moved to top for reliability)
+// Custom Cursor Logic
 const cursor = document.getElementById('cursor');
 const cursorBorder = document.getElementById('cursor-border');
 
@@ -11,8 +9,6 @@ if (cursor && cursorBorder) {
   document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';
     cursor.style.top = e.clientY + 'px';
-
-    // Slight delay for the border to create drag effect
     setTimeout(() => {
       cursorBorder.style.left = e.clientX + 'px';
       cursorBorder.style.top = e.clientY + 'px';
@@ -20,11 +16,11 @@ if (cursor && cursorBorder) {
   });
 }
 
-// Same background animation as main site
+// Visualizer & Background Animation
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
-let momentumY = 0; // Scroll velocity/momentum
+let momentumY = 0;
 let lastScrollY = window.scrollY;
 
 function resizeCanvas() {
@@ -38,7 +34,8 @@ class Particle {
     this.x = Math.random() * canvas.width;
     this.y = Math.random() * canvas.height;
     this.size = Math.random() * 2 + 0.5;
-    this.baseSpeedX = (Math.random() - 0.5) * 1; // More volatile base speed
+    this.currentSize = this.size;
+    this.baseSpeedX = (Math.random() - 0.5) * 1;
     this.baseSpeedY = (Math.random() - 0.5) * 1;
     this.opacity = Math.random() * 0.5 + 0.3;
   }
@@ -51,106 +48,122 @@ class Particle {
     const angle = Math.atan2(dy, dx);
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // 1. VOLATILITY (Always active jitter)
     this.x += (Math.random() - 0.5) * 1.5;
     this.y += (Math.random() - 0.5) * 1.5;
 
-    // 2. SCROLL INTERACTION (Zoom)
     if (Math.abs(momentumY) > 0.5) {
-      // Multiplier for speed. 
-      // momentumY > 0 (Down) -> Positive -> Moves TOWARDS center (+= cos)
-      // momentumY < 0 (Up) -> Negative -> Moves AWAY from center (-= cos effectively)
       const speed = momentumY * 0.8;
-
       this.x += Math.cos(angle) * speed;
       this.y += Math.sin(angle) * speed;
-
-      // Spin effect during scroll
       this.x -= Math.sin(angle) * (Math.abs(momentumY) * 0.1);
       this.y += Math.cos(angle) * (Math.abs(momentumY) * 0.1);
 
-      // RESPWAN / LOOP LOGIC
-      // If moving IN (Down) and too close to center, respawn at edge
       if (momentumY > 0 && distance < 100) {
         this.x = Math.random() > 0.5 ? 0 : canvas.width;
         this.y = Math.random() * canvas.height;
       }
-      // If moving OUT (Up) and too far, wrap around could be nice, but default boundary checks handle it
     } else {
-      // 3. ANTI-GRAVITY (Idle)
-      // Float UP
       this.y -= 2.0;
       this.x += this.baseSpeedX;
-      // Wavy float
       this.x += Math.sin(this.y * 0.01 + Date.now() * 0.002);
     }
 
-    // Boundary Wrap
     if (this.x > canvas.width) this.x = 0;
     if (this.x < 0) this.x = canvas.width;
     if (this.y > canvas.height) this.y = 0;
     if (this.y < 0) this.y = canvas.height;
   }
-
-  draw() {
-    ctx.fillStyle = `rgba(255, 102, 0, ${this.opacity})`;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
 }
 
-function initParticles() {
-  particles = [];
-  const particleCount = Math.floor((canvas.width * canvas.height) / 10000); // More particles
-  for (let i = 0; i < particleCount; i++) {
-    particles.push(new Particle());
-  }
+for (let i = 0; i < 150; i++) {
+  particles.push(new Particle());
 }
-initParticles();
 
-// Resize Handler
-let resizeTimeout;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    resizeCanvas();
-    initParticles();
-  }, 100);
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('scroll', () => {
+  const currentScrollY = window.scrollY;
+  momentumY = currentScrollY - lastScrollY;
+  lastScrollY = currentScrollY;
 });
+
+// Audio Visualizer Bridge
+let audioAnalyser = null;
+let dataArray = null;
+
+window.connectAudioVisualizer = (audioElement) => {
+  try {
+    if (!audioAnalyser) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioAnalyser = audioCtx.createAnalyser();
+      audioAnalyser.fftSize = 256;
+      dataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
+
+      const source = audioCtx.createMediaElementSource(audioElement);
+      source.connect(audioAnalyser);
+      audioAnalyser.connect(audioCtx.destination);
+    }
+  } catch (e) {
+    console.log("Audio Context already initialized or CORS issue");
+  }
+};
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // Friction / Dampening for Scroll Momentum
   momentumY *= 0.95;
   if (Math.abs(momentumY) < 0.1) momentumY = 0;
 
+  let bassEnergy = 0;
+  if (audioAnalyser) {
+    audioAnalyser.getByteFrequencyData(dataArray);
+    let sum = 0;
+    for (let i = 0; i < 20; i++) {
+      sum += dataArray[i];
+    }
+    bassEnergy = (sum / 20) / 255;
+  }
+
   particles.forEach(particle => {
+    const pulse = 1 + (bassEnergy * 2);
+
+    if (bassEnergy > 0.5) {
+      particle.x += (Math.random() - 0.5) * 5 * bassEnergy;
+      particle.y += (Math.random() - 0.5) * 5 * bassEnergy;
+    }
+
+    particle.currentSize = particle.size * pulse;
     particle.update();
-    particle.draw();
+
+    ctx.fillStyle = `rgba(${255}, ${102 + (bassEnergy * 150)}, ${bassEnergy * 200}, ${particle.opacity + bassEnergy})`;
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.currentSize || particle.size, 0, Math.PI * 2);
+    ctx.fill();
   });
+
+  if (bassEnergy > 0.1) {
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    const sliceWidth = canvas.width / dataArray.length;
+    let x = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = (v * canvas.height / 2) + (canvas.height / 4);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    ctx.strokeStyle = `rgba(255, 255, 255, 0.1)`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
   requestAnimationFrame(animate);
 }
 animate();
 
-// Scroll Handler
-window.addEventListener('scroll', () => {
-  const currentScrollY = window.scrollY;
-  const velocity = currentScrollY - lastScrollY;
+// Firestore Helper & Variables
+const CHUNK_SIZE = 800 * 1024;
 
-  // Directly set momentum
-  momentumY = velocity;
-
-  lastScrollY = currentScrollY;
-});
-
-// Beta Testing App Logic
-
-// === FIRESTORE AUDIO CHUNKING SYSTEM ===
-// Google Firestore allows 1MB per document. We split files into chunks.
-const CHUNK_SIZE = 800 * 1024; // ~800KB to be safe (Base64 overhead)
-
-async function saveAudioFile(file) {
+async function saveAudioFile(file, onProgress) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -174,6 +187,10 @@ async function saveAudioFile(file) {
             fileId: fileId
           });
           chunkIds.push(chunkId);
+
+          if (onProgress) {
+            onProgress(((i + 1) / totalChunks) * 100);
+          }
         }
         resolve(chunkIds);
       } catch (e) {
@@ -185,11 +202,8 @@ async function saveAudioFile(file) {
 }
 
 async function loadAudioFile(chunkIds) {
-  // Fetch all chunks in parallel for speed
   const chunkPromises = chunkIds.map(id => getDoc(doc(db, "audio_chunks", id)));
   const chunkSnaps = await Promise.all(chunkPromises);
-
-  // Reconstruct sorted by index (though ids should be sorted by creation, we trust the array order)
   let fullDataUrl = '';
   chunkSnaps.forEach(snap => {
     if (snap.exists()) {
@@ -198,9 +212,7 @@ async function loadAudioFile(chunkIds) {
   });
   return fullDataUrl;
 }
-// ===================================
 
-// Firestore Helper
 const DB = {
   async getAll() {
     const querySnapshot = await getDocs(collection(db, "albums"));
@@ -211,7 +223,6 @@ const DB = {
     return albums;
   },
   async save(album) {
-    // Ensure ID is string for Firestore doc
     const idString = String(album.id);
     await setDoc(doc(db, "albums", idString), album);
   },
@@ -225,7 +236,6 @@ let currentAlbums = [];
 let uploadedTracks = [];
 let coverImage = null;
 
-// Security: Escape HTML to prevent XSS
 function escapeHTML(str) {
   if (!str) return '';
   return String(str).replace(/[&<>'"]/g,
@@ -238,7 +248,6 @@ function escapeHTML(str) {
     }[tag]));
 }
 
-// Security: SHA-256 Hash for password (better than plain text)
 async function checkPassword(input) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -246,7 +255,7 @@ async function checkPassword(input) {
   return hashHex === '94f7188ada6d383c589a8066f29c7f3772f6e6132fd55b30056dd5896fc2e8bc';
 }
 
-// Wait for DOM to be ready
+// MAIN APP LOGIC
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, initializing beta app...');
 
@@ -257,92 +266,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const albumsGrid = document.getElementById('albumsGrid');
   const albumModal = document.getElementById('albumModal');
 
-  console.log('Elements found:', {
-    ownerMode: !!ownerMode,
-    testerMode: !!testerMode,
-    ownerPanel: !!ownerPanel,
-    testerPanel: !!testerPanel,
-    publishBtn: !!document.getElementById('publishBtn')
-  });
+  if (!ownerMode || !testerMode) return;
 
-  if (!ownerMode || !testerMode) {
-    console.error('Critical elements not found!');
-    return;
-  }
-
-  // Owner button opens password modal
+  // Buttons Logic
   ownerMode.addEventListener('click', () => {
     const modal = document.getElementById('ownerPasswordModal');
-    if (modal) {
-      modal.style.display = 'flex';
-    }
+    if (modal) modal.style.display = 'flex';
   });
 
-  // Handle password submission
   const ownerPasswordSubmit = document.getElementById('ownerPasswordSubmit');
   const ownerPasswordInput = document.getElementById('ownerPasswordInput');
 
   if (ownerPasswordSubmit && ownerPasswordInput) {
-    // Allow pressing "Enter" to submit
     ownerPasswordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        ownerPasswordSubmit.click();
-      }
+      if (e.key === 'Enter') ownerPasswordSubmit.click();
     });
 
     ownerPasswordSubmit.addEventListener('click', async () => {
-      const password = ownerPasswordInput.value;
-      if (!await checkPassword(password)) {
+      if (!await checkPassword(ownerPasswordInput.value)) {
         alert('Incorrect password');
         return;
       }
-      // Close modal
-      const modal = document.getElementById('ownerPasswordModal');
-      if (modal) modal.style.display = 'none';
-      // Activate owner mode
+      document.getElementById('ownerPasswordModal').style.display = 'none';
       ownerMode.classList.add('active');
       testerMode.classList.remove('active');
       ownerPanel.style.display = 'block';
       testerPanel.style.display = 'none';
-      // HOTFIX: Inject missing request for specific user if not present (Simulating sync)
-      // Load requests from Firebase
-      loadOwnerAlbums();
-      loadAccessRequests();
-      loadTesterDashboard();
-      initShareLink();
 
       loadOwnerAlbums();
       loadAccessRequests();
       loadTesterDashboard();
       initShareLink();
-
-      // Init Manual Invite
-      document.getElementById('sendInviteBtn')?.addEventListener('click', () => {
-        const name = document.getElementById('inviteName').value;
-        const email = document.getElementById('inviteEmail').value;
-        if (!name || !email) { alert('Enter name and email'); return; }
-
-        // Generate Token
-        const data = {
-          n: name,
-          e: email,
-          x: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
-          s: 'approved' // Secret status
-        };
-
-        const token = btoa(JSON.stringify(data));
-        const link = `${window.location.origin}${window.location.pathname}?token=${token}`;
-
-        const subject = "Welcome to PEAKAFELLER Beta Beat";
-        const body = `Hello ${name},\n\nYou have been granted access to the Peakafeller Beta Testing program.\n\nCLICK HERE TO ACCESS:\n${link}\n\nEnjoy,\nPeakafeller`;
-
-        window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-      });
     });
   }
 
   testerMode.addEventListener('click', () => {
-    console.log('Tester button clicked!');
     testerMode.classList.add('active');
     ownerMode.classList.remove('active');
     testerPanel.style.display = 'block';
@@ -350,18 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAccess();
   });
 
-  // Access Management Functions
+  // Access Logic
   function initShareLink() {
-    const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}?invite=true`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?invite=true`;
     const shareLinkInput = document.getElementById('shareLink');
-    if (shareLinkInput) {
-      shareLinkInput.value = shareUrl;
-    }
+    if (shareLinkInput) shareLinkInput.value = shareUrl;
   }
 
   function checkAccess() {
-    // Check for Magic Link Token
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
@@ -369,32 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const data = JSON.parse(atob(token));
         if (data.s === 'approved') {
-          // Auto-register user
           const userId = 'user_' + Date.now();
           const user = { id: userId, name: data.n, email: data.e };
-
           localStorage.setItem('betaUser', JSON.stringify(user));
-
-          const approvalData = {
-            status: 'approved',
-            expiresAt: new Date(data.x).toISOString()
-          };
+          const approvalData = { status: 'approved', expiresAt: new Date(data.x).toISOString() };
           localStorage.setItem('approvalData_' + userId, JSON.stringify(approvalData));
-
-          // Add to Firebase Access List (for sync)
-          // We can't write to the global access list without admin rights strictly speaking
-          // But for this prototype we assume open write access to 'requests' collection or we use the Owner Panel flow.
-          // Wait, if user is granting access via magic link, we don't necessarily update the 'requests' list 
-          // unless the Owner generated the link which implies approval.
-          // We should ideally add this user to the 'active_testers' collection.
-
           alert('ACCESS GRANTED! Welcome to Beta Beat.');
-
-          alert('ACCESS GRANTED! Welcome to Beta Beat.');
-          // Clear URL
           window.history.replaceState({}, document.title, window.location.pathname);
-
-          // Reload to refresh view
           window.location.reload();
           return;
         }
@@ -403,906 +338,324 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const currentUser = JSON.parse(localStorage.getItem('betaUser')) || null;
-    const approvalData = JSON.parse(localStorage.getItem('approvalData_' + (currentUser ? currentUser.id : ''))) || null;
-
-    // Check expiration
-    if (approvalData && approvalData.expiresAt) {
-      if (new Date() > new Date(approvalData.expiresAt)) {
-        alert('Your beta access has expired (30 days limit). Please request access again.');
-        localStorage.removeItem('approvalData_' + currentUser.id);
-      }
-    }
-
+    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
+    const approvalData = JSON.parse(localStorage.getItem('approvalData_' + (currentUser ? currentUser.id : '')));
     const accessRequestForm = document.getElementById('accessRequestForm');
-    const albumsGrid = document.getElementById('albumsGrid');
-
-    if (!accessRequestForm || !albumsGrid) {
-      loadAlbums();
-      return;
-    }
-
-    // Check if user is approved and not expired
-
     const donationSection = document.getElementById('donationSection');
 
-    // Check if user is approved and not expired
     if (currentUser && approvalData && approvalData.status === 'approved' && new Date() < new Date(approvalData.expiresAt)) {
       accessRequestForm.style.display = 'none';
       albumsGrid.style.display = 'grid';
       if (donationSection) donationSection.style.display = 'block';
       loadAlbums();
     } else {
-      // Not approved or no user
       accessRequestForm.style.display = 'block';
       albumsGrid.style.display = 'none';
       if (donationSection) donationSection.style.display = 'none';
 
-      // If pending (Check new local storage key)
       const pendingRequest = JSON.parse(localStorage.getItem('pendingBetaRequest'));
       if (pendingRequest) {
         document.getElementById('testerName').value = pendingRequest.name;
         document.getElementById('testerEmail').value = pendingRequest.email;
-        document.getElementById('testerName').disabled = true;
-        document.getElementById('testerEmail').disabled = true;
-        const btn = document.getElementById('requestAccessBtn');
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = 'REQUEST SENT';
-        }
-        const status = document.getElementById('requestStatus');
-        if (status) status.textContent = 'Request sent! Waiting for approval...';
-      } else {
-        // Legacy check (can remove later)
-        const requests = JSON.parse(localStorage.getItem('accessRequests')) || [];
-        const myRequest = currentUser ? requests.find(r => r.userId === currentUser.id) : null;
-        if (myRequest && myRequest.status === 'pending') {
-          // ... legacy logic ...
-        }
+        document.getElementById('requestAccessBtn').textContent = 'REQUEST SENT';
+        document.getElementById('requestAccessBtn').disabled = true;
+        document.getElementById('requestStatus').textContent = 'Request sent! Waiting for approval...';
       }
     }
   }
 
-  // Helper for crypto copy
-  window.copyToClipboard = (btn, text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      const originalText = btn.textContent;
-      btn.textContent = 'COPIED!';
-      setTimeout(() => {
-        btn.textContent = originalText;
-      }, 2000);
-    });
-  };
-
-  async function loadAccessRequests() {
-    const requestsList = document.getElementById('accessRequestsList');
-    if (!requestsList) return;
-
-    // Load from Firestore
-    const querySnapshot = await getDocs(collection(db, "requests"));
-    let accessRequests = [];
-    querySnapshot.forEach((doc) => {
-      accessRequests.push(doc.data());
-    });
-
-    // Sort by Date
-    accessRequests.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
-
-    const pendingRequests = accessRequests.filter(r => r.status === 'pending');
-
-    if (pendingRequests.length === 0) {
-      requestsList.innerHTML = '<p style="color: #666; font-family: var(--font-mono); font-size: 0.8rem;">No pending requests</p>';
-      return;
-    }
-
-    requestsList.innerHTML = pendingRequests.map(request => `
-    <div class="access-request-item">
-      <div class="request-info">
-        <div class="request-name">${escapeHTML(request.name)}</div>
-        <div class="request-email" style="font-size: 0.8rem; color: #888;">${escapeHTML(request.email)}</div>
-        <div class="request-time">Requested ${new Date(request.requestedAt).toLocaleString()}</div>
-      </div>
-      <div class="request-actions">
-        <button class="approve-btn" onclick="approveRequest('${escapeHTML(request.userId)}')">APPROVE</button>
-        <button class="deny-btn" onclick="denyRequest('${escapeHTML(request.userId)}')">DENY</button>
-      </div>
-    </div>
-  `).join('');
-  }
-
-  window.approveRequest = async (userId) => {
-    // Get Request
-    const querySnapshot = await getDocs(collection(db, "requests"));
-    let requestDoc = null;
-    let requestData = null;
-
-    querySnapshot.forEach((docSnap) => {
-      if (docSnap.data().userId === userId) {
-        requestDoc = docSnap;
-        requestData = docSnap.data();
-      }
-    });
-
-    if (!requestData) return;
-
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 30); // Add 30 days
-
-    // Update Firestore
-    const requestRef = doc(db, "requests", requestDoc.id);
-    await updateDoc(requestRef, {
-      status: 'approved',
-      approvedAt: new Date().toISOString(),
-      expiresAt: expirationDate.toISOString()
-    });
-
-    // Send Email
-    const emailSubject = "Beta Access Granted";
-    const emailBody = `Hello ${requestData.name},\n\nYou have been granted execution access to the Peakafeller Beta for 30 days.\nExpires: ${expirationDate.toLocaleDateString()}\n\nBest,\nPeakafeller`;
-
-    window.open(`mailto:${requestData.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`);
-
-    loadAccessRequests();
-    loadTesterDashboard();
-    alert(`Access granted for 30 days. Email client opened.`);
-  };
-
-  window.denyRequest = async (userId) => {
-    // Get Request
-    const querySnapshot = await getDocs(collection(db, "requests"));
-    let requestRef = null;
-
-    querySnapshot.forEach((docSnap) => {
-      if (docSnap.data().userId === userId) {
-        requestRef = doc(db, "requests", docSnap.id);
-      }
-    });
-
-    if (requestRef) {
-      await updateDoc(requestRef, { status: 'denied' });
-    }
-
-    loadAccessRequests();
-    loadTesterDashboard();
-    alert('User denied/ejected');
-  };
-
-  // --- Tester Dashboard Logic ---
-
-  window.loadTesterDashboard = async () => {
-    const dashboardList = document.getElementById('testerDashboardList');
-    if (!dashboardList) return;
-
-    // Load from Firestore
-    const querySnapshot = await getDocs(collection(db, "requests"));
-    let accessRequests = [];
-    querySnapshot.forEach((doc) => {
-      accessRequests.push(doc.data());
-    });
-
-    const approvedTesters = accessRequests.filter(r => r.status === 'approved');
-
-    if (approvedTesters.length === 0) {
-      dashboardList.innerHTML = '<p style="color:#666; font-family:var(--font-mono); font-size:0.8rem;">No active testers found.</p>';
-      return;
-    }
-
-    dashboardList.innerHTML = approvedTesters.map(tester => `
-      <div class="tester-item" style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:1rem; border-bottom:1px solid #333; margin-bottom:0.5rem;">
-        <div style="cursor:pointer;" onclick="openTesterStats('${tester.userId}')">
-          <div style="font-weight:bold; color:var(--color-accent);">${escapeHTML(tester.name)}</div>
-          <div style="font-size:0.8rem; color:#888;">${escapeHTML(tester.email)}</div>
-          <div style="font-size:0.7rem; color:#555;">Joined: ${new Date(tester.approvedAt).toLocaleDateString()}</div>
-        </div>
-        <button class="delete-album-btn" style="padding:0.5rem; font-size:0.7rem;" onclick="ejectTester('${tester.userId}')">EJECT</button>
-      </div>
-    `).join('');
-  };
-
-  window.ejectTester = (userId) => {
-    if (!confirm("Are you sure you want to eject this tester? They will lose access immediately.")) return;
-
-    // Deny request
-    window.denyRequest(userId);
-
-    // Remove individual approval token (simulate logout for them)
-    localStorage.removeItem('approvalData_' + userId);
-  };
-
-  window.openTesterStats = async (userId) => {
-    try {
-      const albums = await DB.getAll();
-
-      // Get Tester Info
-      const querySnapshot = await getDocs(collection(db, "requests"));
-      let tester = null;
-      querySnapshot.forEach(docSnap => {
-        if (docSnap.data().userId === userId) tester = docSnap.data();
-      });
-
-      if (!tester) return;
-
-      let activityHTML = '';
-      let totalRatings = 0;
-      let totalComments = 0;
-
-      albums.forEach(album => {
-        let albumActivity = '';
-        album.tracks.forEach(track => {
-          const ratingObj = (track.ratings || []).find(r => r.userId === userId);
-          const userComments = (track.comments || []).filter(c => c.userId === userId);
-
-          if (ratingObj || userComments.length > 0) {
-            totalRatings += ratingObj ? 1 : 0;
-            totalComments += userComments.length;
-
-            const starStr = ratingObj ? '★'.repeat(ratingObj.rating) + '☆'.repeat(5 - ratingObj.rating) : 'Unrated';
-
-            albumActivity += `
-                 <div style="margin-bottom:1rem; padding:0.5rem; background:#222; border-radius:4px;">
-                    <div style="font-weight:bold; color:#fff; font-size:0.9rem;">${escapeHTML(track.name)}</div>
-                    <div style="font-size:0.8rem; color:#ff6600; margin:0.2rem 0;">Rating: ${starStr}</div>
-                    ${userComments.length > 0 ? `
-                      <div style="font-size:0.8rem; color:#aaa; margin-top:0.5rem;">Comments:</div>
-                      <ul style="padding-left:1rem; margin:0; list-style:none;">
-                        ${userComments.map(c => `<li style="font-size:0.8rem; border-left:2px solid #555; padding-left:0.5rem; margin-top:0.2rem; color:#ccc;">"${escapeHTML(c.text)}"</li>`).join('')}
-                      </ul>
-                    ` : ''}
-                 </div>
-               `;
-          }
-        });
-
-        if (albumActivity) {
-          activityHTML += `<h4 style="color:var(--color-accent); margin-top:1.5rem; border-bottom:1px solid #333; padding-bottom:0.5rem;">${escapeHTML(album.title)}</h4>` + albumActivity;
-        }
-      });
-
-      if (!activityHTML) {
-        activityHTML = '<p style="color:#666;">No activity recorded for this tester yet.</p>';
-      }
-
-      const statsContent = `
-         <h2 style="font-family:var(--font-main); color:var(--color-accent); margin-bottom:0.5rem;">${escapeHTML(tester.name)}</h2>
-         <p style="color:#888; font-family:var(--font-mono); font-size:0.8rem; margin-bottom:2rem;">${escapeHTML(tester.email)}</p>
-         
-         <div style="display:flex; gap:2rem; margin-bottom:2rem; background:#111; padding:1rem;">
-            <div>
-              <div style="font-size:1.5rem; font-weight:bold; color:#fff;">${totalRatings}</div>
-              <div style="font-size:0.7rem; color:#666;">RATINGS</div>
-            </div>
-            <div>
-              <div style="font-size:1.5rem; font-weight:bold; color:#fff;">${totalComments}</div>
-              <div style="font-size:0.7rem; color:#666;">COMMENTS</div>
-            </div>
-         </div>
-
-         <div style="max-height:400px; overflow-y:auto;">
-           ${activityHTML}
-         </div>
-       `;
-
-      document.getElementById('testerStatsContent').innerHTML = statsContent;
-      document.getElementById('testerStatsModal').classList.add('active');
-
-    } catch (e) {
-      console.error(e);
-      alert('Error loading stats');
-    }
-  };
-
-
-  // Copy link handler
-  document.getElementById('copyLinkBtn')?.addEventListener('click', () => {
-    const shareLinkInput = document.getElementById('shareLink');
-    if (shareLinkInput) {
-      shareLinkInput.select();
-      document.execCommand('copy');
-
-      const copyBtn = document.getElementById('copyLinkBtn');
-      const originalText = copyBtn.textContent;
-      copyBtn.textContent = 'COPIED!';
-      setTimeout(() => {
-        copyBtn.textContent = originalText;
-      }, 2000);
-    }
-  });
-
-  // Request access handler
+  // Request Access Logic
   const requestBtn = document.getElementById('requestAccessBtn');
   if (requestBtn) {
     requestBtn.addEventListener('click', async () => {
-      console.log('Request Access Clicked');
-      const nameInput = document.getElementById('testerName');
-      const emailInput = document.getElementById('testerEmail');
-      const statusLabel = document.getElementById('requestStatus');
+      const name = document.getElementById('testerName').value;
+      const email = document.getElementById('testerEmail').value;
+      if (!name || !email) return alert('Enter name and email');
 
-      const name = nameInput.value.trim();
-      const email = emailInput.value.trim();
+      requestBtn.textContent = 'SENDING...';
+      const userId = 'user_' + Date.now();
+      const request = { userId, name, email, requestedAt: new Date().toISOString(), status: 'pending' };
 
-      if (!name || !email) {
-        alert('Please enter your name and email');
-        return;
-      }
-
-      requestBtn.disabled = true;
-      requestBtn.textContent = 'SENDING REQUEST...';
-
-      const userId = 'user_' + Date.now().toString();
-      const request = {
-        userId: userId,
-        name: name,
-        email: email,
-        requestedAt: new Date().toISOString(),
-        status: 'pending'
-      };
-
-      // Save to Firestore
       try {
         await setDoc(doc(db, "requests", userId), request);
-        console.log('Request saved to Firestore');
-
-        // Save local state for UI persistence
-        localStorage.setItem('pendingBetaRequest', JSON.stringify({
-          userId: userId,
-          name: name,
-          email: email,
-          timestamp: Date.now()
-        }));
-
-        nameInput.disabled = true;
-        emailInput.disabled = true;
-        statusLabel.textContent = 'Request sent! Waiting for approval...';
-
+        localStorage.setItem('pendingBetaRequest', JSON.stringify(request));
         requestBtn.textContent = 'REQUEST SENT';
+        requestBtn.disabled = true;
 
-        // Also send email as backup notification (new tab)
-        const subject = "Beta Access Request: " + name;
-        const body = `Name: ${name}\nEmail: ${email}\n\nI would like to request access to the Peakafeller Beta Beat platform.`;
-        // window.open(`mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        // Timeout email
         setTimeout(() => {
-          window.location.href = `mailto:p34k.productions@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+          window.location.href = `mailto:p34k.productions@gmail.com?subject=Beta Access: ${name}&body=Requesting access...`;
         }, 1000);
-
       } catch (e) {
-        console.error("Error sending request: ", e);
-        alert("Error sending request: " + e.message);
-        requestBtn.disabled = false;
+        alert("Error: " + e.message);
         requestBtn.textContent = 'REQUEST ACCESS';
       }
     });
   }
 
-  // Admin Tester Login
-  document.getElementById('adminTesterLogin')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const modal = document.getElementById('ownerPasswordModal');
+  // Admin / Owner Functions
+  async function loadAccessRequests() {
+    const list = document.getElementById('accessRequestsList');
+    const snap = await getDocs(collection(db, "requests"));
+    let reqs = [];
+    snap.forEach(d => reqs.push(d.data()));
+    reqs = reqs.filter(r => r.status === 'pending').sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
 
-    // Check if we can reuse the modal or prompt
-    // Since reusing the modal logic requires binding a specific callback, let's use prompt for simplicity 
-    // OR create a temporary binding if we want to use the nice modal.
-    // Let's use prompt for the "Admin Access" link to keep it simple as requested "simple password entry".
-
-    const password = prompt("Enter Owner Password:");
-    if (await checkPassword(password)) {
-      const userId = 'admin_user';
-      const user = { id: userId, name: 'Administrator', email: 'admin@peakafeller.com' };
-
-      // Grant permanent access
-      const expirationDate = new Date();
-      expirationDate.setFullYear(expirationDate.getFullYear() + 99);
-
-      const approvalData = {
-        status: 'approved',
-        expiresAt: expirationDate.toISOString()
-      };
-
-      localStorage.setItem('betaUser', JSON.stringify(user));
-      localStorage.setItem('approvalData_' + userId, JSON.stringify(approvalData));
-
-      alert('Access Granted as Admin');
-
-      // Reload page to ensure all states form/grids are reset correctly
-      window.location.reload();
-    } else if (password !== null) {
-      alert('Incorrect password');
-    }
-  });
-
-  // Load Owner Albums
-  async function loadOwnerAlbums() {
-    const ownerAlbumsList = document.getElementById('ownerAlbumsList');
-    try {
-      currentAlbums = await DB.getAll();
-    } catch (e) {
-      console.error('Failed to load albums', e);
-      currentAlbums = [];
-    }
-
-
-    if (currentAlbums.length === 0) {
-      ownerAlbumsList.innerHTML = '<p style="color: #666; font-family: var(--font-mono); font-size: 0.8rem;">No albums published yet</p>';
-      return;
-    }
-
-    ownerAlbumsList.innerHTML = currentAlbums.map(album => `
-    <div class="owner-album-item">
-      <img src="${escapeHTML(album.cover)}" class="owner-album-cover" alt="${escapeHTML(album.title)}">
-      <div class="owner-album-info">
-        <div class="owner-album-title">${escapeHTML(album.title)}</div>
-        <div class="owner-album-meta">
-          ${album.tracks.length} tracks • Published ${new Date(album.publishedAt).toLocaleDateString()}
-          ${album.tracks.reduce((total, track) => total + (track.comments?.length || 0), 0)} comments
+    if (reqs.length === 0) { list.innerHTML = '<p style="color:#666">No pending requests</p>'; return; }
+    list.innerHTML = reqs.map(r => `
+      <div class="access-request-item">
+        <div>${escapeHTML(r.name)} <span style="color:#666">${escapeHTML(r.email)}</span></div>
+        <div>
+           <button onclick="approveRequest('${r.userId}')">APPROVE</button>
+           <button onclick="denyRequest('${r.userId}')">DENY</button>
         </div>
       </div>
-      <button class="delete-album-btn" onclick="deleteAlbum(${album.id})">DELETE</button>
-    </div>
-  `).join('');
+    `).join('');
   }
 
-  // Delete Album
-  window.deleteAlbum = async (albumId) => {
-    if (!confirm('Are you sure you want to delete this album? All comments will be lost.')) {
-      return;
-    }
-
-    try {
-      await DB.delete(albumId);
-      currentAlbums = currentAlbums.filter(a => a.id !== albumId);
-      loadOwnerAlbums();
-      alert('Album deleted successfully');
-    } catch (e) {
-      alert('Error deleting album');
+  window.approveRequest = async (userId) => {
+    const snap = await getDocs(collection(db, "requests"));
+    let docId = null;
+    snap.forEach(d => { if (d.data().userId === userId) docId = d.id; });
+    if (docId) {
+      await updateDoc(doc(db, "requests", docId), { status: 'approved', approvedAt: new Date().toISOString() });
+      loadAccessRequests(); loadTesterDashboard();
+      alert('User Approved');
     }
   };
 
+  window.denyRequest = async (userId) => {
+    // Similar logic to approve
+    const snap = await getDocs(collection(db, "requests"));
+    let docId = null;
+    snap.forEach(d => { if (d.data().userId === userId) docId = d.id; });
+    if (docId) {
+      await updateDoc(doc(db, "requests", docId), { status: 'denied' });
+      loadAccessRequests(); loadTesterDashboard();
+    }
+  };
 
-  // Cover Upload
+  window.loadTesterDashboard = async () => {
+    const list = document.getElementById('testerDashboardList');
+    const snap = await getDocs(collection(db, "requests"));
+    let testers = []; snap.forEach(d => testers.push(d.data()));
+    testers = testers.filter(r => r.status === 'approved');
+    list.innerHTML = testers.map(t => `<div class="tester-item">${escapeHTML(t.name)} (${escapeHTML(t.email)})</div>`).join('');
+  };
+
+  // Album & Track Management
   document.getElementById('coverUpload').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        coverImage = event.target.result;
-        document.getElementById('coverPreview').innerHTML = `<img src="${coverImage}" alt="Cover">`;
+      reader.onload = (e) => {
+        coverImage = e.target.result;
+        document.getElementById('coverPreview').innerHTML = `<img src="${coverImage}">`;
       };
       reader.readAsDataURL(file);
     }
   });
 
-  // Tracks Upload
-  // Tracks Upload
   document.getElementById('tracksUpload').addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
-
-    if (files.length === 0) {
-      return;
-    }
-
-    console.log(`Queued ${files.length} file(s) for upload...`);
-
     files.forEach(file => {
-      if (!file.type.includes('audio')) {
-        alert(`${file.name} is not an audio file`);
-        return;
-      }
-
-      // Store File Object directly for upload later
-      uploadedTracks.push({
-        name: file.name.replace('.mp3', ''),
-        file: file, // Keep raw file
-        comments: []
-      });
-
-      renderTracksList();
+      uploadedTracks.push({ name: file.name.replace('.mp3', ''), file: file, comments: [] });
     });
-
-    // Reset input
-    e.target.value = '';
+    renderTracksList();
   });
 
   function renderTracksList() {
-    const tracksList = document.getElementById('tracksList');
-    tracksList.innerHTML = uploadedTracks.map((track, index) => `
-    <div class="track-item">
-      <span class="track-name">${escapeHTML(track.name)}</span>
-      <button class="track-remove" onclick="removeTrack(${index})">×</button>
-    </div>
-  `).join('');
+    document.getElementById('tracksList').innerHTML = uploadedTracks.map((t, i) => `
+      <div class="track-item">${escapeHTML(t.name)} <button onclick="removeTrack(${i})">x</button></div>
+    `).join('');
   }
+  window.removeTrack = (i) => { uploadedTracks.splice(i, 1); renderTracksList(); };
 
-  window.removeTrack = (index) => {
-    uploadedTracks.splice(index, 1);
-    renderTracksList();
-  };
+  async function loadOwnerAlbums() {
+    const list = document.getElementById('ownerAlbumsList');
+    currentAlbums = await DB.getAll();
+    list.innerHTML = currentAlbums.map(a => `
+      <div class="owner-album-item">
+        <img src="${escapeHTML(a.cover)}" class="owner-album-cover">
+        <div>${escapeHTML(a.title)} (${a.tracks.length} tracks)</div>
+        <button onclick="deleteAlbum(${a.id})">DELETE</button>
+      </div>
+    `).join('');
+  }
+  window.deleteAlbum = async (id) => { if (confirm('Delete?')) { await DB.delete(id); loadOwnerAlbums(); } };
 
-  // Publish Album
+  // PUBLISH LOGIC
   const publishBtn = document.getElementById('publishBtn');
   if (publishBtn) {
     publishBtn.addEventListener('click', async () => {
-      console.log('Publish button clicked');
       const title = document.getElementById('albumTitle').value;
-
-      console.log('Title:', title);
-      console.log('Cover:', coverImage ? 'Yes' : 'No');
-      console.log('Tracks:', uploadedTracks.length);
-
-      if (!title || !coverImage || uploadedTracks.length === 0) {
-        alert('Please fill all fields and upload at least one track');
-        return;
-      }
-
-      // Logic moved inside try/catch block for async upload processing
-      // Removing old sync object creation
-      /* 
-      const album = {
-        id: Date.now(),
-        title,
-        cover: coverImage,
-        tracks: uploadedTracks.slice(), // Create a copy
-        publishedAt: new Date().toISOString()
-      };
-      */
+      if (!title || !coverImage || uploadedTracks.length === 0) return alert('Incomplete');
 
       try {
-        publishBtn.textContent = 'ENCODING & UPLOADING... (Step 1/2)';
         publishBtn.disabled = true;
-
         const timestamp = Date.now();
         let uploadedTrackData = [];
 
-        // 1. Process Tracks (Chunking Upload)
         for (let i = 0; i < uploadedTracks.length; i++) {
           const track = uploadedTracks[i];
-          publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length}...`;
-
-          try {
-            // Use our new Chunking System
-            const chunkIds = await saveAudioFile(track.file);
-
-            uploadedTrackData.push({
-              name: track.name,
-              chunkIds: chunkIds, // Store reference to chunks
-              // url: ... we don't use URL anymore, we reconstruct from chunks
-              comments: []
-            });
-          } catch (err) {
-            console.error("Chunk upload failed for " + track.name, err);
-            throw new Error("Upload failed for " + track.name);
-          }
+          publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (0%)...`;
+          const chunkIds = await saveAudioFile(track.file, (p) => {
+            publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (${Math.floor(p)}%)...`;
+          });
+          uploadedTrackData.push({ name: track.name, chunkIds, comments: [] });
         }
 
-        const album = {
-          id: timestamp,
-          title,
-          cover: coverImage,
-          tracks: uploadedTrackData,
-          publishedAt: new Date().toISOString()
-        };
-
-        // 2. Save Metadata to Firestore
+        const album = { id: timestamp, title, cover: coverImage, tracks: uploadedTrackData, publishedAt: new Date().toISOString() };
         await DB.save(album);
         currentAlbums.push(album);
 
-        // Reset form
+        // Reset
         document.getElementById('albumTitle').value = '';
         document.getElementById('coverPreview').innerHTML = '';
         uploadedTracks = [];
         coverImage = null;
         renderTracksList();
         loadOwnerAlbums();
+        alert('Published!');
 
-        alert('Album published successfully! Audio is stored in High-Speed Database Chunks.');
-      } catch (err) {
-        console.error('Publish error:', err);
-        alert('An unexpected error occurred: ' + err.message);
+      } catch (e) {
+        console.error(e);
+        alert('Error: ' + e.message);
       } finally {
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
       }
-    }); // Close async callback
-  } // Close if(publishBtn) check
-
-
-  // Load Albums (Tester View)
-  async function loadAlbums() {
-    try {
-      currentAlbums = await DB.getAll();
-    } catch (e) {
-      currentAlbums = [];
-    }
-
-    if (currentAlbums.length === 0) {
-      albumsGrid.innerHTML = `
-      <div class="empty-state">
-        <p>NO ALBUMS IN BETA TESTING</p>
-        <p class="hint">Check back later for new releases</p>
-      </div>
-    `;
-      return;
-    }
-
-    albumsGrid.innerHTML = currentAlbums.map(album => `
-    <div class="album-card" onclick="openAlbum(${album.id})">
-      <img src="${escapeHTML(album.cover)}" alt="${escapeHTML(album.title)}" class="album-cover">
-      <div class="album-info">
-        <h3 class="album-title">${escapeHTML(album.title)}</h3>
-        <p class="album-meta">${album.tracks.length} tracks • ${new Date(album.publishedAt).toLocaleDateString()}</p>
-      </div>
-    </div>
-  `).join('');
+    });
   }
 
-  // Open Album Detail
-  window.openAlbum = (albumId) => {
-    const album = currentAlbums.find(a => a.id === albumId);
-    if (!album) return;
-
-    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
-
-    const detailHTML = `
-    <h2 style="font-family: var(--font-main); font-size: 2rem; font-weight: 100; margin-bottom: 2rem; color: var(--color-accent);">
-      ${escapeHTML(album.title)}
-    </h2>
-    <img src="${escapeHTML(album.cover)}" style="width: 100%; max-width: 400px; border-radius: 8px; margin-bottom: 2rem;">
-    
-    ${album.tracks.map((track, index) => {
-      // Logic for Ratings
-      const myRatingObj = (track.ratings || []).find(r => r.userId === currentUser?.id);
-      const myRating = myRatingObj ? myRatingObj.rating : 0;
-
-      // Star HTML Generator
-      const starsHTML = [1, 2, 3, 4, 5].map(star => `
-        <span class="star-rating ${star <= myRating ? 'active' : ''}" 
-              onclick="rateTrack(${albumId}, ${index}, ${star})"
-              style="cursor: pointer; color: ${star <= myRating ? '#ff6600' : '#444'}; font-size: 1.5rem;">
-          ★
-        </span>
+  // PLAYER & TESTER LOGIC
+  async function loadAlbums() {
+    currentAlbums = await DB.getAll();
+    const grid = document.getElementById('albumsGrid');
+    if (currentAlbums.length === 0) { grid.innerHTML = '<div class="empty-state">No albums</div>'; return; }
+    grid.innerHTML = currentAlbums.map(a => `
+        <div class="album-card" onclick="openAlbum(${a.id})">
+           <img src="${escapeHTML(a.cover)}" class="album-cover">
+           <h3>${escapeHTML(a.title)}</h3>
+        </div>
       `).join('');
+  }
 
-      // Filter Comments: Only show MINE
-      const myComments = (track.comments || []).filter(c => c.userId === currentUser?.id);
+  window.openAlbum = (id) => {
+    const album = currentAlbums.find(a => a.id === id);
+    if (!album) return;
+    const user = JSON.parse(localStorage.getItem('betaUser'));
+
+    // Build HTML (simplified for stability, but keeps features)
+    const tracksHTML = album.tracks.map((t, i) => {
+      const myRating = (t.ratings || []).find(r => r.userId === user?.id)?.rating || 0;
+      const stars = [1, 2, 3, 4, 5].map(s => `<span style="color:${s <= myRating ? '#ff6600' : '#444'}; cursor:pointer" onclick="rateTrack(${id},${i},${s})">★</span>`).join('');
+      const myComments = (t.comments || []).filter(c => c.userId === user?.id);
 
       return `
-      <div class="track-player">
-        <div class="track-header">
-          <span class="track-title">${escapeHTML(track.name)}</span>
-          <div class="track-rating">
-            ${starsHTML}
-          </div>
-        </div>
-        
-        <!-- WaveSurfer Container -->
-        <div class="waveform-container" style="margin: 1rem 0; position: relative;">
-            <div id="waveform-${index}" style="width: 100%;"></div>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; opacity: 0.5;">
-              <span id="loading-${index}" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-accent);">LOADING WAVEFORM...</span>
-            </div>
-        </div>
-
-        <button id="playBtn-${index}" class="play-btn-custom" style="
-            background: var(--color-accent); 
-            color: #000; 
-            border: none; 
-            padding: 0.5rem 2rem; 
-            font-family: var(--font-mono); 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-bottom: 1rem;
-            width: 100%;">
-            PLAY
-        </button>
-        
-        <div class="comments-section">
-          <h4 style="font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 0.5rem; color: #888;">YOUR PRIVATE NOTES:</h4>
-          
-          <div id="comments-${index}" style="margin-bottom: 1rem; max-height: 200px; overflow-y: auto; background: #111; padding: 0.5rem; border: 1px solid #333;">
-            ${myComments.length === 0 ? '<div style="color:#555; text-align:center; font-size:0.8rem;">No notes yet.</div>' : ''}
-            ${myComments.map(c => `
-              <div class="comment-item" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; border-bottom: 1px solid #222; padding-bottom: 0.5rem;">
-                <div>
-                   <div class="comment-timestamp" style="color: var(--color-accent); font-size: 0.7rem;">${escapeHTML(c.timestamp)}</div>
-                   <div class="comment-content" style="font-size: 0.9rem;">${escapeHTML(c.text)}</div>
+          <div class="track-wrapper" style="margin-bottom:2rem;">
+             <div class="track-head" style="display:flex; justify-content:space-between; color:#fff;">
+                <span>${escapeHTML(t.name)}</span>
+                <div>${stars}</div>
+             </div>
+             <div id="waveform-${i}" style="width:100%; margin:1rem 0;"></div>
+             <button id="playBtn-${i}" class="play-btn-custom">PLAY</button>
+             
+             <!-- Comments -->
+             <div style="background:#111; padding:1rem; margin-top:1rem;">
+                ${myComments.map(c => `<div style="font-size:0.8rem; color:#ccc; border-bottom:1px solid #333; padding:0.5rem 0;">${escapeHTML(c.text)} <button onclick="deleteComment(${id},${i},'${c.id}')" style="color:red; float:right;">x</button></div>`).join('')}
+                <div style="margin-top:1rem; display:flex;">
+                   <input id="comment-${i}" placeholder="Private feedback..." style="flex:1; background:#000; border:1px solid #333; color:#fff; padding:0.5rem;">
+                   <button onclick="addComment(${id},${i})">SAVE</button>
                 </div>
-                <div class="comment-actions">
-                  <button onclick="editComment(${albumId}, ${index}, '${c.id}')" style="background:none; border:none; color:#fbcece; cursor:pointer; font-size:0.7rem; margin-right:0.5rem;">EDIT</button>
-                  <button onclick="deleteComment(${albumId}, ${index}, '${c.id}')" style="background:none; border:none; color: #ff4444; cursor:pointer; font-size:0.7rem;">DEL</button>
-                </div>
-              </div>
-            `).join('')}
+             </div>
           </div>
+        `;
+    }).join('');
 
-          <div class="comment-input">
-            <input type="text" class="timestamp-input" id="timestamp-${index}" placeholder="0:00">
-            <textarea class="comment-text" id="comment-${index}" placeholder="Add private feedback..."></textarea>
-            <button class="comment-btn" onclick="addComment(${albumId}, ${index})">SAVE NOTE</button>
-          </div>
-        </div>
-      </div>
-      `;
-    }).join('')}
-  `;
+    document.getElementById('albumDetail').innerHTML = `
+      <h2 style="color:var(--color-accent);">${escapeHTML(album.title)}</h2>
+      ${tracksHTML}
+    `;
+    document.getElementById('albumModal').classList.add('active');
 
-    document.getElementById('albumDetail').innerHTML = detailHTML;
-    albumModal.classList.add('active');
-
-    // Initialize WaveSurfer
+    // Init WaveSurfer
     window.activeWaveSurfers = window.activeWaveSurfers || [];
-    // Clean up old instances if any (though modal rebuilds DOM, good practice to destroy)
     window.activeWaveSurfers.forEach(ws => ws.destroy());
     window.activeWaveSurfers = [];
 
-    album.tracks.forEach(async (track, index) => { // Made async
-      const container = document.getElementById(`waveform-${index}`);
-      const playBtn = document.getElementById(`playBtn-${index}`);
-      const loadingLabel = document.getElementById(`loading-${index}`);
+    album.tracks.forEach(async (t, i) => {
+      const container = document.getElementById(`waveform-${i}`);
+      if (!container) return;
 
-      if (container) {
-        const wavesurfer = WaveSurfer.create({
-          container: container,
-          waveColor: '#444',
-          progressColor: '#ff6600',
-          cursorColor: '#ff6600',
-          barWidth: 2,
-          barGap: 3,
-          height: 60,
-          responsive: true
-        });
+      const ws = WaveSurfer.create({
+        container: container,
+        waveColor: '#444',
+        progressColor: '#ff6600',
+        height: 50,
+        backend: 'WebAudio'
+      });
 
-        // Determine Source: Chunked (New) vs URL (Github) vs Data (Legacy)
-        let audioSrc = '';
-
-        if (track.chunkIds && track.chunkIds.length > 0) {
-          // Load from chunks
-          loadingLabel.textContent = 'DOWNLOADING CHUNKS...';
-          try {
-            audioSrc = await loadAudioFile(track.chunkIds);
-          } catch (e) {
-            console.error(e);
-            loadingLabel.textContent = 'ERROR LOADING';
-            return;
-          }
-        } else {
-          audioSrc = track.url || track.data;
-        }
-
-        wavesurfer.load(audioSrc);
-
-        wavesurfer.on('ready', () => {
-          loadingLabel.style.display = 'none';
-        });
-
-        wavesurfer.on('play', () => {
-          playBtn.textContent = 'PAUSE';
-        });
-
-        wavesurfer.on('pause', () => {
-          playBtn.textContent = 'PLAY';
-        });
-
-        playBtn.addEventListener('click', () => {
-          wavesurfer.playPause();
-        });
-
-        window.activeWaveSurfers.push(wavesurfer);
+      // Load
+      if (t.chunkIds) {
+        ws.load(await loadAudioFile(t.chunkIds));
+      } else {
+        ws.load(t.url || t.data);
       }
+
+      // Play
+      const btn = document.getElementById(`playBtn-${i}`);
+      btn.onclick = () => ws.playPause();
+      ws.on('play', () => {
+        btn.textContent = 'PAUSE';
+        // Connect Visualizer
+        try { window.connectAudioVisualizer(ws.getMediaElement()); } catch (e) { }
+      });
+      ws.on('pause', () => btn.textContent = 'PLAY');
+
+      window.activeWaveSurfers.push(ws);
     });
-
   };
 
-  window.closeModal = () => {
-    albumModal.classList.remove('active');
-  };
+  window.closeModal = () => document.getElementById('albumModal').classList.remove('active');
 
-  window.addComment = async (albumId, trackIndex) => {
-    const timestamp = document.getElementById(`timestamp-${trackIndex}`).value;
-    const text = document.getElementById(`comment-${trackIndex}`).value;
-
-    if (!timestamp || !text) {
-      alert('Please enter both timestamp and comment');
-      return;
-    }
-
-    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
-    if (!currentUser) return;
-
-    const albumIndex = currentAlbums.findIndex(a => a.id === albumId);
-    if (!currentAlbums[albumIndex].tracks[trackIndex].comments) {
-      currentAlbums[albumIndex].tracks[trackIndex].comments = [];
-    }
-
-    const newComment = {
-      id: Date.now().toString(),
-      userId: currentUser.id,
-      timestamp,
-      text,
-      createdAt: new Date().toISOString()
-    };
-
-    currentAlbums[albumIndex].tracks[trackIndex].comments.push(newComment);
-
-    // Save
-    try {
-      await DB.save(currentAlbums[albumIndex]);
-      openAlbum(albumId); // Refresh
-    } catch (e) {
-      alert('Failed to save comment');
-    }
-  };
-
-  // Rate Track Function
-  window.rateTrack = async (albumId, trackIndex, rating) => {
-    const currentUser = JSON.parse(localStorage.getItem('betaUser'));
-    if (!currentUser) return;
-
-    const albumIndex = currentAlbums.findIndex(a => a.id === albumId);
-    const track = currentAlbums[albumIndex].tracks[trackIndex];
-
+  // Actions
+  window.rateTrack = async (aid, ti, r) => {
+    const user = JSON.parse(localStorage.getItem('betaUser'));
+    const album = currentAlbums.find(a => a.id === aid);
+    const track = album.tracks[ti];
     if (!track.ratings) track.ratings = [];
-
-    // Check if user already rated
-    const existingRatingIndex = track.ratings.findIndex(r => r.userId === currentUser.id);
-    if (existingRatingIndex >= 0) {
-      track.ratings[existingRatingIndex].rating = rating;
-    } else {
-      track.ratings.push({ userId: currentUser.id, rating: rating });
-    }
-
-    try {
-      await DB.save(currentAlbums[albumIndex]);
-      openAlbum(albumId); // Refresh UI
-    } catch (e) {
-      console.error(e);
-    }
+    const existing = track.ratings.find(rt => rt.userId === user.id);
+    if (existing) existing.rating = r; else track.ratings.push({ userId: user.id, rating: r });
+    await DB.save(album);
+    openAlbum(aid);
   };
 
-  // Delete Comment Function
-  window.deleteComment = async (albumId, trackIndex, commentId) => {
-    if (!confirm('Delete this comment?')) return;
-
-    const albumIndex = currentAlbums.findIndex(a => a.id === albumId);
-    const track = currentAlbums[albumIndex].tracks[trackIndex];
-
-    track.comments = track.comments.filter(c => c.id !== commentId.toString());
-
-    try {
-      await DB.save(currentAlbums[albumIndex]);
-      openAlbum(albumId); // Refresh
-    } catch (e) {
-      alert('Failed to delete comment');
-    }
+  window.addComment = async (aid, ti) => {
+    const text = document.getElementById(`comment-${ti}`).value;
+    if (!text) return;
+    const user = JSON.parse(localStorage.getItem('betaUser'));
+    const album = currentAlbums.find(a => a.id === aid);
+    if (!album.tracks[ti].comments) album.tracks[ti].comments = [];
+    album.tracks[ti].comments.push({ id: Date.now().toString(), userId: user.id, text, timestamp: '0:00' });
+    await DB.save(album);
+    openAlbum(aid);
   };
 
-  // Edit Comment Function (Simplified: Loads into input, deletes old)
-  window.editComment = (albumId, trackIndex, commentId) => {
-    const album = currentAlbums.find(a => a.id === albumId);
-    const track = album.tracks[trackIndex];
-    const comment = track.comments.find(c => c.id === commentId.toString());
-
-    if (comment) {
-      document.getElementById(`timestamp-${trackIndex}`).value = comment.timestamp;
-      document.getElementById(`comment-${trackIndex}`).value = comment.text;
-      // We delete the old one so "POST" creates the updated version
-      deleteComment(albumId, trackIndex, commentId);
-    }
+  window.deleteComment = async (aid, ti, cid) => {
+    const album = currentAlbums.find(a => a.id === aid);
+    album.tracks[ti].comments = album.tracks[ti].comments.filter(c => c.id !== cid);
+    await DB.save(album);
+    openAlbum(aid);
   };
 
-  // Initial load
-  checkAccess();
-
-  // Custom Cursor Logic
-
-
-  // Hover Effect for interactive elements
-  // Use event delegation for dynamic content
+  // Hover Interactions
   document.body.addEventListener('mouseover', (e) => {
-    if (e.target.matches('a, button, .album-card, input, .track-item, .modal-close') || e.target.closest('a, button, .album-card')) {
-      document.body.classList.add('hovering');
-    } else {
-      document.body.classList.remove('hovering');
-    }
+    if (e.target.matches('button, a, input, .album-card')) document.body.classList.add('hovering');
+    else document.body.classList.remove('hovering');
   });
 
-}); // End DOMContentLoaded
+  // Init
+  checkAccess();
 
-
+});

@@ -13,6 +13,10 @@
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+.mobile-only-item {
+  display: none !important;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -1986,222 +1990,234 @@ body.hovering #cursor-border {
   .rabbit-link {
     display: none;
   }
-}@media (max-width: 768px) {
-
-    /* 1. Positioning the Header ("En haut a droite") */
-    .floating-header {
-        top: 0;
-        right: 0;
-        left: auto;
-        width: auto;
-        padding: 1.5rem;
-        justify-content: flex-end;
-        pointer-events: none;
-        /* Let clicks pass through except on the interactive parts */
-    }
-
-    .header-inner {
-        background: transparent;
-        /* Remove the box look */
-        border: none;
-        box-shadow: none;
-        backdrop-filter: none;
-        padding: 0;
-        pointer-events: auto;
-    }
-
-    /* 2. The Burger Icon ("Moderne") */
-    .header-menu-icon {
-        display: block;
-        /* Visible on mobile */
-        width: 40px;
-        /* Larger hit area */
-        height: 40px;
-        position: relative;
-        z-index: 10001;
-        /* Above the overlay */
-        background: rgba(0, 0, 0, 0.2);
-        /* Subtle backing circle or just transparent? Let's go minimal glass */
-        backdrop-filter: blur(4px);
-        border-radius: 50%;
-        /* Circular touch target */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* The lines */
-    .header-menu-icon span,
-    .header-menu-icon::before,
-    .header-menu-icon::after {
-        content: '';
-        display: block;
-        width: 20px;
-        /* Actual visual width */
-        height: 2px;
-        background-color: var(--color-accent);
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        /* Center horizontally */
-        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        /* Bouncy modern transition */
-    }
-
-    /* Top Line */
-    .header-menu-icon::before {
-        top: 13px;
-    }
-
-    /* Middle Line */
-    .header-menu-icon span {
-        top: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    /* Bottom Line */
-    .header-menu-icon::after {
-        bottom: 13px;
-    }
-
-    /* ACTIVE STATE (X) */
-    .header-menu-icon.is-open {
-        border-color: var(--color-accent);
-        background: rgba(0, 0, 0, 0.8);
-    }
-
-    .header-menu-icon.is-open::before {
-        top: 50%;
-        transform: translate(-50%, -50%) rotate(45deg);
-    }
-
-    .header-menu-icon.is-open span {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0);
-        /* Shrink away */
-    }
-
-    .header-menu-icon.is-open::after {
-        bottom: 50%;
-        transform: translate(-50%, 50%) rotate(-45deg);
-        /* Fix rotation center */
-    }
-
-    /* Correction for true X centering */
-    .header-menu-icon.is-open::after {
-        transform: translate(-50%, -50%) rotate(-45deg);
-    }
-
-    /* 3. The Menu Overlay ("Efficace") */
-    .header-nav {
-        display: block;
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(5, 5, 5, 0.98);
-        /* Almost solid for readability */
-        backdrop-filter: blur(20px);
-        z-index: 10000;
-        padding: 6rem 2rem;
-
-        /* Animation state hidden */
-        transform: translateX(100%);
-        opacity: 0;
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-
-        /* Layout */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        /* Center items */
-        justify-content: center;
-        gap: 2rem;
-    }
-
-    .header-nav.active {
-        transform: translateX(0);
-        opacity: 1;
-    }
-
-    .header-nav a {
-        font-size: 2rem;
-        /* Big readable font */
-        color: #888;
-        text-transform: uppercase;
-        font-weight: 300;
-        letter-spacing: 0.1em;
-    }
-
-    .header-nav a:hover {
-        color: var(--color-accent);
-        transform: scale(1.1);
-    }
-
-    /* Handle Dropdowns in Overlay - Flatten them */
-    .nav-dropdown {
-        display: contents;
-        /* Remove container behavior */
-    }
-
-    .nav-trigger {
-        /* "MUSIC" header in menu */
-        color: var(--color-accent) !important;
-        border-bottom: 1px solid #333;
-        padding-bottom: 1rem;
-        margin-bottom: 1rem;
-        pointer-events: none;
-        /* Just a label in this mode? Or click to toggle? Let's make it a label */
-    }
-
-    .nav-submenu {
-        position: static;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-        background: transparent;
-        border: none;
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        padding: 0;
-        margin: 0;
-        width: auto;
-    }
-
-    .nav-subitem::before {
-        display: none;
-        /* Remove arrow */
-    }
-
-    .nav-subitem {
-        font-size: 1.2rem !important;
-        /* Slightly smaller than main links */
-        padding: 0 !important;
-        color: #666;
-    }
-
-    /* Hide Rabbit */
-    .rabbit-link {
-        display: none;
-    }
-
-    .header-logo {
-        display: none;
-    }
 }
+
 @media (max-width: 768px) {
+
+  /* 1. Positioning the Header ("En haut a droite") */
+  .floating-header {
+    top: 0;
+    right: 0;
+    left: auto;
+    width: auto;
+    padding: 1.5rem;
+    justify-content: flex-end;
+    pointer-events: none;
+    /* Let clicks pass through except on the interactive parts */
+  }
+
+  .header-inner {
+    background: transparent;
+    /* Remove the box look */
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
+    pointer-events: auto;
+  }
+
+  /* 2. The Burger Icon ("Moderne") */
+  .header-menu-icon {
+    display: block;
+    /* Visible on mobile */
+    width: 40px;
+    /* Larger hit area */
+    height: 40px;
+    position: relative;
+    z-index: 10001;
+    /* Above the overlay */
+    background: rgba(0, 0, 0, 0.2);
+    /* Subtle backing circle or just transparent? Let's go minimal glass */
+    backdrop-filter: blur(4px);
+    border-radius: 50%;
+    /* Circular touch target */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* The lines */
+  .header-menu-icon span,
+  .header-menu-icon::before,
+  .header-menu-icon::after {
+    content: '';
+    display: block;
+    width: 20px;
+    /* Actual visual width */
+    height: 2px;
+    background-color: var(--color-accent);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    /* Center horizontally */
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Bouncy modern transition */
+  }
+
+  /* Top Line */
+  .header-menu-icon::before {
+    top: 13px;
+  }
+
+  /* Middle Line */
+  .header-menu-icon span {
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Bottom Line */
+  .header-menu-icon::after {
+    bottom: 13px;
+  }
+
+  /* ACTIVE STATE (X) */
+  .header-menu-icon.is-open {
+    border-color: var(--color-accent);
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  .header-menu-icon.is-open::before {
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .header-menu-icon.is-open span {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    /* Shrink away */
+  }
+
+  .header-menu-icon.is-open::after {
+    bottom: 50%;
+    transform: translate(-50%, 50%) rotate(-45deg);
+    /* Fix rotation center */
+  }
+
+  /* Correction for true X centering */
+  .header-menu-icon.is-open::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  /* 3. The Menu Overlay ("Efficace") */
+  .header-nav {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 5, 5, 0.98);
+    /* Almost solid for readability */
+    backdrop-filter: blur(20px);
+    z-index: 10000;
+    padding: 6rem 2rem;
+
+    /* Animation state hidden */
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center items */
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .header-nav.active {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  .header-nav a {
+    font-size: 2rem;
+    /* Big readable font */
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+  }
+
+  .header-nav a:hover {
+    color: var(--color-accent);
+    transform: scale(1.1);
+  }
+
+  /* Hide main Visuals/About links on mobile in favor of Network list versions */
+  .header-nav>a[href="#visuals"],
+  .header-nav>a[href="#about"] {
+    display: none;
+  }
+
+  /* Handle Dropdowns in Overlay - Flatten them */
+  .nav-dropdown {
+    display: contents;
+    /* Remove container behavior */
+  }
+
+  .nav-trigger {
+    /* "MUSIC" header in menu */
+    color: var(--color-accent) !important;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    pointer-events: none;
+    /* Just a label in this mode? Or click to toggle? Let's make it a label */
+  }
+
+  .nav-submenu {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    background: transparent;
+    border: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    padding: 0;
+    margin: 0;
+    width: auto;
+  }
+
+  .nav-subitem::before {
+    display: none;
+    /* Remove arrow */
+  }
+
+  .nav-subitem {
+    font-size: 1.2rem !important;
+    /* Slightly smaller than main links */
+    padding: 0 !important;
+    color: #666;
+  }
+
+  /* Hide Rabbit */
+  .rabbit-link {
+    display: none;
+  }
+
+  .header-logo {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+
   /* Restore Rabbit Logo on Mobile */
   .rabbit-link {
-    display: flex !important; /* Force visible */
+    display: flex !important;
+    /* Force visible */
     margin-right: 0.5rem;
   }
-  
+
   .rabbit-logo {
-    height: 30px; /* Adjust size for mobile */
+    height: 30px;
+    /* Adjust size for mobile */
     width: auto;
   }
 
@@ -2212,14 +2228,16 @@ body.hovering #cursor-border {
     justify-content: flex-end;
     gap: 1.5rem;
     padding-bottom: 2rem;
-    pointer-events: none; /* Pass clicks */
+    pointer-events: none;
+    /* Pass clicks */
   }
 
   /* Ensure controls are interactive and centered */
   .bottom-controls {
     width: 100%;
     justify-content: center;
-    order: 1; /* Controls first */
+    order: 1;
+    /* Controls first */
     pointer-events: auto;
   }
 
@@ -2229,7 +2247,8 @@ body.hovering #cursor-border {
      Let's hide the terminal social list on very small screens or just center everything.
   */
   .terminal-social-container {
-    display: none; /* Simplify mobile hero */
+    display: none;
+    /* Simplify mobile hero */
   }
 
   /* Center the button cluster */
@@ -2240,368 +2259,378 @@ body.hovering #cursor-border {
 
   /* Position Scroll Indicator at the bottom center */
   .scroll-indicator {
-    position: static; /* Remove absolute positioning */
-    transform: none; /* Remove centering transform since we use flex */
-    order: 2; /* Place after controls */
+    position: static;
+    /* Remove absolute positioning */
+    transform: none;
+    /* Remove centering transform since we use flex */
+    order: 2;
+    /* Place after controls */
     font-size: 0.7rem;
     margin-top: 0.5rem;
     animation: bounce 2s infinite;
   }
 }
+
 @media (max-width: 768px) {
-    /* ========================================= */
-    /* MOBILE HEADER & BURGER (INTUITIVE & MINIMAL) */
-    /* ========================================= */
+  /* ========================================= */
+  /* MOBILE HEADER & BURGER (INTUITIVE & MINIMAL) */
+  /* ========================================= */
 
-    /* 1. Header Frame - Transparent & Minimal */
-    .floating-header {
-        top: 0;
-        right: 0;
-        left: auto;
-        width: auto;
-        padding: 1.5rem;
-        justify-content: flex-end;
-        pointer-events: none;
-    }
+  /* 1. Header Frame - Transparent & Minimal */
+  .floating-header {
+    top: 0;
+    right: 0;
+    left: auto;
+    width: auto;
+    padding: 1.5rem;
+    justify-content: flex-end;
+    pointer-events: none;
+  }
 
-    .header-inner {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        backdrop-filter: none;
-        padding: 0;
-        pointer-events: auto;
-    }
+  .header-inner {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
+    pointer-events: auto;
+  }
 
-    .header-logo {
-        display: none;
-    }
+  .header-logo {
+    display: none;
+  }
 
-    /* 2. Burger Icon - "Coding Effect" (Square, Monochromatic, Sharp) */
-    .header-menu-icon {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        width: 48px;
-        height: 48px;
-        padding: 12px 10px;
-        background: rgba(0, 0, 0, 0.8);
-        /* Dark Terminal Background */
-        border: 1px solid var(--color-dim);
-        border-radius: 2px;
-        /* Slight rounded corners but mostly square */
-        position: relative;
-        z-index: 10001;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    }
+  /* 2. Burger Icon - "Coding Effect" (Square, Monochromatic, Sharp) */
+  .header-menu-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 48px;
+    height: 48px;
+    padding: 12px 10px;
+    background: rgba(0, 0, 0, 0.8);
+    /* Dark Terminal Background */
+    border: 1px solid var(--color-dim);
+    border-radius: 2px;
+    /* Slight rounded corners but mostly square */
+    position: relative;
+    z-index: 10001;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  }
 
-    /* Glitch/Hover Effect on Burger */
-    .header-menu-icon:active {
-        transform: scale(0.95);
-        border-color: var(--color-accent);
-    }
+  /* Glitch/Hover Effect on Burger */
+  .header-menu-icon:active {
+    transform: scale(0.95);
+    border-color: var(--color-accent);
+  }
 
-    /* Lines */
-    .header-menu-icon span,
-    .header-menu-icon::before,
-    .header-menu-icon::after {
-        content: '';
-        display: block;
-        width: 100%;
-        height: 2px;
-        background-color: #fff;
-        /* White crisp lines */
-        position: relative;
-        left: 0;
-        transform: none;
-        transition: transform 0.3s, opacity 0.3s, background-color 0.3s;
-    }
+  /* Lines */
+  .header-menu-icon span,
+  .header-menu-icon::before,
+  .header-menu-icon::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: #fff;
+    /* White crisp lines */
+    position: relative;
+    left: 0;
+    transform: none;
+    transition: transform 0.3s, opacity 0.3s, background-color 0.3s;
+  }
 
-    /* Override previous styles */
-    .header-menu-icon::before {
-        top: 0;
-        box-shadow: none;
-    }
+  /* Override previous styles */
+  .header-menu-icon::before {
+    top: 0;
+    box-shadow: none;
+  }
 
-    .header-menu-icon span {
-        top: 0;
-        opacity: 1;
-    }
+  .header-menu-icon span {
+    top: 0;
+    opacity: 1;
+  }
 
-    .header-menu-icon::after {
-        top: 0;
-        bottom: auto;
-    }
+  .header-menu-icon::after {
+    top: 0;
+    bottom: auto;
+  }
 
-    /* OPEN STATE - Turn into X */
-    .header-menu-icon.is-open {
-        border-color: var(--color-accent);
-        background: #000;
-    }
+  /* OPEN STATE - Turn into X */
+  .header-menu-icon.is-open {
+    border-color: var(--color-accent);
+    background: #000;
+  }
 
-    .header-menu-icon.is-open span {
-        opacity: 0;
-    }
+  .header-menu-icon.is-open span {
+    opacity: 0;
+  }
 
-    .header-menu-icon.is-open::before {
-        transform: translateY(11px) rotate(45deg);
-        background-color: var(--color-accent);
-    }
+  .header-menu-icon.is-open::before {
+    transform: translateY(11px) rotate(45deg);
+    background-color: var(--color-accent);
+  }
 
-    .header-menu-icon.is-open::after {
-        transform: translateY(-11px) rotate(-45deg);
-        background-color: var(--color-accent);
-    }
+  .header-menu-icon.is-open::after {
+    transform: translateY(-11px) rotate(-45deg);
+    background-color: var(--color-accent);
+  }
 
-    /* 3. Immersive Terminal Nav Overlay */
-    .header-nav {
-        display: flex;
-        /* Always display flex but hide via opacity/transform */
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: #050505;
-        /* Deep black */
-        padding: 2rem;
-        z-index: 10000;
-        flex-direction: column;
-        justify-content: center;
-        align-items: flex-start;
-        /* Left align for terminal feel */
-        gap: 0;
-        /* Reset gap, handle with margin */
+  /* 3. Immersive Terminal Nav Overlay */
+  .header-nav {
+    display: flex;
+    /* Always display flex but hide via opacity/transform */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #050505;
+    /* Deep black */
+    padding: 2rem;
+    z-index: 10000;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    /* Left align for terminal feel */
+    gap: 0;
+    /* Reset gap, handle with margin */
 
-        /* Reveal Animation */
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-20px);
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Reveal Animation */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
-        /* Terminal aesthetics */
-        border-left: 2px solid var(--color-accent);
-        /* Left border accent */
-        margin-left: 0;
-    }
+    /* Terminal aesthetics */
+    border-left: 2px solid var(--color-accent);
+    /* Left border accent */
+    margin-left: 0;
+  }
 
-    /* Active State */
-    .header-nav.active {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
+  /* Active State */
+  .header-nav.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
 
-    /* Navigation Links - Coding Style */
-    .header-nav a {
-        font-family: 'JetBrains Mono', monospace;
-        /* Force Mono */
-        font-size: 1.5rem;
-        color: #444;
-        /* Dimmed initially */
-        text-transform: uppercase;
-        text-decoration: none;
-        padding: 1rem 0;
-        width: 100%;
-        border-bottom: 1px solid #111;
-        display: flex;
-        align-items: center;
-        transition: color 0.3s, padding-left 0.3s;
-    }
+  /* Navigation Links - Coding Style */
+  .header-nav a {
+    font-family: 'JetBrains Mono', monospace;
+    /* Force Mono */
+    font-size: 1.5rem;
+    color: #444;
+    /* Dimmed initially */
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 1rem 0;
+    width: 100%;
+    border-bottom: 1px solid #111;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s, padding-left 0.3s;
+  }
 
-    .header-nav a:hover,
-    .header-nav a:active {
-        color: var(--color-accent);
-        padding-left: 10px;
-        /* Indent on hover */
-    }
+  .header-nav a:hover,
+  .header-nav a:active {
+    color: var(--color-accent);
+    padding-left: 10px;
+    /* Indent on hover */
+  }
 
-    .header-nav a::before {
-        content: '> ';
-        color: var(--color-accent);
-        opacity: 0;
-        transition: opacity 0.3s;
-        margin-right: 0.5rem;
-    }
+  .header-nav a::before {
+    content: '> ';
+    color: var(--color-accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    margin-right: 0.5rem;
+  }
 
-    .header-nav a:hover::before,
-    .header-nav.active a::before {
-        opacity: 1;
-        /* Show cursor always when menu active? Or just hover? Let's do hover + active focus */
-    }
+  .header-nav a:hover::before,
+  .header-nav.active a::before {
+    opacity: 1;
+    /* Show cursor always when menu active? Or just hover? Let's do hover + active focus */
+  }
 
-    /* Dropdown flattening */
-    .nav-dropdown {
-        display: contents;
-    }
+  /* Dropdown flattening */
+  .nav-dropdown {
+    display: contents;
+  }
 
-    .nav-submenu {
-        display: flex;
-        flex-direction: column;
-        padding-left: 2rem;
-        width: 100%;
-        border-left: 1px solid #222;
-        margin-top: 0;
-        margin-bottom: 1rem;
-        background: transparent;
-        position: static;
-        visibility: visible;
-        opacity: 1;
-        transform: none;
-    }
+  .nav-submenu {
+    display: flex;
+    flex-direction: column;
+    padding-left: 2rem;
+    width: 100%;
+    border-left: 1px solid #222;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    background: transparent;
+    position: static;
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
 
-    .nav-trigger {
-        color: #fff !important;
-        /* Section headers white */
-        border-bottom: 2px solid #333;
-        pointer-events: none;
-        font-weight: bold;
-        letter-spacing: 0.1em;
-    }
+  .nav-trigger {
+    color: #fff !important;
+    /* Section headers white */
+    border-bottom: 2px solid #333;
+    pointer-events: none;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+  }
 
-    .nav-subitem {
-        font-size: 1.1rem !important;
-        border-bottom: 1px solid #111;
-        color: #777 !important;
-    }
+  .nav-subitem {
+    font-size: 1.1rem !important;
+    border-bottom: 1px solid #111;
+    color: #777 !important;
+  }
 
-    .nav-subitem::before {
-        content: '// ';
-        /* Code comment style for subitems */
-    }
+  .nav-subitem::before {
+    content: '// ';
+    /* Code comment style for subitems */
+  }
 
-    /* ========================================= */
-    /* HERO SECTION (MOBILE OPTIMIZED) */
-    /* ========================================= */
+  /* ========================================= */
+  /* HERO SECTION (MOBILE OPTIMIZED) */
+  /* ========================================= */
 
-    /* Restore Rabbit & Layout */
-    .rabbit-link {
-        display: flex !important;
-        margin-right: 1rem;
-    }
+  /* Restore Rabbit & Layout */
+  .rabbit-link {
+    display: flex !important;
+    margin-right: 1rem;
+  }
 
-    .rabbit-logo {
-        height: 40px;
-        /* Good size */
-        width: auto;
-        filter: drop-shadow(0 0 5px rgba(255, 102, 0, 0.3));
-        /* Slight glow */
-    }
+  .rabbit-logo {
+    height: 40px;
+    /* Good size */
+    width: auto;
+    filter: drop-shadow(0 0 5px rgba(255, 102, 0, 0.3));
+    /* Slight glow */
+  }
 
-    .hero-bottom-ui {
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 2rem;
-        padding-bottom: 4rem;
-        /* More space from bottom */
-        width: 100%;
-        left: 0;
-        bottom: 0;
-        pointer-events: none;
-    }
+  .hero-bottom-ui {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2rem;
+    padding-bottom: 4rem;
+    /* More space from bottom */
+    width: 100%;
+    left: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
 
-    .bottom-controls {
-        width: 100%;
-        justify-content: center;
-        align-items: center;
-        pointer-events: auto;
-        flex-direction: column;
-        /* Stack controls vertically on very narrow screens? No, cluster is fine */
-        gap: 1.5rem;
-    }
+  .bottom-controls {
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto;
+    flex-direction: column;
+    /* Stack controls vertically on very narrow screens? No, cluster is fine */
+    gap: 1.5rem;
+  }
 
-    .nav-cluster {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        width: 100%;
-        flex-wrap: wrap;
-        /* Allow wrapping if needed */
-    }
+  .nav-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+    flex-wrap: wrap;
+    /* Allow wrapping if needed */
+  }
 
-    .btn-smplr,
-    .btn-beta {
-        background: rgba(0, 0, 0, 0.5);
-        /* Semi-transparent */
-        backdrop-filter: blur(4px);
-        border: 1px solid #444;
-        color: #fff;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        padding: 0.8rem 1.2rem;
-        min-width: 100px;
-        text-align: center;
-    }
+  .btn-smplr,
+  .btn-beta {
+    background: rgba(0, 0, 0, 0.5);
+    /* Semi-transparent */
+    backdrop-filter: blur(4px);
+    border: 1px solid #444;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.8rem 1.2rem;
+    min-width: 100px;
+    text-align: center;
+  }
 
-    .btn-smplr:active,
-    .btn-beta:active {
-        background: var(--color-accent);
-        color: #000;
-    }
+  .btn-smplr:active,
+  .btn-beta:active {
+    background: var(--color-accent);
+    color: #000;
+  }
 
-    /* Scroll Indicator */
-    .scroll-indicator {
-        position: static;
-        transform: none;
-        margin-top: 1rem;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.7rem;
-        opacity: 0.7;
-        animation: bounce 2s infinite;
-        order: 10;
-        /* Last */
-        color: var(--color-accent);
-    }
+  /* Scroll Indicator */
+  .scroll-indicator {
+    position: static;
+    transform: none;
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    opacity: 0.7;
+    animation: bounce 2s infinite;
+    order: 10;
+    /* Last */
+    color: var(--color-accent);
+  }
 
-    /* Socials - Visible but minimal at very bottom? Or hidden?
+  /* Socials - Visible but minimal at very bottom? Or hidden?
      Let's Keep them hidden to reduce clutter as per desire for "minimal".
      Or we could add them to the Nav Menu bottom. 
   */
-    .terminal-social-container {
-        display: none;
-    }
+  .terminal-social-container {
+    display: none;
+  }
 
-    /* Title Scaling */
-    .hero-title {
-        font-size: 15vw;
-        /* Massive on mobile */
-        line-height: 0.9;
-    }
+  /* Title Scaling */
+  .hero-title {
+    font-size: 15vw;
+    /* Massive on mobile */
+    line-height: 0.9;
+  }
 
-    .hero-subtitle {
-        font-size: 0.7rem;
-        letter-spacing: 0.1em;
-        max-width: 80%;
-        margin: 2rem auto 0;
-    }
-}@media (max-width: 768px) {
-
-    /* Show Mobile Socials inside the burger menu */
-    .mobile-socials {
-        display: block !important;
-    }
-
-    /* Adjust nav spacing to fit content */
-    .header-nav {
-        justify-content: flex-start;
-        /* Start from top to allow scrolling if needed */
-        padding-top: 6rem;
-        overflow-y: auto;
-        /* Allow scroll on short screens */
-    }
+  .hero-subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    max-width: 80%;
+    margin: 2rem auto 0;
+  }
 }
+
 @media (max-width: 768px) {
+
+  /* Show Mobile Socials inside the burger menu */
+  .mobile-socials {
+    display: block !important;
+  }
+
+  /* Adjust nav spacing to fit content */
+  .header-nav {
+    justify-content: flex-start;
+    /* Start from top to allow scrolling if needed */
+    padding-top: 6rem;
+    overflow-y: auto;
+    /* Allow scroll on short screens */
+  }
+}
+
+@media (max-width: 768px) {
+
   /* HOTFIX: Force Burger Menu to Top Right */
   .header-menu-icon {
     position: fixed !important;
     top: 1.5rem !important;
     right: 1.5rem !important;
     left: auto !important;
-    transform: none !important; /* Reset any centering transforms if present */
-    z-index: 20005 !important; /* Ensure on top of everything */
+    transform: none !important;
+    /* Reset any centering transforms if present */
+    z-index: 20005 !important;
+    /* Ensure on top of everything */
   }
 }
 
@@ -2610,4 +2639,685 @@ body.hovering #cursor-border {
   filter: grayscale(0%) !important;
   transform: scale(1.1);
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: 75/25 Button Split & Latest Release Spacing */
+  /* ========================================= */
+
+  /* 1. BUTTON LAYOUT */
+  .nav-cluster {
+    display: flex;
+    flex-wrap: nowrap;
+    /* No wrapping */
+    align-items: stretch;
+    /* Equal Height */
+    justify-content: center;
+    gap: 0;
+    /* Touching each other */
+    width: 100%;
+    padding: 0 1rem;
+    /* Safety padding from screen edges */
+    box-sizing: border-box;
+  }
+
+  .btn-smplr {
+    width: 75%;
+    flex: 0 0 75%;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+    /* Merge look */
+    height: 60px;
+    /* Taller touch target */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-beta {
+    width: 25%;
+    flex: 0 0 25%;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.7rem;
+  }
+
+  .beta-line {
+    display: block;
+  }
+
+  /* 2. LATEST RELEASE SPACING ("Remonte le carré blanc") */
+  /* Reduce top padding of the section/components on mobile */
+
+  .lr-grid-container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .lr-header-left {
+    padding-top: 2rem !important;
+    /* Reduce top space */
+    padding-bottom: 1rem !important;
+  }
+
+  /* If the section itself has padding, remove it via specificity */
+  #music.section {
+    padding-top: 0 !important;
+  }
+
+  /* Pull it up if needed to reduce Hero gap */
+  .hero {
+    min-height: auto;
+    /* Allow hero to shrink to content on mobile? */
+    height: auto;
+    padding-bottom: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: Title Layout & Burger Positioning */
+  /* ========================================= */
+
+  /* 1. FORCE BURGER TO EXTREME RIGHT */
+  .header-menu-icon {
+    position: fixed !important;
+    top: 1.5rem !important;
+    right: 0 !important;
+    /* Stick to right edge */
+    left: auto !important;
+    margin-right: 1.5rem;
+    /* Safe padding from edge */
+    z-index: 20005 !important;
+  }
+
+  /* 2. PUSH TITLE DOWN TO MAKE SPACE */
+  .hero-content {
+    margin-top: 120px;
+    /* Push down significantly */
+    transition: margin-top 0.3s ease;
+  }
+
+  .hero-title {
+    /* Ensure title wraps or shrinks if needed, but margin handles the placement */
+    margin-top: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: Uniformity for Latest Release Covers on Mobile */
+  /* ========================================= */
+
+  /* Center alignment for the containers */
+  .lr-feature-content,
+  .lr-item {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  /* Make Main Feature Image and Release List Images identical in size/behavior */
+  .lr-image-wrapper,
+  .lr-item-cover-placeholder {
+    width: 100% !important;
+    max-width: 300px !important;
+    /* Uniform max size */
+    aspect-ratio: 1 !important;
+    margin: 1.5rem auto !important;
+    /* Center horizontally with auto margins */
+    order: -1;
+    /* Ensure image is always on top of text */
+  }
+
+  /* Adjust alignment of text to match centered aesthetic */
+  .lr-song-desc,
+  .lr-item-desc {
+    margin: 0 auto !important;
+    max-width: 100% !important;
+  }
+
+  .lr-item {
+    padding-top: 2rem !important;
+  }
+}
+
+/* ========================================= */
+/* FINAL BURGER MENU POSITIONING FIX */
+/* ========================================= */
+
+/* Ensure hidden on desktop */
+@media (min-width: 769px) {
+  .header-menu-icon {
+    display: none !important;
+  }
+}
+
+/* Mobile Positioning - Root Level */
+@media (max-width: 768px) {
+  .header-menu-icon {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    z-index: 99999 !important;
+    /* Maximum z-index */
+
+    /* Reset any inherited flex properties since it's now a div */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+}
+
+/* Rawbeat Logo Styles */
+.rawbeat-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Rawbeat Logo Actions --- */
+.rawbeat-link {
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.rawbeat-logo {
+  width: 40px;
+  height: auto;
+  image-rendering: pixelated;
+  transition: transform 0.1s ease;
+}
+
+/* Dance Animation Removed */
+
+/* --- System Glitch Effect (Body Class) --- */
+.system-failure {
+  animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  filter: invert(1) hue-rotate(180deg);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.system-failure::before,
+.system-failure::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 9999;
+  pointer-events: none;
+  mix-blend-mode: exclusion;
+}
+
+.system-failure::before {
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      #ff0000 2px,
+      #ff0000 4px);
+  animation: glitch-anim-1 0.1s infinite linear alternate-reverse;
+}
+
+.system-failure::after {
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      #00ff00 2px,
+      #00ff00 4px);
+  animation: glitch-anim-2 0.1s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-skew {
+  0% {
+    transform: skew(0deg);
+  }
+
+  20% {
+    transform: skew(-10deg);
+    filter: invert(0.8);
+  }
+
+  40% {
+    transform: skew(10deg);
+    filter: invert(1) blur(2px);
+  }
+
+  60% {
+    transform: skew(-5deg);
+  }
+
+  80% {
+    transform: skew(5deg);
+  }
+
+  100% {
+    transform: skew(0deg);
+  }
+}
+
+@keyframes glitch-anim-1 {
+  0% {
+    clip-path: inset(20% 0 80% 0);
+    transform: translate(-5px, 0);
+  }
+
+  100% {
+    clip-path: inset(60% 0 10% 0);
+    transform: translate(5px, 0);
+  }
+}
+
+@keyframes glitch-anim-2 {
+  0% {
+    clip-path: inset(10% 0 60% 0);
+    transform: translate(5px, 0);
+  }
+
+  100% {
+    clip-path: inset(80% 0 5% 0);
+    transform: translate(-5px, 0);
+  }
+}
+
+.rawbeat-logo {
+  height: 48px;
+  width: auto;
+  filter: invert(1);
+  /* Make it white */
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.rawbeat-logo:hover {
+  transform: scale(1.15) rotate(5deg);
+}
+
+@media (max-width: 768px) {
+
+  /* Mobile Adjustments for Cluster with Logo */
+  .nav-cluster {
+    gap: 0.5rem !important;
+    /* Minimal gap between logo and buttons */
+    justify-content: space-between !important;
+    /* Spread them out */
+    padding: 0 1rem !important;
+  }
+
+  .rawbeat-link {
+    flex: 0 0 50px;
+    /* Fixed small width for logo */
+    justify-content: flex-start;
+  }
+
+  .rawbeat-logo {
+    height: 40px;
+  }
+
+  /* Wrap buttons in grouping div equivalent via flex calc? 
+     Actually, let's just resize them to fit alongside the logo.
+     Available space = 100vw - 2rem(padding) - 50px(logo) - 0.5rem(gap) approx.
+     User requested 75% for Recycleur and 25% for Beta relative to each other?
+     "bouton recycleur prenne 75% de lecran mobil en largeur" -> strict 75vw? 
+     That leaves 25vw for Beta. Logo would push them off screen.
+     
+     I'll assume the USER meant "The buttons cluster should take up the width, with 75/25 split".
+     If I now have a logo, I should maintain the 75/25 ratio between the buttons, 
+     but they share the REMAINING space.
+  */
+
+  .btn-smplr {
+    flex: 3;
+    /* 3 parts (75%) */
+    width: auto !important;
+    /* Reset fixed width */
+  }
+
+  .btn-beta {
+    flex: 1;
+    /* 1 part (25%) */
+    width: auto !important;
+    /* Reset fixed width */
+  }
+
+  /* Ensure they touch */
+  .btn-smplr {
+    margin-right: 0;
+    border-right: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: Explicit Button Styling on Mobile */
+  /* ========================================= */
+
+  /* Force "Recycleur" to be White Checkered / Light */
+  .btn-smplr {
+    background: rgba(255, 255, 255, 0.9) !important;
+    /* White background */
+    color: #000 !important;
+    /* Black Text */
+    border: 1px solid #fff !important;
+  }
+
+  /* Force "Beta Beat" to be Stroke / Outline style */
+  .btn-beta {
+    background: transparent !important;
+    color: #fff !important;
+    /* White Text */
+    border: 1px solid #fff !important;
+    /* White Stroke */
+    backdrop-filter: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: Explicitly Left-Align Mobile Social Links */
+  /* ========================================= */
+
+  /* Force the container to align everything left */
+  .mobile-socials {
+    width: 100% !important;
+    text-align: left !important;
+    align-items: flex-start !important;
+    padding-left: 0 !important;
+    /* Remove any padding pushing it right */
+  }
+
+  /* Force the inner flex container to align left */
+  .mobile-socials>div {
+    align-items: flex-start !important;
+    width: 100% !important;
+  }
+
+  /* Force all links to start from the absolute left edge of their container */
+  .mobile-socials .nav-subitem {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    padding-left: 0 !important;
+    /* Reset padding */
+    margin-left: 0 !important;
+    width: 100% !important;
+    display: block !important;
+    /* Ensure block behavior */
+    border-bottom: 1px dotted #333;
+    /* Optional: guide lines */
+  }
+
+  /* Remove any pseudo-element arrows or icons pushing text */
+  .mobile-socials .nav-subitem::before {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: New Mobile Socials Design */
+  /* ========================================= */
+
+  .mobile-socials-wrapper {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 3rem;
+    /* Space from main links */
+    border-top: 1px dashed #222;
+    padding-top: 1.5rem;
+    align-items: flex-start !important;
+    /* Force Left Align */
+  }
+
+  .mobile-social-header {
+    font-family: 'JetBrains Mono', monospace;
+    color: #555;
+    font-size: 0.75rem;
+    margin-bottom: 1rem;
+    padding-left: 0;
+    text-align: left;
+    width: 100%;
+    letter-spacing: 1px;
+  }
+
+  .mobile-social-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .mobile-social-link {
+    font-family: 'JetBrains Mono', monospace;
+    color: #888;
+    text-decoration: none;
+    font-size: 0.7rem;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    width: 100%;
+  }
+
+  .mobile-only-item {
+    display: flex !important;
+  }
+
+  /* Prefix with arrow for terminal feel */
+  .mobile-social-link::before {
+    content: '> ';
+    color: #444;
+    margin-right: 0.5rem;
+    display: inline-block;
+  }
+
+  .mobile-social-link:hover {
+    color: var(--color-accent);
+    padding-left: 5px;
+    /* Slight movement */
+    background: rgba(255, 255, 255, 0.05);
+    /* Slight highlight box */
+  }
+
+  .mobile-social-link:hover::before {
+    color: var(--color-accent);
+  }
+}
+
+/* Hide on Desktop */
+@media (min-width: 769px) {
+  .mobile-socials-wrapper {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: Absolute Positioning for Mobile Socials */
+  /* ========================================= */
+
+  /* Ensure header nav has relative positioning for absolute child */
+  .header-nav {
+    position: fixed !important;
+    /* It's already fixed, but ensures context */
+    /* Ensure padding doesn't clip absolute child if box-sizing is weird, 
+       but absolute ignores padding of parent usually unless it's the containing block.
+       Actually fixed position creates a containing block for absolute children? 
+       No, fixed is the containing block for absolute if it has non-static position. 
+       .header-nav is fixed. */
+  }
+
+  .mobile-socials-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    padding: 2rem !important;
+    /* Match parent padding */
+    padding-bottom: 2.5rem !important;
+    /* Safe area for bottom */
+    background: linear-gradient(to top, #050505 90%, transparent) !important;
+    /* Blend it in */
+    z-index: 10 !important;
+
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+
+  /* Ensure header text / list is left aligned */
+  .mobile-social-header {
+    text-align: left !important;
+    width: 100% !important;
+    margin-bottom: 15px !important;
+    font-size: 0.8rem !important;
+    color: #444 !important;
+  }
+
+  .mobile-social-list {
+    align-items: flex-start !important;
+    width: 100% !important;
+  }
+
+  .mobile-social-link {
+    text-align: left !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    padding-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* FIX: Hero Section Social List Alignment */
+  /* ========================================= */
+
+  /* Target the container in the Hero section */
+  .terminal-social-container {
+    width: 100% !important;
+    align-items: flex-start !important;
+    /* Force Flex items to left */
+    text-align: left !important;
+    /* Force text to left */
+    padding-left: 2rem !important;
+    /* Add space from screen edge */
+  }
+
+  /* Target the UL list */
+  .terminal-social-list {
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  /* Target the list items and links */
+  .terminal-social-list li,
+  .terminal-social-list a {
+    text-align: left !important;
+    width: 100% !important;
+    display: block !important;
+    /* Ensure they take full width to prevent centering effects */
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ========================================= */
+  /* NEW PRESENTATION: Horizontal Data Stream  */
+  /* ========================================= */
+
+  /* Reset the container to be a horizontal scroll strip */
+  .terminal-social-container {
+    width: 100vw !important;
+    /* Full viewport width */
+    margin-left: -2rem !important;
+    /* Counteract parent padding to touch edges */
+    padding: 1rem 0 !important;
+    background: transparent !important;
+    position: relative !important;
+    right: auto !important;
+    left: 0 !important;
+    align-items: center !important;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+  /* Hide the "Initializing" header on mobile for cleaner look */
+  .term-line-header {
+    display: none !important;
+  }
+
+  /* The list becomes a horizontal flex row */
+  .terminal-social-list {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+    overflow-x: auto !important;
+    padding: 0 2rem !important;
+    /* Pad starts */
+    width: auto !important;
+    white-space: nowrap !important;
+
+    /* Hide scrollbar */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .terminal-social-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Links style */
+  .terminal-social-list a {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.6rem !important;
+    /* Even smaller */
+    color: #888 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    border: 1px solid #333 !important;
+    padding: 0.2rem 0.5rem !important;
+    /* Tighter padding */
+    border-radius: 4px !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .terminal-social-list li {
+    opacity: 1 !important;
+    /* Ensure visible immediately */
+    animation: none !important;
+    /* Remove delay animation */
+    transform: none !important;
+  }
+
+  /* Active/Hover state */
+  .terminal-social-list a:active,
+  .terminal-social-list a:focus {
+    color: #fff !important;
+    border-color: var(--color-accent) !important;
+    background: var(--color-accent) !important;
+    color: #000 !important;
+  }
 }

@@ -1,6 +1,7 @@
 // import './style.css'
 // import './rawbeat.css'
 
+
 // Animated Background Canvas
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
@@ -77,18 +78,35 @@ class Particle {
 
     // 2. Scroll / Vortex Physics
     if (vortexStrength > 0.1) {
-      // ... existing vortex logic with added twist for characters ...
       const dx = centerX - this.x;
       const dy = centerY - this.y;
       const distCenter = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx);
 
-      const pull = vortexStrength * 0.05;
-      this.x += Math.cos(angle) * pull * (distCenter / 50); // Stronger pull
-      this.y += Math.sin(angle) * pull * (distCenter / 50);
+      // Calculate angle towards center
+      let angle = Math.atan2(dy, dx);
+
+      // Add swirl (spiral effect) - closer to 90deg (PI/2) means more orbit, less suction
+      // Randomize direction slightly per particle for organic feel?
+      // Let's make a nice galaxy spiral: Angle + offset
+      angle += 1.5; // Nearly perpendicular (orbit) with slight inward pull
+
+      const pull = vortexStrength * 0.02; // Reduced pull factor
+
+      // Orbit velocity based on distance (faster near center, like gravity)
+      // But limit suction at very close range to avoid singularity
+
+      if (distCenter < 50) {
+        // Too close! Push out / orbit fast without getting sucked in
+        this.x -= Math.cos(angle) * 2;
+        this.y -= Math.sin(angle) * 2;
+        this.energy = 1; // Glow up
+      } else {
+        this.x += Math.cos(angle) * pull * (distCenter / 20);
+        this.y += Math.sin(angle) * pull * (distCenter / 20);
+      }
 
       // Add "Data Stream" speed
-      this.energy = Math.min(this.energy + 0.05, 1);
+      this.energy = Math.min(this.energy + 0.02, 1);
     } else {
       // Normal drift
       this.x += this.speedX;
@@ -137,7 +155,7 @@ class Particle {
 // Initialize particles
 function initParticles() {
   particles = [];
-  const particleCount = Math.floor((canvas.width * canvas.height) / 20000); // Increased density slightly for "WOW" effect
+  const particleCount = Math.floor((canvas.width * canvas.height) / 4000); // Much higher density
   for (let i = 0; i < particleCount; i++) {
     particles.push(new Particle());
   }
@@ -689,7 +707,26 @@ if (menuIcon && headerNav) {
   navLinks.forEach(link => {
     link.addEventListener('click', () => {
       headerNav.classList.remove('active');
-      menuIcon.textContent = '=';
+      menuIcon.classList.remove('is-open');
     });
+  });
+}
+
+
+// Rawbeat Logo Interaction (Glitch & Dance)
+const rawbeatLink = document.querySelector('.rawbeat-link');
+if (rawbeatLink) {
+  rawbeatLink.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    // Trigger Glitch
+    document.body.classList.add('system-failure');
+
+    // Play harsh static sound if possible (optional, keeping silent for now as requested)
+
+    // Remove after 1s
+    setTimeout(() => {
+      document.body.classList.remove('system-failure');
+    }, 1000);
   });
 }
