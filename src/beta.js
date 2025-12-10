@@ -1,29 +1,78 @@
-import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc } from './firebase.js';
+import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc, ref, uploadBytesResumable, getDownloadURL } from './firebase.js';
 import WaveSurfer from 'wavesurfer.js';
 
 // Custom Cursor Logic (Auto-Inject)
+// Custom Cursor Logic (Auto-Inject)
 function initCursor() {
-  let cursor = document.getElementById('cursor');
-  let cursorBorder = document.getElementById('cursor-border');
+  const getCursor = () => document.getElementById('cursor');
+  const getBorder = () => document.getElementById('cursor-border');
 
-  // Create if missing
-  if (!cursor) {
-    cursor = document.createElement('div');
-    cursor.id = 'cursor';
-    document.body.appendChild(cursor);
-  }
-  if (!cursorBorder) {
-    cursorBorder = document.createElement('div');
-    cursorBorder.id = 'cursor-border';
-    document.body.appendChild(cursorBorder);
-  }
+  let cursor = getCursor();
+  let cursorBorder = getBorder();
+
+  // Helper to apply critical styles
+  const applyStyles = (el, isBorder) => {
+    el.style.position = 'fixed';
+    el.style.pointerEvents = 'none';
+    el.style.zIndex = isBorder ? '999998' : '999999';
+    el.style.borderRadius = '50%';
+    el.style.transform = 'translate(-50%, -50%)';
+
+    if (isBorder) {
+      el.style.width = '30px';
+      el.style.height = '30px';
+      el.style.border = '1px solid var(--color-accent, #ff6600)';
+      el.style.transition = 'top 0.1s, left 0.1s, width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s';
+    } else {
+      el.style.width = '6px';
+      el.style.height = '6px';
+      el.style.backgroundColor = 'var(--color-accent, #ff6600)';
+      el.style.transition = 'width 0.2s, height 0.2s, background-color 0.2s';
+    }
+  };
+
+  const createCursor = () => {
+    if (!cursor) {
+      cursor = document.createElement('div');
+      cursor.id = 'cursor';
+      applyStyles(cursor, false);
+      document.body.appendChild(cursor);
+    }
+    if (!cursorBorder) {
+      cursorBorder = document.createElement('div');
+      cursorBorder.id = 'cursor-border';
+      applyStyles(cursorBorder, true);
+      document.body.appendChild(cursorBorder);
+    }
+  };
+
+  createCursor();
+
+  // Ensure they stay in DOM
+  const observer = new MutationObserver((mutations) => {
+    if (!document.body.contains(cursor) || !document.body.contains(cursorBorder)) {
+      cursor = getCursor(); // Try to find again
+      cursorBorder = getBorder();
+      createCursor(); // Re-create if missing
+    }
+  });
+
+  observer.observe(document.body, { childList: true });
 
   document.addEventListener('mousemove', (e) => {
+    if (!cursor || !cursorBorder) {
+      cursor = getCursor();
+      cursorBorder = getBorder();
+      if (!cursor || !cursorBorder) return;
+    }
     cursor.style.left = e.clientX + 'px';
     cursor.style.top = e.clientY + 'px';
+    // Use requestAnimationFrame for smoother border follow if possible, but setTimeout 50ms is the existing style
     setTimeout(() => {
-      cursorBorder.style.left = e.clientX + 'px';
-      cursorBorder.style.top = e.clientY + 'px';
+      if (cursorBorder) {
+        cursorBorder.style.left = e.clientX + 'px';
+        cursorBorder.style.top = e.clientY + 'px';
+      }
     }, 50);
   });
 }
@@ -176,53 +225,26 @@ function animate() {
 animate();
 
 // Firestore Helper & Variables
-const CHUNK_SIZE = 400 * 1024; // Reduced to 400KB for stability
-
-async function saveAudioFile(file, onProgress) {
+async function uploadFileToStorage(file, path, onProgress) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async (event) => {
-      try {
-        const fullDataUrl = event.target.result;
-        const totalLength = fullDataUrl.length;
-        const totalChunks = Math.ceil(totalLength / CHUNK_SIZE);
-        const fileId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const chunkIds = [];
+    const storageRef = ref(storage, path);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-        console.log(`Starting upload for ${file.name}: ${totalLength} bytes in ${totalChunks} chunks.`);
-
-        for (let i = 0; i < totalChunks; i++) {
-          const start = i * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, totalLength);
-          const chunkData = fullDataUrl.substring(start, end);
-          const chunkId = `${fileId}_chunk_${i}`;
-
-          console.log(`Uploading chunk ${i + 1}/${totalChunks}...`);
-
-          await setDoc(doc(db, "audio_chunks", chunkId), {
-            data: chunkData,
-            index: i,
-            fileId: fileId
-          });
-
-          chunkIds.push(chunkId);
-
-          if (onProgress) {
-            onProgress(((i + 1) / totalChunks) * 100);
-          }
-        }
-        console.log("Upload complete for " + file.name);
-        resolve(chunkIds);
-      } catch (e) {
-        console.error("Error in saveAudioFile loop:", e);
-        reject(e);
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        if (onProgress) onProgress(progress);
+      },
+      (error) => {
+        console.error("Upload failed:", error);
+        reject(error);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          resolve(downloadURL);
+        });
       }
-    };
-    reader.onerror = (e) => {
-      console.error("FileReader error:", e);
-      reject(e);
-    };
+    );
   });
 }
 
@@ -260,6 +282,7 @@ const DB = {
 let currentAlbums = [];
 let uploadedTracks = [];
 let coverImage = null;
+let coverFile = null;
 
 function escapeHTML(str) {
   if (!str) return '';
@@ -472,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('coverUpload').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
+      coverFile = file;
       const reader = new FileReader();
       reader.onload = (e) => {
         coverImage = e.target.result;
@@ -510,27 +534,38 @@ document.addEventListener('DOMContentLoaded', () => {
   window.deleteAlbum = async (id) => { if (confirm('Delete?')) { await DB.delete(id); loadOwnerAlbums(); } };
 
   // PUBLISH LOGIC
+
   const publishBtn = document.getElementById('publishBtn');
   if (publishBtn) {
     publishBtn.addEventListener('click', async () => {
       const title = document.getElementById('albumTitle').value;
-      if (!title || !coverImage || uploadedTracks.length === 0) return alert('Incomplete');
+      // We check coverFile existence now instead of just coverImage (though coverImage is set for preview)
+      if (!title || !coverFile || uploadedTracks.length === 0) return alert('Incomplete');
 
       try {
         publishBtn.disabled = true;
         const timestamp = Date.now();
         let uploadedTrackData = [];
 
+        // 1. Upload Cover
+        publishBtn.textContent = 'UPLOADING COVER...';
+        const coverPath = `covers/${timestamp}_${coverFile.name}`;
+        const coverURL = await uploadFileToStorage(coverFile, coverPath);
+
+        // 2. Upload Tracks
         for (let i = 0; i < uploadedTracks.length; i++) {
           const track = uploadedTracks[i];
           publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (0%)...`;
-          const chunkIds = await saveAudioFile(track.file, (p) => {
+
+          const trackPath = `tracks/${timestamp}_${track.file.name}`;
+          const trackURL = await uploadFileToStorage(track.file, trackPath, (p) => {
             publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (${Math.floor(p)}%)...`;
           });
-          uploadedTrackData.push({ name: track.name, chunkIds, comments: [] });
+
+          uploadedTrackData.push({ name: track.name, url: trackURL, comments: [] });
         }
 
-        const album = { id: timestamp, title, cover: coverImage, tracks: uploadedTrackData, publishedAt: new Date().toISOString() };
+        const album = { id: timestamp, title, cover: coverURL, tracks: uploadedTrackData, publishedAt: new Date().toISOString() };
         await DB.save(album);
         currentAlbums.push(album);
 
@@ -539,6 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('coverPreview').innerHTML = '';
         uploadedTracks = [];
         coverImage = null;
+        coverFile = null;
         renderTracksList();
         loadOwnerAlbums();
         alert('Published!');

@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, getDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 
 // TODO: Replace the following with your app's Firebase project configuration
 // You can get this from the Firebase Console (https://console.firebase.google.com/)
@@ -22,4 +22,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-export { db, storage, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, ref, uploadBytes, getDownloadURL, deleteObject, getDoc };
+export { db, storage, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject, getDoc };
