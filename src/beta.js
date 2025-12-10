@@ -1,11 +1,23 @@
 import { db, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc } from './firebase.js';
 import WaveSurfer from 'wavesurfer.js';
 
-// Custom Cursor Logic
-const cursor = document.getElementById('cursor');
-const cursorBorder = document.getElementById('cursor-border');
+// Custom Cursor Logic (Auto-Inject)
+function initCursor() {
+  let cursor = document.getElementById('cursor');
+  let cursorBorder = document.getElementById('cursor-border');
 
-if (cursor && cursorBorder) {
+  // Create if missing
+  if (!cursor) {
+    cursor = document.createElement('div');
+    cursor.id = 'cursor';
+    document.body.appendChild(cursor);
+  }
+  if (!cursorBorder) {
+    cursorBorder = document.createElement('div');
+    cursorBorder.id = 'cursor-border';
+    document.body.appendChild(cursorBorder);
+  }
+
   document.addEventListener('mousemove', (e) => {
     cursor.style.left = e.clientX + 'px';
     cursor.style.top = e.clientY + 'px';
@@ -15,6 +27,9 @@ if (cursor && cursorBorder) {
     }, 50);
   });
 }
+
+// Initialize immediately
+initCursor();
 
 // Visualizer & Background Animation
 const canvas = document.getElementById('bg-canvas');
