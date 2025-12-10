@@ -152,27 +152,56 @@ function animate() {
 animate();
 
 // Firestore Helper & Variables
-async function uploadFileToStorage(file, path, onProgress) {
-  return new Promise((resolve, reject) => {
-    const storageRef = ref(storage, path);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+const CHUNK_SIZE = 300 * 1024; // 300KB chunks to be safe within 1MB limit
 
-    uploadTask.on('state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        if (onProgress) onProgress(progress);
-      },
-      (error) => {
-        console.error("Upload failed:", error);
-        reject(error);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          resolve(downloadURL);
-        });
-      }
-    );
+// Helper: Convert File to Base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
   });
+}
+
+// Upload Audio via Chunking (Firestore)
+async function saveAudioFile(file, onProgress) {
+  try {
+    const base64Data = await fileToBase64(file);
+    const totalLength = base64Data.length;
+    const totalChunks = Math.ceil(totalLength / CHUNK_SIZE);
+    const fileId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const chunkIds = [];
+
+    console.log(`Starting upload for ${file.name}: ${totalLength} chars in ${totalChunks} chunks.`);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, totalLength);
+      const chunkContent = base64Data.substring(start, end);
+      const chunkId = `${fileId}_chunk_${i}`;
+
+      // Save chunk
+      await setDoc(doc(db, "audio_chunks", chunkId), {
+        data: chunkContent,
+        index: i,
+        fileId: fileId,
+        totalChunks: totalChunks
+      });
+
+      chunkIds.push(chunkId);
+
+      // Progress
+      if (onProgress) {
+        const percent = ((i + 1) / totalChunks) * 100;
+        onProgress(percent);
+      }
+    }
+    return chunkIds;
+  } catch (e) {
+    console.error("Chunk upload failed:", e);
+    throw e;
+  }
 }
 
 async function loadAudioFile(chunkIds) {
@@ -474,25 +503,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const timestamp = Date.now();
         let uploadedTrackData = [];
 
-        // 1. Upload Cover
-        publishBtn.textContent = 'UPLOADING COVER...';
-        const coverPath = `covers/${timestamp}_${coverFile.name}`;
-        const coverURL = await uploadFileToStorage(coverFile, coverPath);
+        // 1. Prepare Cover (Base64)
+        // Check size
+        if (coverFile.size > 2 * 1024 * 1024) {
+          if (!confirm("Cover image is large (>2MB). This might slow down loading. Continue?")) {
+            publishBtn.disabled = false;
+            publishBtn.textContent = 'PUBLISH FOR TESTING';
+            return;
+          }
+        }
 
-        // 2. Upload Tracks
+        // We already have 'coverImage' as base64 string from the preview reader
+
+        // 2. Upload Tracks (Chunking)
         for (let i = 0; i < uploadedTracks.length; i++) {
           const track = uploadedTracks[i];
           publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (0%)...`;
 
-          const trackPath = `tracks/${timestamp}_${track.file.name}`;
-          const trackURL = await uploadFileToStorage(track.file, trackPath, (p) => {
+          const chunkIds = await saveAudioFile(track.file, (p) => {
             publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (${Math.floor(p)}%)...`;
           });
 
-          uploadedTrackData.push({ name: track.name, url: trackURL, comments: [] });
+          uploadedTrackData.push({ name: track.name, chunkIds: chunkIds, comments: [] });
         }
 
-        const album = { id: timestamp, title, cover: coverURL, tracks: uploadedTrackData, publishedAt: new Date().toISOString() };
+        const album = {
+          id: timestamp,
+          title,
+          cover: coverImage, // Save Base64 Directly
+          tracks: uploadedTrackData,
+          publishedAt: new Date().toISOString()
+        };
+
         await DB.save(album);
         currentAlbums.push(album);
 
@@ -504,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         coverFile = null;
         renderTracksList();
         loadOwnerAlbums();
-        alert('Published!');
+        alert('Published! (Saved to Firestore)');
 
       } catch (e) {
         console.error(e);
