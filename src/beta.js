@@ -2,83 +2,10 @@ import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, ge
 import WaveSurfer from 'wavesurfer.js';
 
 // Custom Cursor Logic (Auto-Inject)
-// Custom Cursor Logic (Auto-Inject)
-function initCursor() {
-  const getCursor = () => document.getElementById('cursor');
-  const getBorder = () => document.getElementById('cursor-border');
-
-  let cursor = getCursor();
-  let cursorBorder = getBorder();
-
-  // Helper to apply critical styles
-  const applyStyles = (el, isBorder) => {
-    el.style.position = 'fixed';
-    el.style.pointerEvents = 'none';
-    el.style.zIndex = isBorder ? '999998' : '999999';
-    el.style.borderRadius = '50%';
-    el.style.transform = 'translate(-50%, -50%)';
-
-    if (isBorder) {
-      el.style.width = '30px';
-      el.style.height = '30px';
-      el.style.border = '1px solid var(--color-accent, #ff6600)';
-      el.style.transition = 'top 0.1s, left 0.1s, width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s';
-    } else {
-      el.style.width = '6px';
-      el.style.height = '6px';
-      el.style.backgroundColor = 'var(--color-accent, #ff6600)';
-      el.style.transition = 'width 0.2s, height 0.2s, background-color 0.2s';
-    }
-  };
-
-  const createCursor = () => {
-    if (!cursor) {
-      cursor = document.createElement('div');
-      cursor.id = 'cursor';
-      applyStyles(cursor, false);
-      document.body.appendChild(cursor);
-    }
-    if (!cursorBorder) {
-      cursorBorder = document.createElement('div');
-      cursorBorder.id = 'cursor-border';
-      applyStyles(cursorBorder, true);
-      document.body.appendChild(cursorBorder);
-    }
-  };
-
-  createCursor();
-
-  // Ensure they stay in DOM
-  const observer = new MutationObserver((mutations) => {
-    if (!document.body.contains(cursor) || !document.body.contains(cursorBorder)) {
-      cursor = getCursor(); // Try to find again
-      cursorBorder = getBorder();
-      createCursor(); // Re-create if missing
-    }
-  });
-
-  observer.observe(document.body, { childList: true });
-
-  document.addEventListener('mousemove', (e) => {
-    if (!cursor || !cursorBorder) {
-      cursor = getCursor();
-      cursorBorder = getBorder();
-      if (!cursor || !cursorBorder) return;
-    }
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
-    // Use requestAnimationFrame for smoother border follow if possible, but setTimeout 50ms is the existing style
-    setTimeout(() => {
-      if (cursorBorder) {
-        cursorBorder.style.left = e.clientX + 'px';
-        cursorBorder.style.top = e.clientY + 'px';
-      }
-    }, 50);
-  });
-}
+// Custom Cursor Logic moved to src/cursor.js
 
 // Initialize immediately
-initCursor();
+
 
 // Visualizer & Background Animation
 const canvas = document.getElementById('bg-canvas');
