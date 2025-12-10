@@ -161,7 +161,7 @@ function animate() {
 animate();
 
 // Firestore Helper & Variables
-const CHUNK_SIZE = 800 * 1024;
+const CHUNK_SIZE = 400 * 1024; // Reduced to 400KB for stability
 
 async function saveAudioFile(file, onProgress) {
   return new Promise((resolve, reject) => {
@@ -175,29 +175,39 @@ async function saveAudioFile(file, onProgress) {
         const fileId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const chunkIds = [];
 
+        console.log(`Starting upload for ${file.name}: ${totalLength} bytes in ${totalChunks} chunks.`);
+
         for (let i = 0; i < totalChunks; i++) {
           const start = i * CHUNK_SIZE;
           const end = Math.min(start + CHUNK_SIZE, totalLength);
           const chunkData = fullDataUrl.substring(start, end);
           const chunkId = `${fileId}_chunk_${i}`;
 
+          console.log(`Uploading chunk ${i + 1}/${totalChunks}...`);
+
           await setDoc(doc(db, "audio_chunks", chunkId), {
             data: chunkData,
             index: i,
             fileId: fileId
           });
+
           chunkIds.push(chunkId);
 
           if (onProgress) {
             onProgress(((i + 1) / totalChunks) * 100);
           }
         }
+        console.log("Upload complete for " + file.name);
         resolve(chunkIds);
       } catch (e) {
+        console.error("Error in saveAudioFile loop:", e);
         reject(e);
       }
     };
-    reader.onerror = (e) => reject(e);
+    reader.onerror = (e) => {
+      console.error("FileReader error:", e);
+      reject(e);
+    };
   });
 }
 
