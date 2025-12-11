@@ -283,37 +283,64 @@ async function checkPassword(input) {
   return hashHex === '94f7188ada6d383c589a8066f29c7f3772f6e6132fd55b30056dd5896fc2e8bc';
 }
 
-// MAIN APP INITIALIZATION
-// MAIN APP INITIALIZATION
-function initApp() {
-
-  // --- DEBUG LOGGER ---
-  function logToScreen(msg, type = 'info') {
-    const debugDiv = document.getElementById('debugLog');
-    if (debugDiv) {
+// --- ROBUST DEBUG LOGGER (TOP LEVEL) ---
+const logBuffer = [];
+function flushLogs() {
+  const debugDiv = document.getElementById('debugLog');
+  if (debugDiv && logBuffer.length > 0) {
+    logBuffer.forEach(({ msg, type }) => {
       const line = document.createElement('div');
       line.style.color = type === 'error' ? '#ff3333' : '#00ff00';
       line.style.marginBottom = '2px';
+      line.style.borderBottom = '1px solid #222';
       line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
       debugDiv.appendChild(line);
-      debugDiv.scrollTop = debugDiv.scrollHeight;
-    }
+    });
+    logBuffer.length = 0; // Clear buffer
+    debugDiv.scrollTop = debugDiv.scrollHeight;
   }
+}
 
-  // Override Console
-  const originalLog = console.log;
-  const originalError = console.error;
+// Override Console Immediately
+const originalLog = console.log;
+const originalError = console.error;
 
-  console.log = (...args) => {
-    originalLog(...args);
-    logToScreen(args.join(' '));
-  };
-  console.error = (...args) => {
-    originalError(...args);
-    logToScreen(args.join(' '), 'error');
-  };
+function internalLog(type, args) {
+  const msg = args.join(' ');
+  const debugDiv = document.getElementById('debugLog');
 
-  console.log('Initializing Beta Backend... (v2.1 Debug)');
+  if (debugDiv) {
+    // If DOM is ready, flush any old logs first, then write new one
+    if (logBuffer.length > 0) flushLogs();
+
+    const line = document.createElement('div');
+    line.style.color = type === 'error' ? '#ff3333' : '#00ff00';
+    line.style.marginBottom = '2px';
+    line.style.borderBottom = '1px solid #222';
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    debugDiv.appendChild(line);
+    debugDiv.scrollTop = debugDiv.scrollHeight;
+  } else {
+    // Buffer it
+    logBuffer.push({ msg, type });
+  }
+}
+
+console.log = (...args) => { originalLog(...args); internalLog('info', args); };
+console.error = (...args) => { originalError(...args); internalLog('error', args); };
+
+// Catch Global Errors
+window.onerror = function (msg, source, lineno, colno, error) {
+  console.error(`CRITICAL ERROR: ${msg} at ${source}:${lineno}`);
+  return false;
+};
+
+// MAIN APP INITIALIZATION
+function initApp() {
+  console.log('Initializing Beta Backend... (v2.2 Buffered)');
+
+  // Try to flush any logs that happened before DOM was ready
+  setTimeout(flushLogs, 1000); // Give UI a moment to render
 
   if (!db) { console.error("Firebase DB not initialized!"); return; }
 
