@@ -284,8 +284,36 @@ async function checkPassword(input) {
 }
 
 // MAIN APP INITIALIZATION
+// MAIN APP INITIALIZATION
 function initApp() {
-  console.log('Initializing Beta Backend... (v2.0 fixed)');
+
+  // --- DEBUG LOGGER ---
+  function logToScreen(msg, type = 'info') {
+    const debugDiv = document.getElementById('debugLog');
+    if (debugDiv) {
+      const line = document.createElement('div');
+      line.style.color = type === 'error' ? '#ff3333' : '#00ff00';
+      line.style.marginBottom = '2px';
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      debugDiv.appendChild(line);
+      debugDiv.scrollTop = debugDiv.scrollHeight;
+    }
+  }
+
+  // Override Console
+  const originalLog = console.log;
+  const originalError = console.error;
+
+  console.log = (...args) => {
+    originalLog(...args);
+    logToScreen(args.join(' '));
+  };
+  console.error = (...args) => {
+    originalError(...args);
+    logToScreen(args.join(' '), 'error');
+  };
+
+  console.log('Initializing Beta Backend... (v2.1 Debug)');
 
   if (!db) { console.error("Firebase DB not initialized!"); return; }
 
