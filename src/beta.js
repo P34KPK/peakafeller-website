@@ -8,11 +8,45 @@ let particles = [];
 let momentumY = 0;
 let lastScrollY = window.scrollY;
 
+
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
 }
 resizeCanvas();
+
+// --- IMAGE COMPRESSION HELPER ---
+function compressImage(file, maxWidth = 800, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+}
 
 class Particle {
   constructor() {
@@ -251,7 +285,9 @@ async function checkPassword(input) {
 
 // MAIN APP INITIALIZATION
 function initApp() {
-  console.log('Initializing Beta Backend...');
+  console.log('Initializing Beta Backend... (v2.0 fixed)');
+
+  if (!db) { console.error("Firebase DB not initialized!"); return; }
 
   // Hook for UI Script
   window.loadOwnerData = () => {
@@ -264,27 +300,61 @@ function initApp() {
   // File Inputs
   const coverUpload = document.getElementById('coverUpload');
   if (coverUpload) {
-    coverUpload.addEventListener('change', (e) => {
+    console.log('Cover Upload input found, attaching listener...');
+    coverUpload.addEventListener('change', async (e) => {
+      console.log('File selected...');
       const file = e.target.files[0];
       if (file) {
-        coverFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          coverImage = e.target.result;
-          document.getElementById('coverPreview').innerHTML = `<img src="${coverImage}">`;
-        };
-        reader.readAsDataURL(file);
+        console.log('File:', file.name, file.size, file.type);
+        try {
+          const preview = document.getElementById('coverPreview');
+          preview.innerHTML = '<p style="color:var(--color-accent); font-weight:bold;">COMPRESSING...</p>';
+
+          coverFile = file;
+
+          // Attempt compression
+          try {
+            coverImage = await compressImage(file, 600, 0.7);
+            console.log('Compression success');
+            preview.innerHTML = `<img src="${coverImage}" style="max-width:100%; border-radius:4px; border:1px solid #333;">`;
+          } catch (compErr) {
+            console.error("Compression error:", compErr);
+
+            // Fallback if small enough
+            if (file.size < 1024 * 1024) { // 1MB
+              console.log('Falling back to direct base64');
+              const reader = new FileReader();
+              reader.onload = (re) => {
+                coverImage = re.target.result;
+                preview.innerHTML = `<img src="${coverImage}" style="max-width:100%; border-radius:4px;">`;
+              };
+              reader.readAsDataURL(file);
+            } else {
+              throw new Error("Image too large and compression failed. Please use a smaller image (<1MB).");
+            }
+          }
+        } catch (err) {
+          console.error("Image processing failed completely", err);
+          alert("Error: " + err.message);
+          document.getElementById('coverPreview').innerHTML = '<span style="color:red">Upload Failed</span>';
+          coverImage = null;
+        }
       }
     });
+  } else {
+    console.error('CRITICAL: coverUpload element not found in DOM');
   }
 
   const tracksUpload = document.getElementById('tracksUpload');
   if (tracksUpload) {
     tracksUpload.addEventListener('change', (e) => {
+      console.log('Tracks input changed');
       const files = Array.from(e.target.files);
       files.forEach(file => {
+        console.log('Adding track:', file.name);
         uploadedTracks.push({ name: file.name.replace('.mp3', ''), file: file, comments: [] });
       });
+      console.log('Total tracks buffered:', uploadedTracks.length);
       renderTracksList();
     });
   }
@@ -294,30 +364,46 @@ function initApp() {
   if (publishBtn) {
     publishBtn.addEventListener('click', async () => {
       const title = document.getElementById('albumTitle').value;
-      if (!title || !coverFile || uploadedTracks.length === 0) return alert('Incomplete');
+
+      console.log('Publish Clicked. Title:', title);
+      console.log('Cover Image Present:', !!coverImage);
+      console.log('Tracks Count:', uploadedTracks.length);
+
+      if (!title || !coverImage || uploadedTracks.length === 0) {
+        let missing = [];
+        if (!title) missing.push("Title");
+        if (!coverImage) missing.push("Cover Image");
+        if (uploadedTracks.length === 0) missing.push("Tracks");
+
+        alert('Missing fields: ' + missing.join(', '));
+        return;
+      }
+
+      publishBtn.disabled = true;
+      publishBtn.textContent = 'PUBLISHING...';
 
       try {
-        publishBtn.disabled = true;
         const timestamp = Date.now();
         let uploadedTrackData = [];
 
-        if (coverFile.size > 2 * 1024 * 1024) {
-          if (!confirm("Cover image is large (>2MB). This might slow down loading. Continue?")) {
-            publishBtn.disabled = false;
-            publishBtn.textContent = 'PUBLISH FOR TESTING';
-            return;
-          }
-        }
-
+        // Upload Tracks
         for (let i = 0; i < uploadedTracks.length; i++) {
           const track = uploadedTracks[i];
+          console.log(`Starting upload for track ${i + 1}: ${track.name}`);
+
           publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (0%)...`;
 
-          const chunkIds = await saveAudioFile(track.file, (p) => {
-            publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (${Math.floor(p)}%)...`;
-          });
-
-          uploadedTrackData.push({ name: track.name, chunkIds: chunkIds, comments: [] });
+          try {
+            const chunkIds = await saveAudioFile(track.file, (percent) => {
+              const p = Math.floor(percent);
+              publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (${p}%)...`;
+            });
+            console.log(`Track ${i + 1} uploaded. Chunk IDs:`, chunkIds);
+            uploadedTrackData.push({ name: track.name, chunkIds: chunkIds, comments: [] });
+          } catch (trackError) {
+            console.error(`Error uploading track ${track.name}:`, trackError);
+            throw new Error(`Failed to upload ${track.name}. Check console for details.`);
+          }
         }
 
         const album = {
@@ -331,6 +417,7 @@ function initApp() {
         await DB.save(album);
         currentAlbums.push(album);
 
+        // Reset
         document.getElementById('albumTitle').value = '';
         document.getElementById('coverPreview').innerHTML = '';
         uploadedTracks = [];
@@ -338,12 +425,14 @@ function initApp() {
         coverFile = null;
         renderTracksList();
         loadOwnerAlbums();
-        alert('Published! (Saved to Firestore)');
+
+        publishBtn.textContent = 'PUBLISH FOR TESTING';
+        publishBtn.disabled = false;
+        alert('Album Published!');
 
       } catch (e) {
-        console.error(e);
-        alert('Error: ' + e.message);
-      } finally {
+        console.error("Publish Error:", e);
+        alert('Failed: ' + e.message);
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
       }
@@ -376,6 +465,14 @@ function initApp() {
         requestBtn.textContent = 'REQUEST ACCESS';
       }
     });
+    const adminLink = document.getElementById('adminTesterLogin');
+    if (adminLink) {
+      adminLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const modal = document.getElementById('ownerPasswordModal');
+        if (modal) modal.style.display = 'flex';
+      });
+    }
   }
 
   // Initial check
