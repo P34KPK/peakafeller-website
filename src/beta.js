@@ -251,57 +251,15 @@ async function checkPassword(input) {
 
 // MAIN APP INITIALIZATION
 function initApp() {
-  console.log('Initializing Beta App...');
-  const ownerMode = document.getElementById('ownerMode');
-  const testerMode = document.getElementById('testerMode');
-  const ownerPanel = document.getElementById('ownerPanel');
-  const testerPanel = document.getElementById('testerPanel');
+  console.log('Initializing Beta Backend...');
 
-  if (!ownerMode || !testerMode) {
-    console.error('Core elements missing');
-    return;
-  }
-
-  // Buttons Logic
-  ownerMode.onclick = () => {
-    const modal = document.getElementById('ownerPasswordModal');
-    if (modal) modal.style.display = 'flex';
+  // Hook for UI Script
+  window.loadOwnerData = () => {
+    loadOwnerAlbums();
+    loadAccessRequests();
+    loadTesterDashboard();
+    initShareLink();
   };
-
-  testerMode.onclick = () => {
-    testerMode.classList.add('active');
-    ownerMode.classList.remove('active');
-    if (testerPanel) testerPanel.style.display = 'block';
-    if (ownerPanel) ownerPanel.style.display = 'none';
-    checkAccess();
-  };
-
-  // Owner Password Logic
-  const ownerPasswordSubmit = document.getElementById('ownerPasswordSubmit');
-  const ownerPasswordInput = document.getElementById('ownerPasswordInput');
-
-  if (ownerPasswordSubmit && ownerPasswordInput) {
-    ownerPasswordInput.onkeypress = (e) => {
-      if (e.key === 'Enter') ownerPasswordSubmit.click();
-    };
-
-    ownerPasswordSubmit.onclick = async () => {
-      if (!await checkPassword(ownerPasswordInput.value)) {
-        alert('Incorrect password');
-        return;
-      }
-      document.getElementById('ownerPasswordModal').style.display = 'none';
-      ownerMode.classList.add('active');
-      testerMode.classList.remove('active');
-      ownerPanel.style.display = 'block';
-      testerPanel.style.display = 'none';
-
-      loadOwnerAlbums();
-      loadAccessRequests();
-      loadTesterDashboard();
-      initShareLink();
-    };
-  }
 
   // File Inputs
   const coverUpload = document.getElementById('coverUpload');

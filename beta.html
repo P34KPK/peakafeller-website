@@ -238,8 +238,93 @@
 
 
 
-    <script type="module" src="./src/cursor.js"></script>
-    <script type="module" src="./src/beta.js?v=1003"></script>
+    <script>
+        // CRITICAL UI COMPONENT - Runs immediately
+        (function () {
+            console.log("Initializing Critical UI...");
+
+            // 1. ROBUST CURSOR LOGIC
+            const cursor = document.createElement('div');
+            const border = document.createElement('div');
+            cursor.id = 'cursor';
+            border.id = 'cursor-border';
+
+            const style = document.createElement('style');
+            style.innerHTML = `
+            * { cursor: none !important; }
+            #cursor { position: fixed; top: 0; left: 0; width: 8px; height: 8px; background: #ff6600; border-radius: 50%; pointer-events: none; z-index: 9999999; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background 0.2s; }
+            #cursor-border { position: fixed; top: 0; left: 0; width: 30px; height: 30px; border: 1px solid #ff6600; border-radius: 50%; pointer-events: none; z-index: 9999998; transform: translate(-50%, -50%); transition: top 0.05s, left 0.05s, width 0.2s, height 0.2s; }
+            body.hovering #cursor { width: 40px; height: 40px; background: transparent; }
+            body.hovering #cursor-border { width: 50px; height: 50px; background: rgba(255,102,0,0.1); }
+        `;
+            document.head.appendChild(style);
+            document.body.appendChild(cursor);
+            document.body.appendChild(border);
+
+            document.addEventListener('mousemove', e => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+                setTimeout(() => {
+                    border.style.left = e.clientX + 'px';
+                    border.style.top = e.clientY + 'px';
+                }, 40);
+
+                const target = e.target;
+                if (target.matches('button, a, input, select, textarea, .clickable, .mode-btn') || target.closest('button, a')) {
+                    document.body.classList.add('hovering');
+                } else {
+                    document.body.classList.remove('hovering');
+                }
+            });
+
+            // 2. UI TABS & PASSWORD LOGIC (Frontend Only)
+            window.unlockOwnerMode = async function () {
+                const input = document.getElementById('ownerPasswordInput');
+                if (!input) return;
+
+                const pass = input.value;
+                // SHA-256 of 'peakafeller' (example) or whatever the password is
+                // Using a simple hardcoded hash check for the UI unlock
+                const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                if (hashHex === '94f7188ada6d383c589a8066f29c7f3772f6e6132fd55b30056dd5896fc2e8bc') {
+                    // Correct Password
+                    document.getElementById('ownerPasswordModal').style.display = 'none';
+                    document.getElementById('ownerMode').classList.add('active');
+                    document.getElementById('testerMode').classList.remove('active');
+                    document.getElementById('ownerPanel').style.display = 'block';
+                    document.getElementById('testerPanel').style.display = 'none';
+
+                    // Trigger Data Load if available
+                    if (window.loadOwnerData) window.loadOwnerData();
+                } else {
+                    alert('ACCESS DENIED');
+                }
+            };
+
+            // Attach Listeners
+            const ownerBtn = document.getElementById('ownerMode');
+            const testerBtn = document.getElementById('testerMode');
+            const passSubmit = document.getElementById('ownerPasswordSubmit');
+            const passInput = document.getElementById('ownerPasswordInput');
+
+            if (ownerBtn) ownerBtn.onclick = () => document.getElementById('ownerPasswordModal').style.display = 'flex';
+            if (testerBtn) testerBtn.onclick = () => {
+                testerBtn.classList.add('active');
+                ownerBtn.classList.remove('active');
+                document.getElementById('testerPanel').style.display = 'block';
+                document.getElementById('ownerPanel').style.display = 'none';
+                if (window.checkAccess) window.checkAccess();
+            };
+
+            if (passSubmit) passSubmit.onclick = window.unlockOwnerMode;
+            if (passInput) passInput.onkeypress = (e) => { if (e.key === 'Enter') window.unlockOwnerMode(); };
+
+        })();
+    </script>
+    <script type="module" src="./src/beta.js?v=1005"></script>
 </body>
 
 </html>
