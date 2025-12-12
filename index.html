@@ -40,6 +40,29 @@
 
 <body>
   <canvas id="bg-canvas"></canvas>
+
+  <!-- Boot Sequence Overlay (Restored & Functional) -->
+  <div id="boot-overlay"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; padding: 2rem; font-family: 'Courier New', monospace; font-size: 14px; color: var(--color-accent); display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; overflow: hidden;">
+    <div id="boot-text" style="white-space: pre-wrap; line-height: 1.5;"></div>
+    <div class="boot-cursor"
+      style="display: inline-block; width: 10px; height: 18px; background: var(--color-accent); animation: blink 0.8s infinite; margin-top: 5px;">
+    </div>
+  </div>
+  <style>
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+  </style>
+
   <div id="app">
     <!-- Boot Sequence Overlay -->
 
