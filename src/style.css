@@ -2314,13 +2314,22 @@ body.hovering #cursor-border {
     border-radius: 2px;
     /* Slight rounded corners but mostly square */
     /* Slight rounded corners but mostly square */
-    position: fixed;
-    /* FIXED POSITIONING TO ENSURE VISIBILITY */
+    position: absolute;
+    /* SCROLL WITH PAGE AS REQUESTED */
     top: 20px;
     right: 20px;
     z-index: 10001;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  /* Make sure it stays visible/accessible when menu is open */
+  .header-menu-icon.is-open {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10002;
+    /* Higher than nav to ensure clickability */
   }
 
   /* Glitch/Hover Effect on Burger */
