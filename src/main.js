@@ -1,7 +1,7 @@
 
 import './style.css';
-import { db, doc, getDoc, updateDoc, increment } from "./firebase.js";
-// import './rawbeat.css';
+// Firebase is now imported dynamically to prevent blocking visual assets if DB fails.
+// import { db, doc, getDoc, updateDoc, increment } from "./firebase.js"; 
 
 // --- SYSTEM 1: CURSOR & INTERACTION ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -647,7 +647,9 @@ if (rawbeatLink) {
     document.documentElement.innerHTML = `<body style="background:#000; color:#0f0; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace;">> REDIRECTING /${alias}...</body>`;
 
     try {
-      // Logic uses static imports from top of file
+      // Dynamic import to prevent main thread blocking
+      const { db, doc, getDoc, updateDoc, increment } = await import("./firebase.js");
+
       const linkRef = doc(db, "smart_links", "link_" + alias);
       const snap = await getDoc(linkRef);
 
