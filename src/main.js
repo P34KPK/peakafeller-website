@@ -1,4 +1,4 @@
-import './visuals.js';
+
 import './style.css';
 import { db, doc, getDoc, updateDoc, increment } from "./firebase.js";
 // import './rawbeat.css';
