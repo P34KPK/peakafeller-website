@@ -863,8 +863,10 @@
 
 
 
-  <!-- Menu Icon moved to root for safety -->
-  <div class="header-menu-icon" style="cursor: pointer;"><span></span></div>
+  <!-- Menu Icon moved to root for safety. JS via onclick for robustness -->
+  <div class="header-menu-icon" style="cursor: pointer;"
+    onclick="this.classList.toggle('is-open'); document.querySelector('.header-nav').classList.toggle('active');">
+    <span></span></div>
 
   <!-- Custom Cursor Elements -->
   <div id="cursor"></div>

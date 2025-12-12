@@ -999,11 +999,13 @@ body.hovering #cursor-border {
 
   /* Header */
   .floating-header {
-    top: 2rem;
-    width: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 90vw;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    background: transparent;
+    padding: 20px;
+    pointer-events: none;
   }
 
   .header-inner {
