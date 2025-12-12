@@ -205,9 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let kickEnvelope = 0;
 
     function animate() {
-      // FORCE OPAQUE BACKGROUND (Replace CSS Body BG)
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Clear canvas (Transparent) to reveal CSS Grid
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Glow
       glowX += (targetGlowX - glowX) * 0.05;
