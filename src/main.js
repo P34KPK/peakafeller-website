@@ -707,25 +707,28 @@ if (mainDisplay && playlistItems.length > 0) {
 }
 
 
-// Mobile Menu Toggle
-const menuIcon = document.querySelector('.header-menu-icon');
-const headerNav = document.querySelector('.header-nav');
+// Mobile Menu Toggle - Wrapped in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  const menuIcon = document.querySelector('.header-menu-icon');
+  const headerNav = document.querySelector('.header-nav');
 
-if (menuIcon && headerNav) {
-  menuIcon.addEventListener('click', () => {
-    headerNav.classList.toggle('active');
-    menuIcon.classList.toggle('is-open');
-  });
-
-  // Close menu when a link is clicked
-  const navLinks = headerNav.querySelectorAll('a');
-  navLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      headerNav.classList.remove('active');
-      menuIcon.classList.remove('is-open');
+  if (menuIcon && headerNav) {
+    menuIcon.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent bubbling issues
+      headerNav.classList.toggle('active');
+      menuIcon.classList.toggle('is-open');
     });
-  });
-}
+
+    // Close menu when a link is clicked
+    const navLinks = headerNav.querySelectorAll('a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        headerNav.classList.remove('active');
+        menuIcon.classList.remove('is-open');
+      });
+    });
+  }
+});
 
 
 // Rawbeat Logo Interaction (Glitch & Dance)
