@@ -2584,24 +2584,23 @@ body.hovering #cursor-border {
   /* Scroll Indicator - ABSOLUTE FORCE CENTER */
   .scroll-indicator {
     position: absolute;
-    left: 50%;
-    bottom: 1.5rem;
-    /* Descendu sous les boutons */
+    left: 50vw;
+    bottom: 1rem;
     transform: translateX(-50%);
     width: auto;
     margin: 0;
     text-align: center;
+    white-space: nowrap;
+    /* Prevent wrapping */
     display: block;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     opacity: 0.7;
     animation: bounce-mobile 2s infinite;
     pointer-events: none;
-    /* Ne pas bloquer le scroll */
     order: 10;
     color: var(--color-accent);
     z-index: 1;
-    /* Derrière les boutons au cas où */
   }
 
   /* Make sure Hero allows absolute positioning relative to it */
