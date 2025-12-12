@@ -2313,7 +2313,11 @@ body.hovering #cursor-border {
     border: 1px solid var(--color-dim);
     border-radius: 2px;
     /* Slight rounded corners but mostly square */
-    position: relative;
+    /* Slight rounded corners but mostly square */
+    position: fixed;
+    /* FIXED POSITIONING TO ENSURE VISIBILITY */
+    top: 20px;
+    right: 20px;
     z-index: 10001;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
