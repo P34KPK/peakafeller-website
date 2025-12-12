@@ -859,7 +859,7 @@
   <div id="cursor-border"></div>
 
 
-  <!-- SYSTEM CORE: VISUALS (ISOLATED) -->
+  <!-- SYSTEM CORE: VISUALS (ISOLATED & STYLED) -->
   <script>
     (function () {
       console.log("Core Visuals initializing...");
@@ -896,28 +896,33 @@
       } else if (bootOverlay) { bootOverlay.style.display = 'none'; }
 
 
-      // --- 3. CANVAS BACKGROUND ---
+      // --- 3. CANVAS BACKGROUND (STYLED) ---
       const canvas = document.getElementById('bg-canvas');
       if (canvas) {
         const ctx = canvas.getContext('2d');
         let particles = [];
+        let glowX = window.innerWidth / 2;
+        let glowY = window.innerHeight / 2;
+        let mouseX = -100, mouseY = -100;
 
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; glowX += (mouseX - glowX) * 0.1; glowY += (mouseY - glowY) * 0.1; });
         resize();
 
         class Particle {
           constructor() {
             this.reset();
-            this.y = Math.random() * canvas.height; // Spread initially
+            this.y = Math.random() * canvas.height;
           }
           reset() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
-            this.size = Math.random() * 3 + 1;
+            this.size = Math.random() * 2 + 1;
             this.speedX = (Math.random() - 0.5) * 0.5;
             this.speedY = (Math.random() - 0.5) * 0.5;
             this.life = Math.random();
+            this.char = Math.random() > 0.8 ? ['1', '0', 'X'][Math.floor(Math.random() * 3)] : null;
           }
           update() {
             this.x += this.speedX; this.y += this.speedY;
@@ -925,15 +930,32 @@
             if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
           }
           draw() {
-            ctx.fillStyle = `rgba(200, 200, 200, ${this.life * 0.5})`;
-            ctx.fillRect(this.x, this.y, this.size, this.size);
+            // Orange Color: 255, 100, 0
+            const a = this.life * 0.6;
+            ctx.fillStyle = `rgba(255, 120, 0, ${a})`;
+
+            if (this.char) {
+              ctx.font = '12px monospace';
+              ctx.fillText(this.char, this.x, this.y);
+            } else {
+              ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
           }
         }
 
-        for (let i = 0; i < 80; i++) particles.push(new Particle());
+        for (let i = 0; i < 60; i++) particles.push(new Particle());
 
         function animate() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent!
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // GLOW EFFECT
+          const r = Math.max(canvas.width, canvas.height) * 0.5;
+          const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, r);
+          grad.addColorStop(0, 'rgba(255, 85, 0, 0.12)'); // Center Glow
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
           particles.forEach(p => { p.update(); p.draw(); });
           requestAnimationFrame(animate);
         }
