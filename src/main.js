@@ -696,8 +696,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Custom Cursor Logic
-const cursor = document.getElementById('cursor');
-const cursorBorder = document.getElementById('cursor-border');
+let cursor = document.getElementById('cursor');
+let cursorBorder = document.getElementById('cursor-border');
+
+// Foolproof Injection: If HTML elements are missing (race condition), create them.
+if (!cursor || !cursorBorder) {
+  console.log("Cursor elements missing, injecting dynamically...");
+
+  if (!cursor) {
+    cursor = document.createElement('div');
+    cursor.id = 'cursor';
+    document.body.appendChild(cursor);
+  }
+
+  if (!cursorBorder) {
+    cursorBorder = document.createElement('div');
+    cursorBorder.id = 'cursor-border';
+    document.body.appendChild(cursorBorder);
+  }
+}
 
 document.addEventListener('mousemove', (e) => {
   cursor.style.left = e.clientX + 'px';
