@@ -265,9 +265,59 @@ document.addEventListener('DOMContentLoaded', () => {
         ticking = true;
       }
     });
+    // ... (End of particle loop)
     console.log("System 2 (Canvas) initialized.");
+
+    // --- SYSTEM 3: BOOT SEQUENCE (Unlock the Screen) ---
+    const bootOverlay = document.getElementById('boot-overlay');
+    const bootText = document.getElementById('boot-text');
+    if (bootOverlay && bootText) {
+      const lines = [
+        "> INITIALIZING P34K KERNEL...",
+        "> LOADING NEURAL ASSETS...",
+        "> BYPASSING FIREWALL...",
+        "> ACCESS GRANTED."
+      ];
+      let lineIndex = 0;
+      let charIndex = 0;
+
+      function typeBoot() {
+        if (lineIndex < lines.length) {
+          if (charIndex < lines[lineIndex].length) {
+            bootText.innerText += lines[lineIndex].charAt(charIndex);
+            charIndex++;
+            setTimeout(typeBoot, Math.random() * 30 + 10);
+          } else {
+            bootText.innerText += "\n";
+            lineIndex++;
+            charIndex = 0;
+            setTimeout(typeBoot, 200);
+          }
+        } else {
+          // Sequence Complete - Open the Gates
+          setTimeout(() => {
+            bootOverlay.style.transition = "opacity 0.8s ease-out";
+            bootOverlay.style.opacity = "0";
+            setTimeout(() => {
+              bootOverlay.style.display = "none";
+            }, 800);
+          }, 500);
+        }
+      }
+      // Start typing immediately
+      setTimeout(typeBoot, 100);
+    } else {
+      // Safe fallback if overlay missing in HTML but present in DOM??
+      // Just in case existing overlay blocks view without ID
+      const overlays = document.querySelectorAll('[style*="z-index: 10000"]');
+      overlays.forEach(o => o.style.display = 'none');
+    }
+
   } catch (err) {
     console.error("Canvas System Failed:", err);
+    // Emergency Unlock
+    const bootOverlay = document.getElementById('boot-overlay');
+    if (bootOverlay) bootOverlay.style.display = 'none';
   }
 })();
 
