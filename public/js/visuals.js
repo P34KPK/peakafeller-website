@@ -54,22 +54,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- SYSTEM 2: VISUAL CORE (Canvas/Particles) ---
-(function initCanvasSystem(attempts = 0) {
-    const canvas = document.getElementById('bg-canvas');
+(function initCanvasSystem() {
+    let canvas = document.getElementById('bg-canvas');
     if (!canvas) {
-        if (attempts < 50) { // Retry for 5 seconds
-            // Silent retry to avoid console spam, or debug log
-            if (attempts % 10 === 0) console.log(`Waiting for Canvas... (${attempts})`);
-            setTimeout(() => initCanvasSystem(attempts + 1), 100);
-            return;
-        } else {
-            console.error("CRITICAL: Canvas element #bg-canvas missing after 5 seconds.");
-            return;
-        }
+        console.warn("Canvas missing, injecting auto-canvas...");
+        canvas = document.createElement('canvas');
+        canvas.id = 'bg-canvas';
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.zIndex = '0'; // Ensure it is behind content
+        canvas.style.pointerEvents = 'none';
+        document.body.prepend(canvas);
     }
 
     try {
-        console.log("Canvas found. Initializing Visuals...");
+        console.log("Canvas initialized.");
 
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error("Canvas context blocked.");
@@ -167,14 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             draw() {
-                // DEBUG: Force White Particles for Visibility Check
-                // let r = 100 + (255 - 100) * this.energy;
-                // let g = 100 + (85 - 100) * this.energy;
-                // let b = 100 + (0 - 100) * this.energy;
-                // let a = 0.5 + (0.5) * this.energy;
-                // ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
-
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Force White for Debug
+                let r = 100 + (255 - 100) * this.energy;
+                let g = 100 + (85 - 100) * this.energy;
+                let b = 100 + (0 - 100) * this.energy;
+                let a = 0.5 + (0.5) * this.energy;
+                ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
 
                 if (this.char && this.energy > 0.5) {
                     ctx.font = `${this.baseSize * 4}px monospace`;
@@ -228,8 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             grad.addColorStop(1, 'rgba(255, 85, 0, 0)');
 
             // TEMP DEBUG: Use brighter glow for test
-            // ctx.fillStyle = grad;
-            ctx.fillStyle = 'rgba(50, 0, 0, 0.2)'; // DEBUG RED BACKGROUND TINT
+            ctx.fillStyle = grad;
 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
