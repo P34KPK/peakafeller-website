@@ -2585,8 +2585,8 @@ body.hovering #cursor-border {
   .scroll-indicator {
     position: absolute;
     left: 50%;
-    bottom: 5rem;
-    /* Remonté un peu pour ne pas être caché par l'interface mobile */
+    bottom: 1.5rem;
+    /* Descendu sous les boutons */
     transform: translateX(-50%);
     width: auto;
     margin: 0;
@@ -2600,7 +2600,8 @@ body.hovering #cursor-border {
     /* Ne pas bloquer le scroll */
     order: 10;
     color: var(--color-accent);
-    z-index: 5;
+    z-index: 1;
+    /* Derrière les boutons au cas où */
   }
 
   /* Make sure Hero allows absolute positioning relative to it */
