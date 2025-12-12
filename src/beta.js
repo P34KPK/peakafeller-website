@@ -3,7 +3,8 @@ import WaveSurfer from 'wavesurfer.js';
 
 // Visualizer & Background Animation
 const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
+if (!ctx) console.warn("Canvas context missing in beta.js - Visuals disabled");
 let particles = [];
 let momentumY = 0;
 let lastScrollY = window.scrollY;
