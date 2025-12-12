@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         console.log("System 1 (Cursor) initialized.");
+        document.body.classList.add('custom-cursor-active');
     } catch (e) {
         console.error("Cursor System Failed:", e);
     }

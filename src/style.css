@@ -665,7 +665,9 @@ body.is-scrolling .triangle-loader {
 }
 
 /* Custom Cursor */
-* {
+/* Custom Cursor Logic: Active only when JS is ready */
+body.custom-cursor-active,
+body.custom-cursor-active * {
   cursor: none !important;
 }
 
