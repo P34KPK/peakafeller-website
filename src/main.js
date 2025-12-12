@@ -51,9 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- SYSTEM 2: VISUAL CORE (Canvas/Particles) ---
-(function initCanvasSystem() {
-  // DEBUG ALERT - REMOVE IF SEEN
-  // window.alert("DEBUG: VISUAL SYSTEM STARTED"); 
+window.addEventListener('load', () => {
+  console.log("Window Loaded. Starting Canvas System...");
   // Commenting out alert because user asked for fix, not annoyance.
   // Actually, I WILL use console.log instead of alert to be less intrusive but verifiable in console.
   console.log("%c DEBUG: VISUAL SYSTEM STARTED ", "background: red; color: white; font-size: 20px");
@@ -106,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.baseSize = Math.random() * 2 + 0.5;
+        this.baseSize = Math.random() * 3 + 1.5;
         this.size = this.baseSize;
         this.speedX = (Math.random() - 0.5) * 0.2;
         this.speedY = (Math.random() - 0.5) * 0.2;
@@ -318,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bootOverlay = document.getElementById('boot-overlay');
     if (bootOverlay) bootOverlay.style.display = 'none';
   }
-})();
+});
 
 
 // --- INTERACTIVE ELEMENTS ---
