@@ -2418,6 +2418,10 @@ body.hovering #cursor-border {
     pointer-events: auto;
     /* Re-enable clicks */
     transform: translateY(0);
+    overflow-y: auto;
+    /* Allow scrolling content */
+    -webkit-overflow-scrolling: touch;
+    /* Smooth iOS scroll */
   }
 
   /* Navigation Links - Coding Style */
@@ -2569,18 +2573,18 @@ body.hovering #cursor-border {
     color: #000;
   }
 
-  /* Scroll Indicator */
+  /* Scroll Indicator - Perfect Center Fix */
   .scroll-indicator {
     position: relative;
     /* Restored from static for better control */
     transform: none;
     /* No translate needed if using margin auto or flex */
-    margin: 1rem auto 0 auto;
-    /* Auto margins for centering */
-    width: fit-content;
+    margin: 1rem 0 0 0;
+    width: 100%;
     /* Ensure margin auto works */
-    display: block;
+    text-align: center;
     /* Ensure it behaves as block for margins */
+    display: block;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     opacity: 0.7;
