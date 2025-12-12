@@ -1,395 +1,385 @@
-// --- SMART LINK REDIRECTOR (Isolée via Dynamic Import) ---
-(async function handleSmartRedirect() {
-  const params = new URLSearchParams(window.location.search);
-  const alias = params.get('go');
-
-  if (alias) {
-    // Basic redirect message
-    document.documentElement.innerHTML = `<body style="background:#000; color:#0f0; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace;">> REDIRECTING /${alias}...</body>`;
-
-    try {
-      // Dynamic import to isolate failures
-      const { db, doc, getDoc, updateDoc, increment } = await import("./firebase.js");
-      const linkRef = doc(db, "smart_links", "link_" + alias);
-      const snap = await getDoc(linkRef);
-
-      if (snap.exists()) {
-        const data = snap.data();
-        updateDoc(linkRef, { clicks: increment(1) });
-
-        const webUrl = data.target;
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        let deepLink = null;
-
-        if (isMobile) {
-          if (webUrl.includes('amazon') || webUrl.includes('amzn')) {
-            deepLink = 'amzn://open?url=' + encodeURIComponent(webUrl);
-          } else if (webUrl.includes('spotify.com')) {
-            deepLink = webUrl.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
-          } else if (webUrl.includes('instagram.com')) {
-            deepLink = webUrl.replace('https://www.instagram.com/', 'instagram://user?username=').replace(/\/$/, '');
-          }
-        }
-
-        if (deepLink) {
-          window.location.href = deepLink;
-          setTimeout(() => window.location.replace(webUrl), 500);
-        } else {
-          window.location.replace(webUrl);
-        }
-      } else {
-        document.body.innerHTML = `<div style="color:red; font-family:monospace; padding:2rem;">ERROR: LINK /${alias} NOT FOUND</div>`;
-      }
-    } catch (e) {
-      console.error("Redirect Error", e);
-      window.location.href = "/";
-    }
-    // Stop execution
-    throw new Error("Redirecting...");
-  }
-})();
 
 import './style.css';
 // import './rawbeat.css';
 
+// --- VISUAL CORE (Critical Priority) ---
+
+// Custom Cursor Logic
+let cursor = document.getElementById('cursor');
+let cursorBorder = document.getElementById('cursor-border');
+
+// Foolproof Injection: If HTML elements are missing (race condition), create them.
+if (!cursor || !cursorBorder) {
+  if (!cursor) {
+    cursor = document.createElement('div');
+    cursor.id = 'cursor';
+    document.body.appendChild(cursor);
+  }
+  if (!cursorBorder) {
+    cursorBorder = document.createElement('div');
+    cursorBorder.id = 'cursor-border';
+    document.body.appendChild(cursorBorder);
+  }
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (cursor) {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  }
+  if (cursorBorder) {
+    setTimeout(() => {
+      cursorBorder.style.left = e.clientX + 'px';
+      cursorBorder.style.top = e.clientY + 'px';
+    }, 50);
+  }
+});
+
+// Hover Effect
+const clickableElements = document.querySelectorAll('a, button, .spotify-card, .gallery-item');
+clickableElements.forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+});
+
 
 // Animated Background Canvas
 const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 
-let particles = [];
-let scrollY = 0;
-let scrollVelocity = 0;
-let vortexStrength = 0;
+if (ctx) {
 
-// Glow Variables
-let glowX = window.innerWidth / 2;
-let glowY = window.innerHeight / 2;
-let targetGlowX = window.innerWidth / 2;
-let targetGlowY = window.innerHeight / 2;
+  let particles = [];
+  let scrollY = 0;
+  let scrollVelocity = 0;
+  let vortexStrength = 0;
 
-// Set canvas size
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
+  // Glow Variables
+  let glowX = window.innerWidth / 2;
+  let glowY = window.innerHeight / 2;
+  let targetGlowX = window.innerWidth / 2;
+  let targetGlowY = window.innerHeight / 2;
 
-resizeCanvas();
-resizeCanvas();
-// window.addEventListener('resize', resizeCanvas); // Handled below with debounce
-
-// Particle class
-// Mouse Tracking for Canvas
-let mouseX = -1000;
-let mouseY = -1000;
-window.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-});
-
-// Particle class
-class Particle {
-  constructor() {
-    this.x = Math.random() * canvas.width;
-    this.y = Math.random() * canvas.height;
-    this.baseSize = Math.random() * 2 + 0.5; // Pixels are varied
-    this.size = this.baseSize;
-    this.speedX = (Math.random() - 0.5) * 0.2; // Slower base drift
-    this.speedY = (Math.random() - 0.5) * 0.2;
-
-    // Code aesthetic
-    this.chars = ['0', '1', '{', '}', '<', '>', '/', ';', '*', '+'];
-    this.char = Math.random() < 0.1 ? this.chars[Math.floor(Math.random() * this.chars.length)] : null; // 10% are chars
-
-    this.color = { r: 60, g: 60, b: 60, a: 0.3 }; // Default dark grey
-    this.energy = 0; // 0 = dormant, 1 = fully active (orange)
+  // Set canvas size
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   }
 
-  update(isMusicActive, kickEnvelope, index, mx, my) {
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+  resizeCanvas();
 
-    // 1. Mouse Interaction (Repulsion / Excitement)
-    const dxMouse = this.x - mx;
-    const dyMouse = this.y - my;
-    const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-    const mouseRange = 150;
-
-    if (distMouse < mouseRange) {
-      const force = (mouseRange - distMouse) / mouseRange;
-      // Push away slightly
-      this.x += (dxMouse / distMouse) * force * 2;
-      this.y += (dyMouse / distMouse) * force * 2;
-      // Energize!
-      this.energy = Math.min(this.energy + 0.1, 1);
-    } else {
-      // Decay energy
-      this.energy = Math.max(this.energy - 0.02, 0);
-    }
-
-    // 2. Scroll / Vortex Physics
-    if (vortexStrength > 0.1) {
-      const dx = centerX - this.x;
-      const dy = centerY - this.y;
-      const distCenter = Math.sqrt(dx * dx + dy * dy);
-
-      // Calculate angle towards center
-      let angle = Math.atan2(dy, dx);
-
-      // Add swirl (spiral effect) - closer to 90deg (PI/2) means more orbit, less suction
-      // Randomize direction slightly per particle for organic feel?
-      // Let's make a nice galaxy spiral: Angle + offset
-      angle += 1.5; // Nearly perpendicular (orbit) with slight inward pull
-
-      const pull = vortexStrength * 0.02; // Reduced pull factor
-
-      // Orbit velocity based on distance (faster near center, like gravity)
-      // But limit suction at very close range to avoid singularity
-
-      if (distCenter < 50) {
-        // Too close! Push out / orbit fast without getting sucked in
-        this.x -= Math.cos(angle) * 2;
-        this.y -= Math.sin(angle) * 2;
-        this.energy = 1; // Glow up
-      } else {
-        this.x += Math.cos(angle) * pull * (distCenter / 20);
-        this.y += Math.sin(angle) * pull * (distCenter / 20);
-      }
-
-      // Add "Data Stream" speed
-      this.energy = Math.min(this.energy + 0.02, 1);
-    } else {
-      // Normal drift
-      this.x += this.speedX;
-      this.y += this.speedY;
-    }
-
-    // 3. Kick Impact
-    if (isMusicActive && kickEnvelope > 0.2) {
-      this.energy = 1; // Beat hits light everything up
-      // Jitter
-      this.x += (Math.random() - 0.5) * kickEnvelope * 5;
-      this.y += (Math.random() - 0.5) * kickEnvelope * 5;
-    }
-
-    // Wrap
-    if (this.x > canvas.width + 50) this.x = -50;
-    if (this.x < -50) this.x = canvas.width + 50;
-    if (this.y > canvas.height + 50) this.y = -50;
-    if (this.y < -50) this.y = canvas.height + 50;
-  }
-
-  draw(isMusicActive, kickEnvelope, index) {
-    // Interpolate Color: Grey to Neon Orange
-    // Orange: 255, 85, 0
-    // Grey: 60, 60, 60
-
-    let r = 60 + (255 - 60) * this.energy;
-    let g = 60 + (85 - 60) * this.energy;
-    let b = 60 + (0 - 60) * this.energy;
-    let a = 0.3 + (0.7) * this.energy;
-
-    ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
-
-    if (this.char && (this.energy > 0.5 || isMusicActive)) {
-      // Draw Character for high energy particles
-      ctx.font = `${this.baseSize * 4}px monospace`;
-      ctx.fillText(this.char, this.x, this.y);
-    } else {
-      // Draw Pixel Square
-      let size = this.baseSize * (1 + this.energy); // Grow when active
-      ctx.fillRect(this.x, this.y, size, size);
-    }
-  }
-}
-
-// Initialize particles
-function initParticles() {
-  particles = [];
-  const particleCount = Math.floor((canvas.width * canvas.height) / 4000); // Much higher density
-  for (let i = 0; i < particleCount; i++) {
-    particles.push(new Particle());
-  }
-}
-
-initParticles();
-initParticles();
-
-// Optimized Resize Handler
-let resizeTimeout;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    const oldWidth = canvas.width;
-    resizeCanvas();
-    // Only re-init if width changed (orientation change) or huge height change
-    if (Math.abs(canvas.width - oldWidth) > 50) {
-      initParticles();
-    }
-  }, 100);
-});
-
-// Beat Simulation Variables
-let lastBeatTime = 0;
-const beatInterval = 468; // ~128 BPM
-let kickEnvelope = 0;
-
-// Animation loop
-function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // --- Draw Subtle Orange Glow ---
-  // Smoothly interpolate current glow position towards target
-  glowX += (targetGlowX - glowX) * 0.05;
-  glowY += (targetGlowY - glowY) * 0.05;
-
-  const glowRadius = Math.max(canvas.width, canvas.height) * 0.6;
-  const glowGradient = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowRadius);
-
-  // Very subtle orange (adjust alpha for subtlety)
-  // Very subtle orange (adjust alpha for subtlety)
-  glowGradient.addColorStop(0, 'rgba(255, 85, 0, 0.15)'); // Reduced intensity further but sharper color
-  glowGradient.addColorStop(1, 'rgba(255, 85, 0, 0)');
-
-  ctx.fillStyle = glowGradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  // -------------------------------
-
-  // Check if music is playing
-  const isMusicActive = document.getElementById('stickyPlayer')?.classList.contains('active');
-  const currentTime = Date.now();
-
-  if (isMusicActive) {
-    // Simulate Kick Drum (Metronome)
-    if (currentTime - lastBeatTime > beatInterval) {
-      lastBeatTime = currentTime;
-      kickEnvelope = 1.0; // BOOM: Kick hits max
-    }
-    // Physics: Fast Attack, Exponential Decay
-    kickEnvelope *= 0.85;
-
-    // Base vortex is active but disrupted by kicks
-    // Vortex strength pulses slightly with the beat
-    vortexStrength = 0.6 + (kickEnvelope * 0.4);
-  } else {
-    // No music: Calm decay
-    kickEnvelope *= 0.9;
-    vortexStrength *= 0.95;
-  }
-
-  particles.forEach((particle, index) => {
-    // Pass mouse interaction data
-    particle.update(isMusicActive, kickEnvelope, index, mouseX, mouseY);
-    particle.draw(isMusicActive, kickEnvelope, index);
+  // Mouse Tracking for Canvas
+  let mouseX = -1000;
+  let mouseY = -1000;
+  window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
   });
 
+  // Particle class
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.baseSize = Math.random() * 2 + 0.5; // Pixels are varied
+      this.size = this.baseSize;
+      this.speedX = (Math.random() - 0.5) * 0.2; // Slower base drift
+      this.speedY = (Math.random() - 0.5) * 0.2;
 
-  requestAnimationFrame(animate);
-}
+      // Code aesthetic
+      this.chars = ['0', '1', '{', '}', '<', '>', '/', ';', '*', '+'];
+      this.char = Math.random() < 0.1 ? this.chars[Math.floor(Math.random() * this.chars.length)] : null; // 10% are chars
 
-animate();
+      this.color = { r: 60, g: 60, b: 60, a: 0.3 }; // Default dark grey
+      this.energy = 0; // 0 = dormant, 1 = fully active (orange)
+    }
 
-// Optimized Scroll Handling
-let lastKnownScrollPosition = 0;
-let ticking = false;
-let lastScrollY = 0; // Moved here to be accessible by handleScroll
-let scrollTimeout; // Declared globally for handleScroll
-let visualsScrollTimeout; // Declared globally for handleScroll
-let animationScrollTimeout; // Declared globally for handleScroll
+    update(isMusicActive, kickEnvelope, index, mx, my) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
 
-window.addEventListener('scroll', () => {
-  lastKnownScrollPosition = window.scrollY;
+      // 1. Mouse Interaction (Repulsion / Excitement)
+      const dxMouse = this.x - mx;
+      const dyMouse = this.y - my;
+      const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+      const mouseRange = 150;
 
-  if (!ticking) {
-    window.requestAnimationFrame(() => {
-      handleScroll(lastKnownScrollPosition);
-      ticking = false;
+      if (distMouse < mouseRange) {
+        const force = (mouseRange - distMouse) / mouseRange;
+        // Push away slightly
+        this.x += (dxMouse / distMouse) * force * 2;
+        this.y += (dyMouse / distMouse) * force * 2;
+        // Energize!
+        this.energy = Math.min(this.energy + 0.1, 1);
+      } else {
+        // Decay energy
+        this.energy = Math.max(this.energy - 0.02, 0);
+      }
+
+      // 2. Scroll / Vortex Physics
+      if (vortexStrength > 0.1) {
+        const dx = centerX - this.x;
+        const dy = centerY - this.y;
+        const distCenter = Math.sqrt(dx * dx + dy * dy);
+
+        // Calculate angle towards center
+        let angle = Math.atan2(dy, dx);
+
+        // Add swirl (spiral effect) - closer to 90deg (PI/2) means more orbit, less suction
+        // Randomize direction slightly per particle for organic feel?
+        // Let's make a nice galaxy spiral: Angle + offset
+        angle += 1.5; // Nearly perpendicular (orbit) with slight inward pull
+
+        const pull = vortexStrength * 0.02; // Reduced pull factor
+
+        // Orbit velocity based on distance (faster near center, like gravity)
+        // But limit suction at very close range to avoid singularity
+
+        if (distCenter < 50) {
+          // Too close! Push out / orbit fast without getting sucked in
+          this.x -= Math.cos(angle) * 2;
+          this.y -= Math.sin(angle) * 2;
+          this.energy = 1; // Glow up
+        } else {
+          this.x += Math.cos(angle) * pull * (distCenter / 20);
+          this.y += Math.sin(angle) * pull * (distCenter / 20);
+        }
+
+        // Add "Data Stream" speed
+        this.energy = Math.min(this.energy + 0.02, 1);
+      } else {
+        // Normal drift
+        this.x += this.speedX;
+        this.y += this.speedY;
+      }
+
+      // 3. Kick Impact
+      if (isMusicActive && kickEnvelope > 0.2) {
+        this.energy = 1; // Beat hits light everything up
+        // Jitter
+        this.x += (Math.random() - 0.5) * kickEnvelope * 5;
+        this.y += (Math.random() - 0.5) * kickEnvelope * 5;
+      }
+
+      // Wrap
+      if (this.x > canvas.width + 50) this.x = -50;
+      if (this.x < -50) this.x = canvas.width + 50;
+      if (this.y > canvas.height + 50) this.y = -50;
+      if (this.y < -50) this.y = canvas.height + 50;
+    }
+
+    draw(isMusicActive, kickEnvelope, index) {
+      // Interpolate Color: Grey to Neon Orange
+      // Orange: 255, 85, 0
+      // Grey: 60, 60, 60
+
+      let r = 60 + (255 - 60) * this.energy;
+      let g = 60 + (85 - 60) * this.energy;
+      let b = 60 + (0 - 60) * this.energy;
+      let a = 0.3 + (0.7) * this.energy;
+
+      ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
+
+      if (this.char && (this.energy > 0.5 || isMusicActive)) {
+        // Draw Character for high energy particles
+        ctx.font = `${this.baseSize * 4}px monospace`;
+        ctx.fillText(this.char, this.x, this.y);
+      } else {
+        // Draw Pixel Square
+        let size = this.baseSize * (1 + this.energy); // Grow when active
+        ctx.fillRect(this.x, this.y, size, size);
+      }
+    }
+  }
+
+  // Initialize particles
+  function initParticles() {
+    particles = [];
+    const particleCount = Math.floor((canvas.width * canvas.height) / 4000); // Much higher density
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+  }
+
+  initParticles();
+
+  // Optimized Resize Handler
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      const oldWidth = canvas.width;
+      resizeCanvas();
+      // Only re-init if width changed (orientation change) or huge height change
+      if (Math.abs(canvas.width - oldWidth) > 50) {
+        initParticles();
+      }
+    }, 100);
+  });
+
+  // Beat Simulation Variables
+  let lastBeatTime = 0;
+  const beatInterval = 468; // ~128 BPM
+  let kickEnvelope = 0;
+
+  // Animation loop
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // --- Draw Subtle Orange Glow ---
+    // Smoothly interpolate current glow position towards target
+    glowX += (targetGlowX - glowX) * 0.05;
+    glowY += (targetGlowY - glowY) * 0.05;
+
+    const glowRadius = Math.max(canvas.width, canvas.height) * 0.6;
+    const glowGradient = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowRadius);
+
+    // Very subtle orange (adjust alpha for subtlety)
+    glowGradient.addColorStop(0, 'rgba(255, 85, 0, 0.15)');
+    glowGradient.addColorStop(1, 'rgba(255, 85, 0, 0)');
+
+    ctx.fillStyle = glowGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // -------------------------------
+
+    // Check if music is playing
+    const isMusicActive = document.getElementById('stickyPlayer')?.classList.contains('active');
+    const currentTime = Date.now();
+
+    if (isMusicActive) {
+      // Simulate Kick Drum (Metronome)
+      if (currentTime - lastBeatTime > beatInterval) {
+        lastBeatTime = currentTime;
+        kickEnvelope = 1.0; // BOOM: Kick hits max
+      }
+      // Physics: Fast Attack, Exponential Decay
+      kickEnvelope *= 0.85;
+
+      // Base vortex is active but disrupted by kicks
+      // Vortex strength pulses slightly with the beat
+      vortexStrength = 0.6 + (kickEnvelope * 0.4);
+    } else {
+      // No music: Calm decay
+      kickEnvelope *= 0.9;
+      vortexStrength *= 0.95;
+    }
+
+    particles.forEach((particle, index) => {
+      // Pass mouse interaction data
+      particle.update(isMusicActive, kickEnvelope, index, mouseX, mouseY);
+      particle.draw(isMusicActive, kickEnvelope, index);
     });
 
-    ticking = true;
-  }
-});
 
-function handleScroll(scrollPos) {
-  // 1. Particle / Vortex Math
-  const currentScrollY = scrollPos;
-  scrollVelocity = currentScrollY - lastScrollY;
-
-  // Vortex Activation
-  const speed = Math.abs(scrollVelocity);
-  if (speed > 0) {
-    vortexStrength = Math.min(vortexStrength + speed * 0.05, 4);
+    requestAnimationFrame(animate);
   }
 
-  // Glow Movement
-  targetGlowY += scrollVelocity * 1.5;
-  if (speed > 2) {
-    targetGlowX += (Math.random() - 0.5) * 150;
-    targetGlowY += (Math.random() - 0.5) * 100;
-  }
+  animate();
 
-  // Bounds
-  targetGlowY = Math.max(-400, Math.min(canvas.height + 400, targetGlowY));
-  targetGlowX = Math.max(-200, Math.min(canvas.width + 200, targetGlowX));
+  // Optimized Scroll Handling
+  let lastKnownScrollPosition = 0;
+  let ticking = false;
+  let lastScrollY = 0; // Moved here to be accessible by handleScroll
+  let scrollTimeout; // Declared globally for handleScroll
+  let visualsScrollTimeout; // Declared globally for handleScroll
+  let animationScrollTimeout; // Declared globally for handleScroll
 
-  scrollY = scrollVelocity;
-  lastScrollY = currentScrollY;
+  window.addEventListener('scroll', () => {
+    lastKnownScrollPosition = window.scrollY;
 
-  // Decay scroll influence
-  setTimeout(() => {
-    scrollY *= 0.9;
-  }, 50);
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        if (typeof handleScroll === 'function') handleScroll(lastKnownScrollPosition);
+        ticking = false;
+      });
 
-  // 2. Parallax Effect
-  const parallaxLayers = document.querySelectorAll('.parallax-layer');
-  parallaxLayers.forEach(layer => {
-    const speed = layer.getAttribute('data-speed');
-    const yPos = -(scrollPos * speed);
-    layer.style.transform = `translate3d(0, ${yPos}px, 0)`; // Hardware acceleration
+      ticking = true;
+    }
   });
 
-  // 3. Scroll Detection for CSS Classes
-  document.body.classList.add('is-scrolling');
-  clearTimeout(animationScrollTimeout);
-  animationScrollTimeout = setTimeout(() => {
-    document.body.classList.remove('is-scrolling');
-  }, 150);
+  function handleScroll(scrollPos) {
+    // 1. Particle / Vortex Math
+    const currentScrollY = scrollPos;
+    scrollVelocity = currentScrollY - lastScrollY;
 
-  // 4. Triangle Loader Logic
-  const triangleLoader = document.querySelector('.triangle-loader');
-  if (triangleLoader) {
-    const musicSection = document.querySelector('#music');
-    if (musicSection) {
-      // Simple check to avoid layout thrashing if not needed
-      const rect = musicSection.getBoundingClientRect();
-      const inView = rect.top < window.innerHeight && rect.bottom > 0;
-      if (inView) {
-        triangleLoader.classList.remove('paused');
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          triangleLoader.classList.add('paused');
-        }, 1000);
+    // Vortex Activation
+    const speed = Math.abs(scrollVelocity);
+    if (speed > 0) {
+      vortexStrength = Math.min(vortexStrength + speed * 0.05, 4);
+    }
+
+    // Glow Movement
+    targetGlowY += scrollVelocity * 1.5;
+    if (speed > 2) {
+      targetGlowX += (Math.random() - 0.5) * 150;
+      targetGlowY += (Math.random() - 0.5) * 100;
+    }
+
+    // Bounds
+    targetGlowY = Math.max(-400, Math.min(canvas.height + 400, targetGlowY));
+    targetGlowX = Math.max(-200, Math.min(canvas.width + 200, targetGlowX));
+
+    scrollY = scrollVelocity;
+    lastScrollY = currentScrollY;
+
+    // Decay scroll influence
+    setTimeout(() => {
+      scrollY *= 0.9;
+    }, 50);
+
+    // 2. Parallax Effect
+    const parallaxLayers = document.querySelectorAll('.parallax-layer');
+    parallaxLayers.forEach(layer => {
+      const speed = layer.getAttribute('data-speed');
+      const yPos = -(scrollPos * speed);
+      layer.style.transform = `translate3d(0, ${yPos}px, 0)`; // Hardware acceleration
+    });
+
+    // 3. Scroll Detection for CSS Classes
+    document.body.classList.add('is-scrolling');
+    clearTimeout(animationScrollTimeout);
+    animationScrollTimeout = setTimeout(() => {
+      document.body.classList.remove('is-scrolling');
+    }, 150);
+
+    // 4. Triangle Loader Logic
+    const triangleLoader = document.querySelector('.triangle-loader');
+    if (triangleLoader) {
+      const musicSection = document.querySelector('#music');
+      if (musicSection) {
+        // Simple check to avoid layout thrashing if not needed
+        const rect = musicSection.getBoundingClientRect();
+        const inView = rect.top < window.innerHeight && rect.bottom > 0;
+        if (inView) {
+          triangleLoader.classList.remove('paused');
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            triangleLoader.classList.add('paused');
+          }, 1000);
+        }
       }
     }
-  }
 
-  // 5. Visual Loader Logic
-  const visualLoader = document.querySelector('.visual-loader');
-  if (visualLoader) {
-    const visualsSection = document.querySelector('#visuals');
-    if (visualsSection) {
-      const rect = visualsSection.getBoundingClientRect();
-      const inView = rect.top < window.innerHeight && rect.bottom > 0;
-      if (inView) {
-        visualLoader.classList.remove('paused');
-        clearTimeout(visualsScrollTimeout);
-        visualsScrollTimeout = setTimeout(() => {
-          visualLoader.classList.add('paused');
-        }, 1000);
+    // 5. Visual Loader Logic
+    const visualLoader = document.querySelector('.visual-loader');
+    if (visualLoader) {
+      const visualsSection = document.querySelector('#visuals');
+      if (visualsSection) {
+        const rect = visualsSection.getBoundingClientRect();
+        const inView = rect.top < window.innerHeight && rect.bottom > 0;
+        if (inView) {
+          visualLoader.classList.remove('paused');
+          clearTimeout(visualsScrollTimeout);
+          visualsScrollTimeout = setTimeout(() => {
+            visualLoader.classList.add('paused');
+          }, 1000);
+        }
       }
     }
-  }
-}
+  } // End handleScroll
+} // End if(ctx)
+
+// --- INTERACTIVE ELEMENTS ---
 
 // Scramble Text Class
 class ScrambleText {
@@ -677,51 +667,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Custom Cursor Logic
-let cursor = document.getElementById('cursor');
-let cursorBorder = document.getElementById('cursor-border');
-
-// Foolproof Injection: If HTML elements are missing (race condition), create them.
-if (!cursor || !cursorBorder) {
-  console.log("Cursor elements missing, injecting dynamically...");
-
-  if (!cursor) {
-    cursor = document.createElement('div');
-    cursor.id = 'cursor';
-    document.body.appendChild(cursor);
-  }
-
-  if (!cursorBorder) {
-    cursorBorder = document.createElement('div');
-    cursorBorder.id = 'cursor-border';
-    document.body.appendChild(cursorBorder);
-  }
-}
-
-document.addEventListener('mousemove', (e) => {
-  cursor.style.left = e.clientX + 'px';
-  cursor.style.top = e.clientY + 'px';
-
-  // Slight delay for the border to create drag effect
-  setTimeout(() => {
-    cursorBorder.style.left = e.clientX + 'px';
-    cursorBorder.style.top = e.clientY + 'px';
-  }, 50);
-});
-
-// Hover Effect
-const clickableElements = document.querySelectorAll('a, button, .spotify-card, .gallery-item');
-
-clickableElements.forEach(el => {
-  el.addEventListener('mouseenter', () => {
-    document.body.classList.add('hovering');
-  });
-  el.addEventListener('mouseleave', () => {
-    document.body.classList.remove('hovering');
-  });
-});
-
-
 
 // Video Terminal Logic
 const playlistItems = document.querySelectorAll('.term-file');
@@ -798,3 +743,54 @@ if (rawbeatLink) {
     }, 1000);
   });
 }
+
+// --- LOW PRIORITY LOGIC (Load Last) ---
+
+// Smart Link Redirector (Isolated at Bottom)
+(async function handleSmartRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const alias = params.get('go');
+
+  if (alias) {
+    // Basic redirect message
+    document.documentElement.innerHTML = `<body style="background:#000; color:#0f0; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace;">> REDIRECTING /${alias}...</body>`;
+
+    try {
+      // Dynamic import to isolate failures
+      const { db, doc, getDoc, updateDoc, increment } = await import("./firebase.js");
+      const linkRef = doc(db, "smart_links", "link_" + alias);
+      const snap = await getDoc(linkRef);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        updateDoc(linkRef, { clicks: increment(1) });
+
+        const webUrl = data.target;
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        let deepLink = null;
+
+        if (isMobile) {
+          if (webUrl.includes('amazon') || webUrl.includes('amzn')) {
+            deepLink = 'amzn://open?url=' + encodeURIComponent(webUrl);
+          } else if (webUrl.includes('spotify.com')) {
+            deepLink = webUrl.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
+          } else if (webUrl.includes('instagram.com')) {
+            deepLink = webUrl.replace('https://www.instagram.com/', 'instagram://user?username=').replace(/\/$/, '');
+          }
+        }
+
+        if (deepLink) {
+          window.location.href = deepLink;
+          setTimeout(() => window.location.replace(webUrl), 500);
+        } else {
+          window.location.replace(webUrl);
+        }
+      } else {
+        document.body.innerHTML = `<div style="color:red; font-family:monospace; padding:2rem;">ERROR: LINK /${alias} NOT FOUND</div>`;
+      }
+    } catch (e) {
+      console.error("Redirect Error", e);
+      window.location.href = "/";
+    }
+  }
+})();
