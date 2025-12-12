@@ -374,6 +374,12 @@
                 if (window.checkAccess) window.checkAccess();
             };
 
+            const adminLink = document.getElementById('adminTesterLogin');
+            if (adminLink) adminLink.onclick = (e) => {
+                e.preventDefault();
+                document.getElementById('ownerPasswordModal').style.display = 'flex';
+            };
+
             if (passSubmit) passSubmit.onclick = window.unlockOwnerMode;
             if (passInput) passInput.onkeypress = (e) => { if (e.key === 'Enter') window.unlockOwnerMode(); };
 
