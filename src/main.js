@@ -55,15 +55,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- SYSTEM 2: VISUAL CORE (Canvas/Particles) ---
-// Executing immediately (Module type implies defer)
-(function initCanvasSystem() {
-  try {
-    console.log("Initializing Canvas System...");
-    const canvas = document.getElementById('bg-canvas');
-    if (!canvas) {
-      console.error("Canvas element #bg-canvas not found!");
+(function initCanvasSystem(attempts = 0) {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) {
+    if (attempts < 50) { // Retry for 5 seconds
+      // Silent retry to avoid console spam, or debug log
+      if (attempts % 10 === 0) console.log(`Waiting for Canvas... (${attempts})`);
+      setTimeout(() => initCanvasSystem(attempts + 1), 100);
+      return;
+    } else {
+      console.error("CRITICAL: Canvas element #bg-canvas missing after 5 seconds.");
       return;
     }
+  }
+
+  try {
+    console.log("Canvas found. Initializing Visuals...");
 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error("Canvas context blocked.");
