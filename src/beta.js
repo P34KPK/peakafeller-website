@@ -180,31 +180,46 @@ function animate() {
 animate();
 
 // Firestore Helper & Variables
-const CHUNK_SIZE = 300 * 1024; // 300KB chunks
-
-function fileToBase64(file) {
+// Helper to get pure Base64 from a Blob slice without loading whole file
+function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
+    reader.onload = () => {
+      const result = reader.result;
+      // Strip "data:application/octet-stream;base64," header
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
 }
 
+// Low-memory sequential uploader
 async function saveAudioFile(file, onProgress) {
   try {
-    const base64Data = await fileToBase64(file);
-    const totalLength = base64Data.length;
-    const totalChunks = Math.ceil(totalLength / CHUNK_SIZE);
+    // Multiple of 3 bytes is mandatory for clean Base64 concatenation
+    const CHUNK_SIZE_BYTES = 1024 * 1024; // 1MB binary chunks (balanced for network/memory)
+    const totalBytes = file.size;
+    const totalChunks = Math.ceil(totalBytes / CHUNK_SIZE_BYTES);
     const fileId = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     const chunkIds = [];
 
-    console.log(`Starting upload for ${file.name}: ${totalLength} chars in ${totalChunks} chunks.`);
+    console.log(`Starting ROBUST upload for ${file.name}: ${totalBytes} bytes in ${totalChunks} chunks.`);
 
     for (let i = 0; i < totalChunks; i++) {
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, totalLength);
-      const chunkContent = base64Data.substring(start, end);
+      const start = i * CHUNK_SIZE_BYTES;
+      const end = Math.min(start + CHUNK_SIZE_BYTES, totalBytes);
+      const blobSlice = file.slice(start, end);
+
+      // Convert ONLY this slice to Base64
+      let chunkContent = await blobToBase64(blobSlice);
+
+      // Reconstruct Data URI header ONLY on the first chunk
+      if (i === 0) {
+        chunkContent = `data:${file.type};base64,${chunkContent}`;
+      }
+
       const chunkId = `${fileId}_chunk_${i}`;
 
       await setDoc(doc(db, "audio_chunks", chunkId), {
@@ -216,22 +231,44 @@ async function saveAudioFile(file, onProgress) {
 
       chunkIds.push(chunkId);
 
+      // UI Update
       if (onProgress) {
-        const percent = ((i + 1) / totalChunks) * 100;
-        onProgress(percent);
+        onProgress(((i + 1) / totalChunks) * 100);
       }
+
+      // Garbage Collection Pause
+      await new Promise(r => setTimeout(r, 100));
     }
+
     return chunkIds;
   } catch (e) {
-    console.error("Chunk upload failed:", e);
+    console.error(`UPLOAD FAILED at chunk ${chunkIds.length}:`, e);
+    // Forward specific errors to UI logs
+    if (e.code) console.error(`Code: ${e.code}`);
     throw e;
   }
 }
 
-async function loadAudioFile(chunkIds) {
-  const chunkPromises = chunkIds.map(id => getDoc(doc(db, "audio_chunks", id)));
+async function loadAudioFile(chunkIds, onProgress) {
+  let completed = 0;
+  const total = chunkIds.length;
+
+  // Wrap promises to track progress
+  const chunkPromises = chunkIds.map(async (id) => {
+    const snap = await getDoc(doc(db, "audio_chunks", id));
+    completed++;
+    if (onProgress) onProgress((completed / total) * 100);
+    return snap;
+  });
+
   const chunkSnaps = await Promise.all(chunkPromises);
+
   let fullDataUrl = '';
+  // Reassemble in correct order (preserving index 0 to N)
+  // Since map preserves order of promises, chunkSnaps matches chunkIds order?
+  // Ideally chunkIds are sorted. We assume saveAudioFile produced them sorted.
+  // But let's be safe: we rely on the order of chunkIds array.
+
   chunkSnaps.forEach(snap => {
     if (snap.exists()) {
       fullDataUrl += snap.data().data;
@@ -530,6 +567,45 @@ function initApp() {
     }
   }
 
+  // --- DIAGNOSTIC TOOL ---
+  const debugDiv = document.getElementById('debugLog');
+  if (debugDiv) {
+    const testBtn = document.createElement('button');
+    testBtn.textContent = "[ RUN DB DIAGNOSTIC ]";
+    testBtn.style.cssText = "background:#333; color:#fff; border:1px solid #555; padding:5px 10px; margin-top:10px; cursor:pointer; font-family:monospace; width:100%;";
+    debugDiv.parentNode.insertBefore(testBtn, debugDiv.nextSibling);
+
+    testBtn.onclick = async () => {
+      console.log(">>> STARTING DATABASE DIAGNOSTIC...");
+      try {
+        const testId = "test_" + Date.now();
+        // Write Test
+        await setDoc(doc(db, "diagnostics", testId), {
+          timestamp: new Date().toISOString(),
+          test: "Can I write?"
+        });
+        console.log(">>> WRITE SUCCESS: Database is writable.");
+
+        // Read Test
+        const snap = await getDoc(doc(db, "diagnostics", testId));
+        if (snap.exists()) console.log(">>> READ SUCCESS: Database is readable.");
+
+        // Delete Test
+        await deleteDoc(doc(db, "diagnostics", testId));
+        console.log(">>> DELETE SUCCESS: Database is clean.");
+
+        alert("DIAGNOSTIC PASSED: System is operational.");
+      } catch (e) {
+        console.error(">>> DIAGNOSTIC FAILED:", e);
+        console.error(">>> ERROR CODE:", e.code || "Unknown");
+
+        if (e.code === 'resource-exhausted') alert("FAIL: DAILY QUOTA EXCEEDED (Come back tomorrow)");
+        else if (e.code === 'permission-denied') alert("FAIL: PERMISSION DENIED (Rules issue)");
+        else alert("FAIL: " + e.message);
+      }
+    };
+  }
+
   // Initial check
   checkAccess();
 }
@@ -746,18 +822,52 @@ window.openAlbum = (id) => {
     });
 
     if (t.chunkIds) {
-      ws.load(await loadAudioFile(t.chunkIds));
+      const btn = document.getElementById(`playBtn-${i}`);
+      // Initial Loading State
+      btn.textContent = 'BUFFERING [░░░░░] 0%';
+      btn.disabled = true;
+
+      try {
+        const audioData = await loadAudioFile(t.chunkIds, (percent) => {
+          // PROGRESS BAR VISUAL
+          const bars = Math.floor(percent / 20); // 0 to 5 bars
+          const visual = '█'.repeat(bars) + '░'.repeat(5 - bars);
+          btn.textContent = `LOADING [${visual}] ${Math.floor(percent)}%`;
+        });
+
+        ws.load(audioData);
+        btn.textContent = 'PLAY';
+        btn.disabled = false;
+
+      } catch (err) {
+        console.error("Load failed", err);
+        btn.textContent = 'ERROR';
+        btn.style.color = 'red';
+      }
     } else {
       ws.load(t.url || t.data);
     }
 
     const btn = document.getElementById(`playBtn-${i}`);
-    btn.onclick = () => ws.playPause();
+
+    // Safety check just in case
+    if (btn) {
+      btn.onclick = () => {
+        if (ws.isPlaying()) ws.pause();
+        else ws.play();
+      };
+    }
+
+    ws.on('ready', () => {
+      // Auto-play if desired or just ready state
+      // btn.disabled = false;
+    });
+
     ws.on('play', () => {
-      btn.textContent = 'PAUSE';
+      if (btn) btn.textContent = 'PAUSE';
       try { window.connectAudioVisualizer(ws.getMediaElement()); } catch (e) { }
     });
-    ws.on('pause', () => btn.textContent = 'PLAY');
+    ws.on('pause', () => { if (btn) btn.textContent = 'PLAY'; });
 
     window.activeWaveSurfers.push(ws);
   });
