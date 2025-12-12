@@ -604,11 +604,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const headerNav = document.querySelector('.header-nav');
 
   if (menuIcon && headerNav) {
+    // Note: Toggle is handled via inline onclick in index.html for maximum robustness.
+    // Keeping this commented out to avoid double-toggling.
+    /*
     menuIcon.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent bubbling issues
+      e.stopPropagation(); 
       headerNav.classList.toggle('active');
       menuIcon.classList.toggle('is-open');
     });
+    */
 
     // Close menu when a link is clicked
     const navLinks = headerNav.querySelectorAll('a');
