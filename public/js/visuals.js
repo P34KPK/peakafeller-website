@@ -167,11 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             draw() {
-                let r = 100 + (255 - 100) * this.energy;
-                let g = 100 + (85 - 100) * this.energy;
-                let b = 100 + (0 - 100) * this.energy;
-                let a = 0.5 + (0.5) * this.energy;
-                ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
+                // DEBUG: Force White Particles for Visibility Check
+                // let r = 100 + (255 - 100) * this.energy;
+                // let g = 100 + (85 - 100) * this.energy;
+                // let b = 100 + (0 - 100) * this.energy;
+                // let a = 0.5 + (0.5) * this.energy;
+                // ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; // Force White for Debug
 
                 if (this.char && this.energy > 0.5) {
                     ctx.font = `${this.baseSize * 4}px monospace`;
@@ -187,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             particles = [];
             const count = Math.floor((canvas.width * canvas.height) / 4000);
             for (let i = 0; i < count; i++) particles.push(new Particle());
+            console.log(`System 2: Created ${count} particles.`);
         }
         initParticles();
 
@@ -205,7 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const beatInterval = 468;
         let kickEnvelope = 0;
 
+        let debugLogCount = 0;
+
         function animate() {
+            if (debugLogCount < 10) {
+                console.log("Anim Frame Running");
+                debugLogCount++;
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Glow
@@ -215,7 +226,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowR);
             grad.addColorStop(0, 'rgba(255, 85, 0, 0.15)');
             grad.addColorStop(1, 'rgba(255, 85, 0, 0)');
-            ctx.fillStyle = grad;
+
+            // TEMP DEBUG: Use brighter glow for test
+            // ctx.fillStyle = grad;
+            ctx.fillStyle = 'rgba(50, 0, 0, 0.2)'; // DEBUG RED BACKGROUND TINT
+
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Audio Logic Stub (Music Active Check)
