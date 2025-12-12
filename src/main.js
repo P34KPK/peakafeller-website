@@ -1,54 +1,66 @@
-
 import './style.css';
 // import './rawbeat.css';
 
-// --- VISUAL CORE (Critical Priority) ---
+// --- SYSTEM 1: CURSOR & INTERACTION (Critical) ---
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    // Custom Cursor Logic
+    let cursor = document.getElementById('cursor');
+    let cursorBorder = document.getElementById('cursor-border');
 
-// Custom Cursor Logic
-let cursor = document.getElementById('cursor');
-let cursorBorder = document.getElementById('cursor-border');
+    // Injection if missing
+    if (!cursor || !cursorBorder) {
+      if (!document.body) {
+        console.warn("Body not ready for cursor injection");
+        return;
+      }
+      if (!cursor) {
+        cursor = document.createElement('div');
+        cursor.id = 'cursor';
+        document.body.appendChild(cursor);
+      }
+      if (!cursorBorder) {
+        cursorBorder = document.createElement('div');
+        cursorBorder.id = 'cursor-border';
+        document.body.appendChild(cursorBorder);
+      }
+    }
 
-// Foolproof Injection: If HTML elements are missing (race condition), create them.
-if (!cursor || !cursorBorder) {
-  if (!cursor) {
-    cursor = document.createElement('div');
-    cursor.id = 'cursor';
-    document.body.appendChild(cursor);
-  }
-  if (!cursorBorder) {
-    cursorBorder = document.createElement('div');
-    cursorBorder.id = 'cursor-border';
-    document.body.appendChild(cursorBorder);
-  }
-}
+    // Mouse Movement
+    document.addEventListener('mousemove', (e) => {
+      if (cursor) {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+      }
+      if (cursorBorder) {
+        setTimeout(() => {
+          cursorBorder.style.left = e.clientX + 'px';
+          cursorBorder.style.top = e.clientY + 'px';
+        }, 50);
+      }
+    });
 
-document.addEventListener('mousemove', (e) => {
-  if (cursor) {
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
-  }
-  if (cursorBorder) {
-    setTimeout(() => {
-      cursorBorder.style.left = e.clientX + 'px';
-      cursorBorder.style.top = e.clientY + 'px';
-    }, 50);
+    // Hover Effects
+    const clickableElements = document.querySelectorAll('a, button, .spotify-card, .gallery-item');
+    clickableElements.forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+    });
+
+    console.log("System 1 (Cursor) initialized.");
+  } catch (e) {
+    console.error("Cursor System Failed:", e);
   }
 });
 
-// Hover Effect
-const clickableElements = document.querySelectorAll('a, button, .spotify-card, .gallery-item');
-clickableElements.forEach(el => {
-  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
-  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
-});
 
-
-// Animated Background Canvas - Wrapped in Load Listener for Safety
+// --- SYSTEM 2: VISUAL CORE (Canvas/Particles) ---
 window.addEventListener('load', () => {
-  const canvas = document.getElementById('bg-canvas');
-  const ctx = canvas ? canvas.getContext('2d') : null;
+  try {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
 
-  if (ctx) {
+    if (!ctx) throw new Error("Canvas context not found or blocked.");
 
     let particles = [];
     let scrollY = 0;
@@ -61,15 +73,12 @@ window.addEventListener('load', () => {
     let targetGlowX = window.innerWidth / 2;
     let targetGlowY = window.innerHeight / 2;
 
-    // Set canvas size
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
-
     resizeCanvas();
 
-    // Mouse Tracking for Canvas
     let mouseX = -1000;
     let mouseY = -1000;
     window.addEventListener('mousemove', (e) => {
@@ -77,87 +86,63 @@ window.addEventListener('load', () => {
       mouseY = e.clientY;
     });
 
-    // Particle class
     class Particle {
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.baseSize = Math.random() * 2 + 0.5; // Pixels are varied
+        this.baseSize = Math.random() * 2 + 0.5;
         this.size = this.baseSize;
-        this.speedX = (Math.random() - 0.5) * 0.2; // Slower base drift
+        this.speedX = (Math.random() - 0.5) * 0.2;
         this.speedY = (Math.random() - 0.5) * 0.2;
-
-        // Code aesthetic
         this.chars = ['0', '1', '{', '}', '<', '>', '/', ';', '*', '+'];
-        this.char = Math.random() < 0.1 ? this.chars[Math.floor(Math.random() * this.chars.length)] : null; // 10% are chars
-
-        this.color = { r: 60, g: 60, b: 60, a: 0.3 }; // Default dark grey
-        this.energy = 0; // 0 = dormant, 1 = fully active (orange)
+        this.char = Math.random() < 0.1 ? this.chars[Math.floor(Math.random() * this.chars.length)] : null;
+        this.energy = 0;
       }
 
-      update(isMusicActive, kickEnvelope, index, mx, my) {
+      update(isMusicActive, kickEnvelope) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        // 1. Mouse Interaction (Repulsion / Excitement)
-        const dxMouse = this.x - mx;
-        const dyMouse = this.y - my;
+        // Mouse Repulsion
+        const dxMouse = this.x - mouseX;
+        const dyMouse = this.y - mouseY;
         const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
         const mouseRange = 150;
 
         if (distMouse < mouseRange) {
           const force = (mouseRange - distMouse) / mouseRange;
-          // Push away slightly
           this.x += (dxMouse / distMouse) * force * 2;
           this.y += (dyMouse / distMouse) * force * 2;
-          // Energize!
           this.energy = Math.min(this.energy + 0.1, 1);
         } else {
-          // Decay energy
           this.energy = Math.max(this.energy - 0.02, 0);
         }
 
-        // 2. Scroll / Vortex Physics
+        // Vortex
         if (vortexStrength > 0.1) {
           const dx = centerX - this.x;
           const dy = centerY - this.y;
-          const distCenter = Math.sqrt(dx * dx + dy * dy);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          let angle = Math.atan2(dy, dx) + 1.5;
+          const pull = vortexStrength * 0.02;
 
-          // Calculate angle towards center
-          let angle = Math.atan2(dy, dx);
-
-          // Add swirl (spiral effect) - closer to 90deg (PI/2) means more orbit, less suction
-          // Randomize direction slightly per particle for organic feel?
-          // Let's make a nice galaxy spiral: Angle + offset
-          angle += 1.5; // Nearly perpendicular (orbit) with slight inward pull
-
-          const pull = vortexStrength * 0.02; // Reduced pull factor
-
-          // Orbit velocity based on distance (faster near center, like gravity)
-          // But limit suction at very close range to avoid singularity
-
-          if (distCenter < 50) {
-            // Too close! Push out / orbit fast without getting sucked in
+          if (dist < 50) {
             this.x -= Math.cos(angle) * 2;
             this.y -= Math.sin(angle) * 2;
-            this.energy = 1; // Glow up
+            this.energy = 1;
           } else {
-            this.x += Math.cos(angle) * pull * (distCenter / 20);
-            this.y += Math.sin(angle) * pull * (distCenter / 20);
+            this.x += Math.cos(angle) * pull * (dist / 20);
+            this.y += Math.sin(angle) * pull * (dist / 20);
           }
-
-          // Add "Data Stream" speed
           this.energy = Math.min(this.energy + 0.02, 1);
         } else {
-          // Normal drift
           this.x += this.speedX;
           this.y += this.speedY;
         }
 
-        // 3. Kick Impact
+        // Kick
         if (isMusicActive && kickEnvelope > 0.2) {
-          this.energy = 1; // Beat hits light everything up
-          // Jitter
+          this.energy = 1;
           this.x += (Math.random() - 0.5) * kickEnvelope * 5;
           this.y += (Math.random() - 0.5) * kickEnvelope * 5;
         }
@@ -169,217 +154,117 @@ window.addEventListener('load', () => {
         if (this.y < -50) this.y = canvas.height + 50;
       }
 
-      draw(isMusicActive, kickEnvelope, index) {
-        // Interpolate Color: Grey to Neon Orange
-        // Orange: 255, 85, 0
-        // Grey: 60, 60, 60
-
-        let r = 100 + (255 - 100) * this.energy; // Brighter Grey base
+      draw() {
+        let r = 100 + (255 - 100) * this.energy;
         let g = 100 + (85 - 100) * this.energy;
         let b = 100 + (0 - 100) * this.energy;
-        let a = 0.5 + (0.5) * this.energy; // Higher base opacity
-
+        let a = 0.5 + (0.5) * this.energy;
         ctx.fillStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${a})`;
 
-        if (this.char && (this.energy > 0.5 || isMusicActive)) {
-          // Draw Character for high energy particles
+        if (this.char && this.energy > 0.5) {
           ctx.font = `${this.baseSize * 4}px monospace`;
           ctx.fillText(this.char, this.x, this.y);
         } else {
-          // Draw Pixel Square
-          let size = this.baseSize * (1 + this.energy); // Grow when active
+          let size = this.baseSize * (1 + this.energy);
           ctx.fillRect(this.x, this.y, size, size);
         }
       }
     }
 
-    // Initialize particles
     function initParticles() {
       particles = [];
-      const particleCount = Math.floor((canvas.width * canvas.height) / 4000); // Much higher density
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
-      }
+      const count = Math.floor((canvas.width * canvas.height) / 4000);
+      for (let i = 0; i < count; i++) particles.push(new Particle());
     }
-
     initParticles();
 
-    // Optimized Resize Handler
     let resizeTimeout;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
-        const oldWidth = canvas.width;
+        const w = canvas.width;
         resizeCanvas();
-        // Only re-init if width changed (orientation change) or huge height change
-        if (Math.abs(canvas.width - oldWidth) > 50) {
-          initParticles();
-        }
+        if (Math.abs(canvas.width - w) > 50) initParticles();
       }, 100);
     });
 
-    // Beat Simulation Variables
+    // Loop Variables
     let lastBeatTime = 0;
-    const beatInterval = 468; // ~128 BPM
+    const beatInterval = 468;
     let kickEnvelope = 0;
 
-    // Animation loop
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // --- Draw Subtle Orange Glow ---
-      // Smoothly interpolate current glow position towards target
+      // Glow
       glowX += (targetGlowX - glowX) * 0.05;
       glowY += (targetGlowY - glowY) * 0.05;
-
-      const glowRadius = Math.max(canvas.width, canvas.height) * 0.6;
-      const glowGradient = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowRadius);
-
-      // Very subtle orange (adjust alpha for subtlety)
-      glowGradient.addColorStop(0, 'rgba(255, 85, 0, 0.15)');
-      glowGradient.addColorStop(1, 'rgba(255, 85, 0, 0)');
-
-      ctx.fillStyle = glowGradient;
+      const glowR = Math.max(canvas.width, canvas.height) * 0.6;
+      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowR);
+      grad.addColorStop(0, 'rgba(255, 85, 0, 0.15)');
+      grad.addColorStop(1, 'rgba(255, 85, 0, 0)');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // -------------------------------
 
-      // Check if music is playing
+      // Audio Logic Stub (Music Active Check)
       const isMusicActive = document.getElementById('stickyPlayer')?.classList.contains('active');
-      const currentTime = Date.now();
+      const now = Date.now();
 
       if (isMusicActive) {
-        // Simulate Kick Drum (Metronome)
-        if (currentTime - lastBeatTime > beatInterval) {
-          lastBeatTime = currentTime;
-          kickEnvelope = 1.0; // BOOM: Kick hits max
+        if (now - lastBeatTime > beatInterval) {
+          lastBeatTime = now;
+          kickEnvelope = 1.0;
         }
-        // Physics: Fast Attack, Exponential Decay
         kickEnvelope *= 0.85;
-
-        // Base vortex is active but disrupted by kicks
-        // Vortex strength pulses slightly with the beat
         vortexStrength = 0.6 + (kickEnvelope * 0.4);
       } else {
-        // No music: Calm decay
         kickEnvelope *= 0.9;
         vortexStrength *= 0.95;
       }
 
-      particles.forEach((particle, index) => {
-        // Pass mouse interaction data
-        particle.update(isMusicActive, kickEnvelope, index, mouseX, mouseY);
-        particle.draw(isMusicActive, kickEnvelope, index);
+      particles.forEach(p => {
+        p.update(isMusicActive, kickEnvelope);
+        p.draw();
       });
-
 
       requestAnimationFrame(animate);
     }
-
     animate();
 
-    // Optimized Scroll Handling
-    let lastKnownScrollPosition = 0;
+    // Scroll Handler (Required for Vortex)
     let ticking = false;
-    let lastScrollY = 0; // Moved here to be accessible by handleScroll
-    let scrollTimeout; // Declared globally for handleScroll
-    let visualsScrollTimeout; // Declared globally for handleScroll
-    let animationScrollTimeout; // Declared globally for handleScroll
-
+    let lastScrollY = 0;
     window.addEventListener('scroll', () => {
-      lastKnownScrollPosition = window.scrollY;
-
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          if (typeof handleScroll === 'function') handleScroll(lastKnownScrollPosition);
+          const currentScrollY = window.scrollY;
+          const scrollVelocity = currentScrollY - lastScrollY;
+          const speed = Math.abs(scrollVelocity);
+
+          if (speed > 0) vortexStrength = Math.min(vortexStrength + speed * 0.05, 4);
+
+          targetGlowY += scrollVelocity * 1.5;
+          if (speed > 2) {
+            targetGlowX += (Math.random() - 0.5) * 150;
+            targetGlowY += (Math.random() - 0.5) * 100;
+          }
+
+          targetGlowY = Math.max(-400, Math.min(canvas.height + 400, targetGlowY));
+          targetGlowX = Math.max(-200, Math.min(canvas.width + 200, targetGlowX));
+
+          lastScrollY = currentScrollY;
           ticking = false;
         });
-
         ticking = true;
       }
     });
 
-    function handleScroll(scrollPos) {
-      // 1. Particle / Vortex Math
-      const currentScrollY = scrollPos;
-      scrollVelocity = currentScrollY - lastScrollY;
+    console.log("System 2 (Canvas) initialized.");
 
-      // Vortex Activation
-      const speed = Math.abs(scrollVelocity);
-      if (speed > 0) {
-        vortexStrength = Math.min(vortexStrength + speed * 0.05, 4);
-      }
-
-      // Glow Movement
-      targetGlowY += scrollVelocity * 1.5;
-      if (speed > 2) {
-        targetGlowX += (Math.random() - 0.5) * 150;
-        targetGlowY += (Math.random() - 0.5) * 100;
-      }
-
-      // Bounds
-      targetGlowY = Math.max(-400, Math.min(canvas.height + 400, targetGlowY));
-      targetGlowX = Math.max(-200, Math.min(canvas.width + 200, targetGlowX));
-
-      scrollY = scrollVelocity;
-      lastScrollY = currentScrollY;
-
-      // Decay scroll influence
-      setTimeout(() => {
-        scrollY *= 0.9;
-      }, 50);
-
-      // 2. Parallax Effect
-      const parallaxLayers = document.querySelectorAll('.parallax-layer');
-      parallaxLayers.forEach(layer => {
-        const speed = layer.getAttribute('data-speed');
-        const yPos = -(scrollPos * speed);
-        layer.style.transform = `translate3d(0, ${yPos}px, 0)`; // Hardware acceleration
-      });
-
-      // 3. Scroll Detection for CSS Classes
-      document.body.classList.add('is-scrolling');
-      clearTimeout(animationScrollTimeout);
-      animationScrollTimeout = setTimeout(() => {
-        document.body.classList.remove('is-scrolling');
-      }, 150);
-
-      // 4. Triangle Loader Logic
-      const triangleLoader = document.querySelector('.triangle-loader');
-      if (triangleLoader) {
-        const musicSection = document.querySelector('#music');
-        if (musicSection) {
-          // Simple check to avoid layout thrashing if not needed
-          const rect = musicSection.getBoundingClientRect();
-          const inView = rect.top < window.innerHeight && rect.bottom > 0;
-          if (inView) {
-            triangleLoader.classList.remove('paused');
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-              triangleLoader.classList.add('paused');
-            }, 1000);
-          }
-        }
-      }
-
-      // 5. Visual Loader Logic
-      const visualLoader = document.querySelector('.visual-loader');
-      if (visualLoader) {
-        const visualsSection = document.querySelector('#visuals');
-        if (visualsSection) {
-          const rect = visualsSection.getBoundingClientRect();
-          const inView = rect.top < window.innerHeight && rect.bottom > 0;
-          if (inView) {
-            visualLoader.classList.remove('paused');
-            clearTimeout(visualsScrollTimeout);
-            visualsScrollTimeout = setTimeout(() => {
-              visualLoader.classList.add('paused');
-            }, 1000);
-          }
-        }
-      }
-    } // End handleScroll
-  } // End if(ctx)
-}); // End window load listener
+  } catch (err) {
+    console.error("Canvas System Failed:", err);
+  }
+});
 
 // --- INTERACTIVE ELEMENTS ---
 
