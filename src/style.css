@@ -2400,6 +2400,8 @@ body.hovering #cursor-border {
     /* Reveal Animation */
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
+    /* CRITICAL FIX: Prevent ghost clicks */
     transform: translateY(-20px);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -2413,6 +2415,8 @@ body.hovering #cursor-border {
   .header-nav.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
+    /* Re-enable clicks */
     transform: translateY(0);
   }
 
