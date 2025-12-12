@@ -2422,6 +2422,14 @@ body.hovering #cursor-border {
     /* Allow scrolling content */
     -webkit-overflow-scrolling: touch;
     /* Smooth iOS scroll */
+    padding-bottom: 5rem;
+    /* Space at bottom for scrolling */
+    display: flex;
+    /* Ensure flex layout is kept */
+    justify-content: flex-start;
+    /* Start from top so successful scroll */
+    padding-top: 6rem;
+    /* Push content down below close button */
   }
 
   /* Navigation Links - Coding Style */
@@ -2573,25 +2581,31 @@ body.hovering #cursor-border {
     color: #000;
   }
 
-  /* Scroll Indicator - Perfect Center Fix */
+  /* Scroll Indicator - ABSOLUTE FORCE CENTER */
   .scroll-indicator {
-    position: relative;
-    /* Restored from static for better control */
-    transform: none;
-    /* No translate needed if using margin auto or flex */
-    margin: 1rem 0 0 0;
-    width: 100%;
-    /* Ensure margin auto works */
+    position: absolute;
+    left: 50%;
+    bottom: 5rem;
+    /* Remonté un peu pour ne pas être caché par l'interface mobile */
+    transform: translateX(-50%);
+    width: auto;
+    margin: 0;
     text-align: center;
-    /* Ensure it behaves as block for margins */
     display: block;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     opacity: 0.7;
     animation: bounce-mobile 2s infinite;
+    pointer-events: none;
+    /* Ne pas bloquer le scroll */
     order: 10;
-    /* Last */
     color: var(--color-accent);
+    z-index: 5;
+  }
+
+  /* Make sure Hero allows absolute positioning relative to it */
+  .hero-content {
+    position: relative;
   }
 
   @keyframes bounce-mobile {
