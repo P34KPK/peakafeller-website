@@ -3321,3 +3321,116 @@ body.hovering #cursor-border {
     color: #000 !important;
   }
 }
+/* ========================================= */
+/* VISUAL ACCORDION LAYOUT */
+/* ========================================= */
+.visual-accordion {
+  display: flex;
+  height: 500px; /* Tall strip */
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.visual-accordion-card {
+  flex: 1;
+  position: relative;
+  transition: flex 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s;
+  overflow: hidden;
+  border-right: 1px solid var(--color-border);
+  filter: grayscale(100%) contrast(1.2);
+  cursor: pointer;
+}
+
+.visual-accordion-card:last-child {
+  border-right: none;
+}
+
+.visual-accordion-card:hover {
+  flex: 3.5; /* Grow significantly on hover */
+  filter: grayscale(0%) contrast(1.1);
+}
+
+/* Image */
+.visual-accordion-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.visual-accordion-card:hover .visual-accordion-img {
+  transform: scale(1.05);
+}
+
+/* Overlay Info */
+.visual-accordion-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%);
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Show details on hover */
+.visual-accordion-card:hover .visual-accordion-overlay {
+  transform: translateY(0);
+}
+
+/* Title Label (Always visible vertically if possible, or hidden? Let's hide initially for cleaner look) */
+.visual-label-vertical {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  transform-origin: bottom left;
+  transform: rotate(-90deg) translate(0, 100%);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.visual-accordion-card:hover .visual-label-vertical {
+  opacity: 0; /* Hide when expanded */
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .visual-accordion {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .visual-accordion-card {
+    height: 300px; /* Stacked vertical blocks */
+    flex: none; /* Disable flex growth horizontally */
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .visual-accordion-card:hover {
+    flex: none; /* No resizing on mobile touch to avoid layout shifts */
+  }
+
+  /* Show overlay always or on tap */
+  .visual-accordion-overlay {
+    transform: translateY(0);
+    padding: 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 20%, transparent);
+  }
+
+  .visual-label-vertical {
+    display: none;
+  }
+}
