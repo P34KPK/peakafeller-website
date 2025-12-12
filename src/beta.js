@@ -792,34 +792,41 @@ function initSmartLinksUI() {
       btn.textContent = "CREATING...";
 
       try {
-        // Check uniqueness
-        const snap = await getDocs(collection(db, "smart_links"));
-        let exists = false;
-        snap.forEach(d => { if (d.data().alias === alias) exists = true; });
+        // Timeout Race Logic
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Database Timeout (Quota likely exceeded)")), 8000)
+        );
 
-        if (exists) {
-          alert(`Alias '${alias}' is already taken.`);
-          btn.disabled = false;
-          btn.textContent = "CREATE TRACKING LINK";
-          return;
-        }
+        // Real DB Operation
+        const dbOperation = async () => {
+          const snap = await getDocs(collection(db, "smart_links"));
+          let exists = false;
+          snap.forEach(d => { if (d.data().alias === alias) exists = true; });
 
-        const linkData = {
-          alias: alias,
-          target: target,
-          clicks: 0,
-          createdAt: new Date().toISOString()
+          if (exists) throw new Error(`Alias '${alias}' is already taken.`);
+
+          const linkData = {
+            alias: alias,
+            target: target,
+            clicks: 0,
+            createdAt: new Date().toISOString()
+          };
+
+          await setDoc(doc(db, "smart_links", "link_" + alias), linkData);
+          return true;
         };
 
-        await setDoc(doc(db, "smart_links", "link_" + alias), linkData);
+        // Race!
+        await Promise.race([dbOperation(), timeout]);
 
         document.getElementById('linkTarget').value = '';
         document.getElementById('linkAlias').value = '';
         loadSmartLinks();
         alert(`Smart Link Created: peakafeller.com/?go=${alias}`);
+
       } catch (e) {
         console.error("Link Creation Error:", e);
-        alert("Error: " + e.message);
+        alert("Creation Failed: " + e.message + "\n\n(If 'Timeout', Firebase quota is full. Try again tomorrow.)");
       } finally {
         btn.disabled = false;
         btn.textContent = "CREATE TRACKING LINK";
