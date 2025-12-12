@@ -1,4 +1,5 @@
 import './style.css';
+import { db, doc, getDoc, updateDoc, increment } from "./firebase.js";
 // import './rawbeat.css';
 
 // --- SYSTEM 1: CURSOR & INTERACTION (Critical) ---
@@ -663,8 +664,7 @@ if (rawbeatLink) {
     document.documentElement.innerHTML = `<body style="background:#000; color:#0f0; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace;">> REDIRECTING /${alias}...</body>`;
 
     try {
-      // Dynamic import to isolate failures
-      const { db, doc, getDoc, updateDoc, increment } = await import("./firebase.js");
+      // Logic uses static imports from top of file
       const linkRef = doc(db, "smart_links", "link_" + alias);
       const snap = await getDoc(linkRef);
 
