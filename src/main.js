@@ -55,12 +55,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // --- SYSTEM 2: VISUAL CORE (Canvas/Particles) ---
-window.addEventListener('load', () => {
+// Executing immediately (Module type implies defer)
+(function initCanvasSystem() {
   try {
+    console.log("Initializing Canvas System...");
     const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas ? canvas.getContext('2d') : null;
+    if (!canvas) {
+      console.error("Canvas element #bg-canvas not found!");
+      return;
+    }
 
-    if (!ctx) throw new Error("Canvas context not found or blocked.");
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error("Canvas context blocked.");
 
     let particles = [];
     let scrollY = 0;
@@ -264,7 +270,7 @@ window.addEventListener('load', () => {
   } catch (err) {
     console.error("Canvas System Failed:", err);
   }
-});
+})();
 
 // --- INTERACTIVE ELEMENTS ---
 
