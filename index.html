@@ -858,6 +858,90 @@
   <div id="cursor"></div>
   <div id="cursor-border"></div>
 
+
+  <!-- SYSTEM CORE: VISUALS (ISOLATED) -->
+  <script>
+    (function () {
+      console.log("Core Visuals initializing...");
+
+      // --- 1. CURSOR ---
+      try {
+        let cursor = document.getElementById('cursor');
+        let cursorBorder = document.getElementById('cursor-border');
+        if (!cursor) { cursor = document.createElement('div'); cursor.id = 'cursor'; document.body.appendChild(cursor); }
+        if (!cursorBorder) { cursorBorder = document.createElement('div'); cursorBorder.id = 'cursor-border'; document.body.appendChild(cursorBorder); }
+
+        document.addEventListener('mousemove', (e) => {
+          cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px';
+          setTimeout(() => { cursorBorder.style.left = e.clientX + 'px'; cursorBorder.style.top = e.clientY + 'px'; }, 50);
+        });
+        document.body.classList.add('custom-cursor-active');
+      } catch (e) { console.error("Cursor error", e); }
+
+      // --- 2. BOOT SEQUENCE ---
+      const bootOverlay = document.getElementById('boot-overlay');
+      const bootText = document.getElementById('boot-text');
+      if (bootOverlay && bootText) {
+        const lines = ["> INITIALIZING P34K KERNEL...", "> LOADING NEURAL ASSETS...", "> ACCESS GRANTED."];
+        let i = 0, char = 0;
+        function type() {
+          if (i < lines.length) {
+            if (char < lines[i].length) { bootText.innerText += lines[i].charAt(char++); setTimeout(type, 30); }
+            else { bootText.innerText += "\n"; i++; char = 0; setTimeout(type, 200); }
+          } else {
+            setTimeout(() => { bootOverlay.style.transition = "opacity 0.5s"; bootOverlay.style.opacity = "0"; setTimeout(() => bootOverlay.style.display = "none", 500); }, 500);
+          }
+        }
+        setTimeout(type, 100);
+      } else if (bootOverlay) { bootOverlay.style.display = 'none'; }
+
+
+      // --- 3. CANVAS BACKGROUND ---
+      const canvas = document.getElementById('bg-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+          constructor() {
+            this.reset();
+            this.y = Math.random() * canvas.height; // Spread initially
+          }
+          reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 3 + 1;
+            this.speedX = (Math.random() - 0.5) * 0.5;
+            this.speedY = (Math.random() - 0.5) * 0.5;
+            this.life = Math.random();
+          }
+          update() {
+            this.x += this.speedX; this.y += this.speedY;
+            this.life -= 0.005;
+            if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+          }
+          draw() {
+            ctx.fillStyle = `rgba(200, 200, 200, ${this.life * 0.5})`;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+          }
+        }
+
+        for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height); // Transparent!
+          particles.forEach(p => { p.update(); p.draw(); });
+          requestAnimationFrame(animate);
+        }
+        animate();
+      }
+    })();
+  </script>
+
   <script type="module" defer src="./src/main.js"></script>
 </body>
 
