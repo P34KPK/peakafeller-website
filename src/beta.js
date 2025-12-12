@@ -437,18 +437,28 @@ function initApp() {
     console.error('CRITICAL: coverUpload element not found in DOM');
   }
 
-  const tracksUpload = document.getElementById('tracksUpload');
-  if (tracksUpload) {
-    tracksUpload.addEventListener('change', (e) => {
-      console.log('Tracks input changed');
-      const files = Array.from(e.target.files);
-      files.forEach(file => {
-        console.log('Adding track:', file.name);
-        uploadedTracks.push({ name: file.name.replace('.mp3', ''), file: file, comments: [] });
+  // Manual Track Input Logic
+  const addTrackBtn = document.getElementById('addManualTrackBtn');
+  const trackInput = document.getElementById('trackNameInput');
+
+  if (addTrackBtn && trackInput) {
+    addTrackBtn.onclick = () => {
+      const val = trackInput.value.trim();
+      if (!val) return;
+
+      // Simple heuristic: if it has no extension, assume mp3
+      const filename = val.includes('.') ? val : val + '.mp3';
+      const nameDisplay = filename.replace(/\.[^/.]+$/, ""); // Name without extension
+
+      uploadedTracks.push({
+        name: nameDisplay,
+        filename: filename, // STore filename for URL construction
+        comments: []
       });
-      console.log('Total tracks buffered:', uploadedTracks.length);
+
+      trackInput.value = '';
       renderTracksList();
-    });
+    };
   }
 
   // Publish Button
@@ -458,69 +468,48 @@ function initApp() {
       const title = document.getElementById('albumTitle').value;
 
       console.log('Publish Clicked. Title:', title);
-      console.log('Cover Image Present:', !!coverImage);
-      console.log('Tracks Count:', uploadedTracks.length);
 
       if (!title || !coverImage || uploadedTracks.length === 0) {
-        let missing = [];
-        if (!title) missing.push("Title");
-        if (!coverImage) missing.push("Cover Image");
-        if (uploadedTracks.length === 0) missing.push("Tracks");
-
-        alert('Missing fields: ' + missing.join(', '));
+        alert('Please fill Title, Cover, and add at least one Track filename.');
         return;
       }
 
       publishBtn.disabled = true;
-      publishBtn.textContent = 'PUBLISHING...';
+      publishBtn.textContent = 'SAVING...';
 
       try {
         const timestamp = Date.now();
-        let uploadedTrackData = [];
 
-        // Upload Tracks
-        for (let i = 0; i < uploadedTracks.length; i++) {
-          const track = uploadedTracks[i];
-          console.log(`Starting upload for track ${i + 1}: ${track.name}`);
-
-          publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (0%)...`;
-
-          try {
-            const chunkIds = await saveAudioFile(track.file, (percent) => {
-              const p = Math.floor(percent);
-              publishBtn.textContent = `UPLOADING TRACK ${i + 1}/${uploadedTracks.length} (${p}%)...`;
-            });
-            console.log(`Track ${i + 1} uploaded. Chunk IDs:`, chunkIds);
-            uploadedTrackData.push({ name: track.name, chunkIds: chunkIds, comments: [] });
-          } catch (trackError) {
-            console.error(`Error uploading track ${track.name}:`, trackError);
-            throw new Error(`Failed to upload ${track.name}. Check console for details.`);
-          }
-        }
+        // Map UI tracks to Database Object
+        // No more "Upload", just referencing the file location
+        const finalTracks = uploadedTracks.map(t => ({
+          name: t.name,
+          url: `./beta-tracks/${t.filename}`, // Local relative path (works on GitHub Pages)
+          comments: []
+        }));
 
         const album = {
           id: timestamp,
           title,
-          cover: coverImage,
-          tracks: uploadedTrackData,
+          cover: coverImage, // Base64 cover is fine (small)
+          tracks: finalTracks,
           publishedAt: new Date().toISOString()
         };
 
         await DB.save(album);
         currentAlbums.push(album);
 
-        // Reset
+        // Reset UI
         document.getElementById('albumTitle').value = '';
         document.getElementById('coverPreview').innerHTML = '';
         uploadedTracks = [];
         coverImage = null;
-        coverFile = null;
         renderTracksList();
         loadOwnerAlbums();
 
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
-        alert('Album Published!');
+        alert('Album Published! (Ensure files are in public/beta-tracks folder)');
 
       } catch (e) {
         console.error("Publish Error:", e);
@@ -730,6 +719,121 @@ window.denyRequest = async (userId) => {
     loadAccessRequests(); loadTesterDashboard();
   }
 };
+
+// --- SMART LINKS LOGIC ---
+window.switchOwnerTab = (tab) => {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab' + (tab === 'beta' ? 'Beta' : 'Links')).classList.add('active');
+
+  document.getElementById('viewBeta').style.display = tab === 'beta' ? 'block' : 'none';
+  document.getElementById('viewLinks').style.display = tab === 'links' ? 'block' : 'none';
+
+  if (tab === 'links') loadSmartLinks();
+};
+
+async function loadSmartLinks() {
+  const list = document.getElementById('smartLinksList');
+  if (!list) return;
+
+  try {
+    const snap = await getDocs(collection(db, "smart_links"));
+    let links = [];
+    snap.forEach(doc => links.push({ id: doc.id, ...doc.data() }));
+
+    // Sort by click count descending
+    links.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+
+    if (links.length === 0) { list.innerHTML = '<p style="color:#666">No smart links created.</p>'; return; }
+
+    list.innerHTML = links.map(l => {
+      const shortLink = `${window.location.origin}/?go=${l.alias}`;
+      return `
+            <div class="link-item">
+                <div class="link-info">
+                    <div class="link-alias">/${l.alias}</div>
+                    <a href="${l.target}" target="_blank" class="link-target">${l.target}</a>
+                    <div class="link-stats">Clicks: ${l.clicks || 0} • Created: ${new Date(l.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="link-actions">
+                    <button class="copy-link-btn" onclick="copyToClipboard(this, '${shortLink}')">COPY</button>
+                    <button class="delete-link-btn" onclick="deleteSmartLink('${l.id}')">DEL</button>
+                </div>
+            </div>`;
+    }).join('');
+  } catch (e) {
+    console.error("Error loading links:", e);
+    list.innerHTML = `<p style="color:red">Error loading links: ${e.message}</p>`;
+  }
+}
+
+window.deleteSmartLink = async (id) => {
+  if (confirm('Delete this link permanently?')) {
+    await deleteDoc(doc(db, "smart_links", id));
+    loadSmartLinks();
+  }
+};
+
+// Initialize Link Creator (Safe Auto-Run)
+function initSmartLinksUI() {
+  const createLinkBtn = document.getElementById('createLinkBtn');
+  if (createLinkBtn) {
+    console.log("Initializing Smart Links UI...");
+    createLinkBtn.onclick = async () => {
+      const target = document.getElementById('linkTarget').value.trim();
+      let alias = document.getElementById('linkAlias').value.trim();
+
+      if (!target) return alert("Target URL is required");
+      if (!target.startsWith('http')) return alert("URL must start with http:// or https://");
+
+      if (!alias) alias = Math.random().toString(36).substr(2, 6);
+
+      const btn = document.getElementById('createLinkBtn');
+      btn.disabled = true;
+      btn.textContent = "CREATING...";
+
+      try {
+        // Check uniqueness
+        const snap = await getDocs(collection(db, "smart_links"));
+        let exists = false;
+        snap.forEach(d => { if (d.data().alias === alias) exists = true; });
+
+        if (exists) {
+          alert(`Alias '${alias}' is already taken.`);
+          btn.disabled = false;
+          btn.textContent = "CREATE TRACKING LINK";
+          return;
+        }
+
+        const linkData = {
+          alias: alias,
+          target: target,
+          clicks: 0,
+          createdAt: new Date().toISOString()
+        };
+
+        await setDoc(doc(db, "smart_links", "link_" + alias), linkData);
+
+        document.getElementById('linkTarget').value = '';
+        document.getElementById('linkAlias').value = '';
+        loadSmartLinks();
+        alert(`Smart Link Created: peakafeller.com/?go=${alias}`);
+      } catch (e) {
+        console.error("Link Creation Error:", e);
+        alert("Error: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "CREATE TRACKING LINK";
+      }
+    };
+  }
+}
+
+// Run immediately if DOM ready, or wait
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSmartLinksUI);
+} else {
+  initSmartLinksUI();
+}
 
 window.loadTesterDashboard = async () => {
   const list = document.getElementById('testerDashboardList');

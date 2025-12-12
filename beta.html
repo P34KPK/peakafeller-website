@@ -41,93 +41,137 @@
 
         <!-- Owner Panel (Hidden by default) -->
         <div id="ownerPanel" class="panel" style="display: none;">
-            <div class="upload-section">
-                <h2>/UPLOAD NEW ALBUM</h2>
 
-                <div class="form-group">
-                    <label>Album Title</label>
-                    <input type="text" id="albumTitle" placeholder="Enter album title..." class="input-field">
+            <!-- Dashboard Tabs -->
+            <div class="dashboard-tabs"
+                style="margin-bottom: 2rem; border-bottom: 1px solid #333; padding-bottom: 1rem;">
+                <button id="tabBeta" class="tab-btn active" onclick="switchOwnerTab('beta')">/ BETA BEAT</button>
+                <button id="tabLinks" class="tab-btn" onclick="switchOwnerTab('links')">/ SMART LINKS</button>
+            </div>
+
+            <!-- BETA BEAT VIEW -->
+            <div id="viewBeta">
+                <div class="upload-section">
+                    <h2>/UPLOAD NEW ALBUM</h2>
+
+                    <div class="form-group">
+                        <label>Album Title</label>
+                        <input type="text" id="albumTitle" placeholder="Enter album title..." class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Album Cover</label>
+                        <div class="file-upload">
+                            <input type="file" id="coverUpload" accept="image/*" hidden>
+                            <button onclick="document.getElementById('coverUpload').click()" class="upload-btn">
+                                + UPLOAD COVER
+                            </button>
+                            <div id="coverPreview" class="cover-preview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tracks (Files must be in 'public/beta-tracks')</label>
+                        <div class="manual-track-entry"
+                            style="background:rgba(255,255,255,0.05); padding:1rem; border-radius:4px;">
+                            <input type="text" id="trackNameInput" placeholder="Enter filename (e.g. song.mp3)"
+                                class="input-field" style="margin-bottom:0.5rem;">
+                            <button id="addManualTrackBtn" class="upload-btn" style="width:100%; text-align:center;">+
+                                ADD
+                                TRACK TO LIST</button>
+                        </div>
+                        <div id="tracksList" class="tracks-list" style="margin-top:1rem;"></div>
+                    </div>
+
+                    <button id="publishBtn" class="publish-btn">PUBLISH FOR TESTING</button>
+
+                    <!-- DEBUG CONSOLE -->
+                    <div style="margin-top: 2rem; border-top: 1px dashed #444; padding-top: 1rem;">
+                        <h3 style="font-size: 0.8rem; color: #666;">/ SYSTEM LOGS (DEBUG)</h3>
+                        <div id="debugLog"
+                            style="background: #000; border: 1px solid #333; color: #0f0; font-family: monospace; font-size: 0.7rem; height: 150px; overflow-y: scroll; padding: 0.5rem; margin-top: 0.5rem; word-break: break-all;">
+                        </div>
+                        <button onclick="document.getElementById('debugLog').innerHTML=''"
+                            style="background:none; border:none; color:#666; font-size:0.6rem; cursor:pointer; margin-top:0.2rem;">CLEAR
+                            LOGS</button>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Album Cover</label>
-                    <div class="file-upload">
-                        <input type="file" id="coverUpload" accept="image/*" hidden>
-                        <button onclick="document.getElementById('coverUpload').click()" class="upload-btn">
-                            + UPLOAD COVER
+                <!-- Manage Albums Section -->
+                <div class="manage-section">
+                    <h2>/MANAGE ALBUMS</h2>
+                    <div id="ownerAlbumsList" class="owner-albums-list"></div>
+                </div>
+
+                <!-- Access Requests Section -->
+                <div class="manage-section">
+                    <h2>/ACCESS REQUESTS</h2>
+                    <div id="accessRequestsList" class="access-requests-list"></div>
+                </div>
+
+                <!-- Manual Invite Section -->
+                <div class="manage-section">
+                    <h2>/GRANT ACCESS VIA EMAIL</h2>
+                    <div class="form-group">
+                        <input type="text" id="inviteName" placeholder="Tester Name" class="input-field"
+                            style="margin-bottom:0.5rem;">
+                        <input type="email" id="inviteEmail" placeholder="Tester Email" class="input-field"
+                            style="margin-bottom:0.5rem;">
+                        <button id="sendInviteBtn" class="upload-btn"
+                            style="background:var(--color-accent); color:#000;">
+                            SEND ACCESS EMAIL
                         </button>
-                        <div id="coverPreview" class="cover-preview"></div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Tracks (MP3)</label>
-                    <div class="file-upload">
-                        <input type="file" id="tracksUpload" accept="audio/mp3" multiple hidden>
-                        <button onclick="document.getElementById('tracksUpload').click()" class="upload-btn">
-                            + ADD TRACKS
-                        </button>
-                        <div id="tracksList" class="tracks-list"></div>
+                <!-- Share Invite Section -->
+                <div class="manage-section">
+                    <h2>/SHARE INVITE</h2>
+                    <div class="share-section">
+                        <p class="share-description">Share this link with beta testers:</p>
+                        <div class="share-link-container">
+                            <input type="text" id="shareLink" class="share-link-input" readonly>
+                            <button id="copyLinkBtn" class="copy-btn">COPY</button>
+                        </div>
                     </div>
                 </div>
 
-                <button id="publishBtn" class="publish-btn">PUBLISH FOR TESTING</button>
+                <!-- Tester Dashboard Section -->
+                <div class="manage-section">
+                    <h2>/TESTER DASHBOARD</h2>
+                    <div id="testerDashboardList" class="tester-list"></div>
+                </div>
+            </div> <!-- END BETA VIEW -->
 
-                <!-- DEBUG CONSOLE -->
-                <div style="margin-top: 2rem; border-top: 1px dashed #444; padding-top: 1rem;">
-                    <h3 style="font-size: 0.8rem; color: #666;">/ SYSTEM LOGS (DEBUG)</h3>
-                    <div id="debugLog"
-                        style="background: #000; border: 1px solid #333; color: #0f0; font-family: monospace; font-size: 0.7rem; height: 150px; overflow-y: scroll; padding: 0.5rem; margin-top: 0.5rem; word-break: break-all;">
+            <!-- SMART LINKS VIEW -->
+            <div id="viewLinks" style="display: none;">
+                <div class="upload-section">
+                    <h2>/CREATE SMART LINK</h2>
+                    <p style="color:#666; font-size:0.8rem; margin-bottom:1rem;">Generate tracked redirect links (e.g.
+                        peakafeller.com/?go=spotify)</p>
+
+                    <div class="form-group">
+                        <label>Target URL (Where it goes)</label>
+                        <input type="url" id="linkTarget" placeholder="https://..." class="input-field">
                     </div>
-                    <button onclick="document.getElementById('debugLog').innerHTML=''"
-                        style="background:none; border:none; color:#666; font-size:0.6rem; cursor:pointer; margin-top:0.2rem;">CLEAR
-                        LOGS</button>
+
+                    <div class="form-group">
+                        <label>Custom Alias (The ?go=... part)</label>
+                        <input type="text" id="linkAlias" placeholder="e.g. spotify (leave empty for random)"
+                            class="input-field">
+                    </div>
+
+                    <button id="createLinkBtn" class="publish-btn">CREATE TRACKING LINK</button>
                 </div>
-            </div>
 
-            <!-- Manage Albums Section -->
-            <div class="manage-section">
-                <h2>/MANAGE ALBUMS</h2>
-                <div id="ownerAlbumsList" class="owner-albums-list"></div>
-            </div>
-
-            <!-- Access Requests Section -->
-            <div class="manage-section">
-                <h2>/ACCESS REQUESTS</h2>
-                <div id="accessRequestsList" class="access-requests-list"></div>
-            </div>
-
-            <!-- Manual Invite Section -->
-            <div class="manage-section">
-                <h2>/GRANT ACCESS VIA EMAIL</h2>
-                <div class="form-group">
-                    <input type="text" id="inviteName" placeholder="Tester Name" class="input-field"
-                        style="margin-bottom:0.5rem;">
-                    <input type="email" id="inviteEmail" placeholder="Tester Email" class="input-field"
-                        style="margin-bottom:0.5rem;">
-                    <button id="sendInviteBtn" class="upload-btn" style="background:var(--color-accent); color:#000;">
-                        SEND ACCESS EMAIL
-                    </button>
-                </div>
-            </div>
-
-            <!-- Share Invite Section -->
-            <div class="manage-section">
-                <h2>/SHARE INVITE</h2>
-                <div class="share-section">
-                    <p class="share-description">Share this link with beta testers:</p>
-                    <div class="share-link-container">
-                        <input type="text" id="shareLink" class="share-link-input" readonly>
-                        <button id="copyLinkBtn" class="copy-btn">COPY</button>
+                <div class="manage-section">
+                    <h2>/ACTIVE LINKS</h2>
+                    <div id="smartLinksList" class="tracks-list" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Links loaded here -->
                     </div>
                 </div>
             </div>
-
-            <!-- Tester Dashboard Section -->
-            <div class="manage-section">
-                <h2>/TESTER DASHBOARD</h2>
-                <div id="testerDashboardList" class="tester-list"></div>
-            </div>
+            <!-- END SMART LINKS VIEW -->
         </div>
 
         <!-- Tester Panel -->

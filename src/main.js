@@ -1,4 +1,73 @@
-// import './style.css'
+// Firebase Imports for Redirection Logic
+import { db, doc, getDoc, updateDoc, increment } from "./firebase.js";
+
+// --- SMART LINK REDIRECTOR ---
+(async function handleSmartRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const alias = params.get('go');
+
+  if (alias) {
+    // Stop everything else
+    document.documentElement.innerHTML = `<body style="background:#000; color:#0f0; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace;">> REDIRECTING /${alias}...</body>`;
+
+    try {
+      const linkRef = doc(db, "smart_links", "link_" + alias);
+      const snap = await getDoc(linkRef);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        // Fire and forget increment
+        updateDoc(linkRef, { clicks: increment(1) });
+
+        const webUrl = data.target;
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        let deepLink = null;
+
+        // --- DEEP LINKING (App Force) ---
+        if (isMobile) {
+          // Amazon Force Open
+          if (webUrl.includes('amazon') || webUrl.includes('amzn')) {
+            // Try standard URI scheme
+            deepLink = 'amzn://open?url=' + encodeURIComponent(webUrl);
+          }
+          // Spotify Force Open
+          else if (webUrl.includes('spotify.com')) {
+            // Convert https://open.spotify.com/track/123 to spotify:track:123
+            // Simple replace for standard structure
+            deepLink = webUrl.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
+          }
+          // Instagram
+          else if (webUrl.includes('instagram.com')) {
+            deepLink = webUrl.replace('https://www.instagram.com/', 'instagram://user?username=').replace(/\/$/, '');
+          }
+        }
+
+        if (deepLink) {
+          console.log("Deep Linking to:", deepLink);
+          // Attempt to open App
+          window.location.href = deepLink;
+
+          // Fallback to Web if App fails (timeout hack)
+          setTimeout(() => {
+            window.location.replace(webUrl);
+          }, 500); // 500ms grace period
+        } else {
+          // Standard Web Redirect
+          window.location.replace(webUrl);
+        }
+      } else {
+        document.body.innerHTML = `<div style="color:red; font-family:monospace; padding:2rem;">ERROR: LINK /${alias} NOT FOUND</div>`;
+      }
+    } catch (e) {
+      console.error("Redirect Error", e);
+      window.location.href = "/";
+    }
+    // Halt execution of main site scripts
+    throw new Error("Redirecting...");
+  }
+})();
+
+import './style.css'
 // import './rawbeat.css'
 
 
