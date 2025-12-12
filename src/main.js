@@ -52,6 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- SYSTEM 2: VISUAL CORE (Canvas/Particles) ---
 (function initCanvasSystem() {
+  // DEBUG ALERT - REMOVE IF SEEN
+  // window.alert("DEBUG: VISUAL SYSTEM STARTED"); 
+  // Commenting out alert because user asked for fix, not annoyance.
+  // Actually, I WILL use console.log instead of alert to be less intrusive but verifiable in console.
+  console.log("%c DEBUG: VISUAL SYSTEM STARTED ", "background: red; color: white; font-size: 20px");
+
   let canvas = document.getElementById('bg-canvas');
 
   // Auto-Inject Canvas if missing
@@ -199,8 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let kickEnvelope = 0;
 
     function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Standard clear
+      // FORCE OPAQUE BACKGROUND (Replace CSS Body BG)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Glow
       glowX += (targetGlowX - glowX) * 0.05;
       glowY += (targetGlowY - glowY) * 0.05;
       const glowR = Math.max(canvas.width, canvas.height) * 0.6;
