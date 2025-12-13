@@ -903,11 +903,11 @@
         let particles = [];
         let glowX = window.innerWidth / 2;
         let glowY = window.innerHeight / 2;
-        let mouseX = -100, mouseY = -100;
+        let targetGlowX = Math.random() * window.innerWidth;
+        let targetGlowY = Math.random() * window.innerHeight;
 
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize);
-        window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; glowX += (mouseX - glowX) * 0.1; glowY += (mouseY - glowY) * 0.1; });
         resize();
 
         class Particle {
@@ -946,6 +946,14 @@
         for (let i = 0; i < 60; i++) particles.push(new Particle());
 
         function animate() {
+          // FLOAT LOGIC
+          glowX += (targetGlowX - glowX) * 0.005; // Very slow drift
+          glowY += (targetGlowY - glowY) * 0.005;
+          if (Math.abs(targetGlowX - glowX) < 100 && Math.abs(targetGlowY - glowY) < 100) {
+            targetGlowX = Math.random() * canvas.width;
+            targetGlowY = Math.random() * canvas.height;
+          }
+
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
           // GLOW EFFECT
