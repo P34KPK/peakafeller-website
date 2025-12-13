@@ -379,7 +379,37 @@ if (rawbeatLink) {
 (async function handleSmartRedirect() {
   const params = new URLSearchParams(window.location.search);
   const alias = params.get('go');
+  const refParam = params.get('ref');
 
+  // STATELESS REDIRECT (NO DB)
+  if (refParam) {
+    try {
+      const target = atob(refParam);
+      // Visual Feedback
+      document.documentElement.innerHTML = `<body style="background:#000; color:#ff6600; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace; font-size:1.5rem;">>> REDIRECTING...</body>`;
+
+      // Mobile Deep Link Logic (Same as before)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      let deepLink = null;
+
+      if (isMobile) {
+        if (target.includes('spotify.com')) deepLink = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
+        else if (target.includes('youtube.com') || target.includes('youtu.be')) deepLink = `vnd.youtube:${target.split('v=')[1] || target.split('/').pop()}`;
+      }
+
+      if (deepLink) {
+        window.location.href = deepLink;
+        setTimeout(() => window.location.replace(target), 2000);
+      } else {
+        window.location.replace(target);
+      }
+      return; // Stop execution
+    } catch (e) {
+      console.error("Invalid Ref", e);
+    }
+  }
+
+  // LEGACY DB REDIRECT
   if (alias) {
     // Basic redirect message
     document.documentElement.innerHTML = `<body style="background:#000; color:#0f0; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace;">> REDIRECTING /${alias}...</body>`;

@@ -722,45 +722,117 @@ window.switchOwnerTab = (tab) => {
   if (tab === 'links') loadSmartLinks();
 };
 
-window.loadSmartLinks = async function loadSmartLinks() {
+// --- STATELESS SMART LINKS SYSTEM (NO FIREBASE) ---
+
+// Load Links from Local Storage
+window.loadSmartLinks = function () {
   const list = document.getElementById('smartLinksList');
   if (!list) return;
 
   try {
-    const snap = await getDocs(collection(db, "smart_links"));
-    let links = [];
-    snap.forEach(doc => links.push({ id: doc.id, ...doc.data() }));
+    const links = JSON.parse(localStorage.getItem('my_smart_links') || '[]');
 
-    // Sort by click count descending
-    links.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+    if (links.length === 0) {
+      list.innerHTML = '<p style="color:#666; font-family:monospace;">No links created yet. Links are stored locally.</p>';
+      return;
+    }
 
-    if (links.length === 0) { list.innerHTML = '<p style="color:#666">No smart links created.</p>'; return; }
+    // Sort by Date (Newest first)
+    links.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     list.innerHTML = links.map(l => {
-      const shortLink = `${window.location.origin}/?go=${l.alias}`;
+      // Reconstruct the link
+      const encoded = btoa(l.target);
+      const smartLink = `${window.location.origin}/?ref=${encoded}`;
+
       return `
             <div class="link-item">
                 <div class="link-info">
-                    <a href="${shortLink}" target="_blank" class="link-alias" style="color:var(--color-accent); text-decoration:underline; display:block; margin-bottom:0.2rem; cursor:pointer; font-weight:bold;">/${l.alias} ↗</a>
+                    <a href="${smartLink}" target="_blank" class="link-alias" 
+                       style="color:var(--color-accent); text-decoration:underline; display:block; margin-bottom:0.2rem; cursor:pointer; font-weight:bold;">
+                       ${l.alias} ↗
+                    </a>
+                    <div style="font-size:0.7em; color:#666; font-family:monospace; margin-bottom:4px;">${smartLink}</div>
                     <a href="${l.target}" target="_blank" class="link-target">${l.target}</a>
-                    <div class="link-stats">Clicks: ${l.clicks || 0} • Created: ${new Date(l.createdAt).toLocaleDateString()}</div>
+                    <div class="link-stats">Created: ${new Date(l.createdAt).toLocaleDateString()}</div>
                 </div>
                 <div class="link-actions">
-                    <button class="copy-link-btn" onclick="copyToClipboard(this, '${shortLink}')">COPY</button>
+                    <button class="copy-link-btn" onclick="copyToClipboard(this, '${smartLink}')">COPY</button>
                     <button class="delete-link-btn" onclick="deleteSmartLink('${l.id}')">DEL</button>
                 </div>
             </div>`;
     }).join('');
+
   } catch (e) {
     console.error("Error loading links:", e);
-    list.innerHTML = `<p style="color:red">Error loading links: ${e.message}</p>`;
+    list.innerHTML = `<p style="color:red">Error: ${e.message}</p>`;
   }
-}
+};
 
-window.deleteSmartLink = async (id) => {
-  if (confirm('Delete this link permanently?')) {
-    await deleteDoc(doc(db, "smart_links", id));
-    loadSmartLinks();
+// Create Action
+window.createSmartLinkAction = async () => {
+  const btn = document.getElementById('createLinkBtn');
+  if (!btn) return;
+
+  const target = document.getElementById('linkTarget').value.trim();
+  let alias = document.getElementById('linkAlias').value.trim();
+
+  if (!target) return alert("Target URL is required");
+  if (!target.startsWith('http')) return alert("URL must start with http://");
+  if (!alias) alias = "Link " + Math.floor(Math.random() * 1000); // Simple Label
+
+  btn.disabled = true;
+  const oldText = btn.innerText;
+  btn.innerText = "SAVING...";
+
+  try {
+    // 1. Generate Stateless Link
+    const encoded = btoa(target); // Base64 Encode
+    const fullLink = `${window.location.origin}/?ref=${encoded}`;
+
+    // 2. Save to Local Storage (User's Library)
+    const links = JSON.parse(localStorage.getItem('my_smart_links') || '[]');
+
+    // Check for dupes in alias purely for organization
+    if (links.find(l => l.alias === alias)) {
+      if (!confirm(`Alias '${alias}' already exists locally. Overwrite?`)) throw new Error("Cancelled");
+      // Remove old
+      const idx = links.findIndex(l => l.alias === alias);
+      links.splice(idx, 1);
+    }
+
+    links.push({
+      id: Date.now().toString(),
+      alias: alias,
+      target: target,
+      createdAt: new Date().toISOString()
+    });
+
+    localStorage.setItem('my_smart_links', JSON.stringify(links));
+
+    alert(`SUCCESS! Smart Link Created.\n\nCopy it from the list below.`);
+
+    // Reset
+    document.getElementById('linkTarget').value = '';
+    document.getElementById('linkAlias').value = '';
+    window.loadSmartLinks();
+
+  } catch (e) {
+    console.error(e);
+    if (e.message !== "Cancelled") alert("Failed: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = oldText;
+  }
+};
+
+// Delete Action
+window.deleteSmartLink = (id) => {
+  if (confirm('Remove this link from your list? (The link itself will still work technically, as it is stateless)')) {
+    const links = JSON.parse(localStorage.getItem('my_smart_links') || '[]');
+    const newLinks = links.filter(l => l.id !== id);
+    localStorage.setItem('my_smart_links', JSON.stringify(newLinks));
+    window.loadSmartLinks();
   }
 };
 
@@ -769,60 +841,7 @@ function initSmartLinksUI() {
   const createLinkBtn = document.getElementById('createLinkBtn');
   if (createLinkBtn) {
     console.log("Initializing Smart Links UI...");
-    createLinkBtn.onclick = async () => {
-      const target = document.getElementById('linkTarget').value.trim();
-      let alias = document.getElementById('linkAlias').value.trim();
-
-      if (!target) return alert("Target URL is required");
-      if (!target.startsWith('http')) return alert("URL must start with http:// or https://");
-
-      if (!alias) alias = Math.random().toString(36).substr(2, 6);
-
-      const btn = document.getElementById('createLinkBtn');
-      btn.disabled = true;
-      btn.textContent = "CREATING...";
-
-      try {
-        // Timeout Race Logic
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Database Timeout (Quota likely exceeded)")), 8000)
-        );
-
-        // Real DB Operation
-        const dbOperation = async () => {
-          const snap = await getDocs(collection(db, "smart_links"));
-          let exists = false;
-          snap.forEach(d => { if (d.data().alias === alias) exists = true; });
-
-          if (exists) throw new Error(`Alias '${alias}' is already taken.`);
-
-          const linkData = {
-            alias: alias,
-            target: target,
-            clicks: 0,
-            createdAt: new Date().toISOString()
-          };
-
-          await setDoc(doc(db, "smart_links", "link_" + alias), linkData);
-          return true;
-        };
-
-        // Race!
-        await Promise.race([dbOperation(), timeout]);
-
-        document.getElementById('linkTarget').value = '';
-        document.getElementById('linkAlias').value = '';
-        loadSmartLinks();
-        alert(`Smart Link Created: peakafeller.com/?go=${alias}`);
-
-      } catch (e) {
-        console.error("Link Creation Error:", e);
-        alert("Creation Failed: " + e.message + "\n\n(If 'Timeout', Firebase quota is full. Try again tomorrow.)");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "CREATE TRACKING LINK";
-      }
-    };
+    createLinkBtn.onclick = window.createSmartLinkAction;
   }
 }
 
