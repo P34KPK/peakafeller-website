@@ -399,18 +399,36 @@ if (rawbeatLink) {
         let deepLink = null;
 
         if (isMobile) {
-          if (webUrl.includes('amazon') || webUrl.includes('amzn')) {
-            deepLink = 'amzn://open?url=' + encodeURIComponent(webUrl);
-          } else if (webUrl.includes('spotify.com')) {
+          if (webUrl.includes('spotify.com')) {
+            // Spotify URI
             deepLink = webUrl.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
           } else if (webUrl.includes('instagram.com')) {
-            deepLink = webUrl.replace('https://www.instagram.com/', 'instagram://user?username=').replace(/\/$/, '');
+            // Instagram
+            const username = webUrl.split('instagram.com/')[1]?.split('/')[0];
+            if (username) deepLink = `instagram://user?username=${username}`;
+          } else if (webUrl.includes('youtube.com') || webUrl.includes('youtu.be')) {
+            // YouTube
+            deepLink = `vnd.youtube:${webUrl.split('v=')[1] || webUrl.split('/').pop()}`;
+          } else if (webUrl.includes('amazon')) {
+            // Amazon is tricky. Best bet on mobile is often just the HTTPS link which triggers Universal Links/App Links.
+            // But we can try the scheme:
+            deepLink = `amazon://content/item?ASIN=${webUrl.match(/\/([A-Z0-9]{10})/)?.[1]}`; // Try to extract ASIN
+            if (!deepLink.includes('ASIN')) deepLink = null; // Fallback if no ASIN found
           }
         }
 
         if (deepLink) {
+          console.log("Attempting Deep Link:", deepLink);
+          const start = Date.now();
           window.location.href = deepLink;
-          setTimeout(() => window.location.replace(webUrl), 500);
+
+          // Fallback if app doesn't open
+          setTimeout(() => {
+            if (document.hidden || document.webkitHidden) return; // App opened
+            if (Date.now() - start < 3000) {
+              window.location.replace(webUrl);
+            }
+          }, 2500);
         } else {
           window.location.replace(webUrl);
         }
