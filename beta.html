@@ -387,6 +387,37 @@
     </script>
     <script type="module" src="./src/beta.js?v=1005"></script>
     <script type="module" src="./src/beta-ui.js"></script>
+
+    <!-- FAILSAFE TAB LOGIC (INLINE) -->
+    <script>
+        (function () {
+            console.log("Failsafe Tab Logic Loaded");
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(btn => {
+                btn.onclick = function (e) {
+                    console.log("Tab Clicked:", this.id);
+                    // 1. Visual Toggle
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // 2. View Toggle
+                    const viewBeta = document.getElementById('viewBeta');
+                    const viewLinks = document.getElementById('viewLinks');
+
+                    if (this.id === 'tabLinks') {
+                        if (viewBeta) viewBeta.style.display = 'none';
+                        if (viewLinks) viewLinks.style.display = 'block';
+                        // Try load data
+                        if (window.loadSmartLinks) window.loadSmartLinks();
+                        else console.warn("loadSmartLinks not ready");
+                    } else {
+                        if (viewBeta) viewBeta.style.display = 'block';
+                        if (viewLinks) viewLinks.style.display = 'none';
+                    }
+                };
+            });
+        })();
+    </script>
 </body>
 
 </html>
