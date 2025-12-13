@@ -1,6 +1,9 @@
 import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc, ref, uploadBytesResumable, getDownloadURL } from './firebase.js';
 import WaveSurfer from 'wavesurfer.js';
 
+// EXPOSE FIREBASE FOR UI SCRIPT
+window.FB = { db, setDoc, doc, getDocs, collection };
+
 // Visualizer & Background Animation
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
