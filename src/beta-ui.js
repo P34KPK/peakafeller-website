@@ -27,6 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Admin Link in Tester Form
+    const adminLink = document.getElementById('adminTesterLogin');
+    if (adminLink) {
+        adminLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('ownerPasswordModal').style.display = 'flex';
+        });
+    }
+
     window.switchMode = (mode) => {
         if (mode === 'owner') {
             ownerBtn.classList.add('active');
