@@ -906,6 +906,9 @@
         let targetGlowX = Math.random() * window.innerWidth;
         let targetGlowY = Math.random() * window.innerHeight;
 
+        let lastScrollY = window.scrollY;
+        let scrollSpeed = 0;
+
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize);
         resize();
@@ -925,7 +928,17 @@
             this.char = Math.random() > 0.8 ? ['1', '0', 'X'][Math.floor(Math.random() * 3)] : null;
           }
           update() {
-            this.x += this.speedX; this.y += this.speedY;
+            // Normal movement
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            // Scroll Reaction (Chaos)
+            if (Math.abs(scrollSpeed) > 1) {
+              const chaos = scrollSpeed * 0.2; // Strength of reaction
+              this.x += (Math.random() - 0.5) * chaos;
+              this.y += (Math.random() - 0.5) * chaos;
+            }
+
             this.life -= 0.005;
             if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
           }
@@ -946,12 +959,23 @@
         for (let i = 0; i < 60; i++) particles.push(new Particle());
 
         function animate() {
+          // Scroll Physics
+          const currentScrollY = window.scrollY;
+          const diff = currentScrollY - lastScrollY;
+          scrollSpeed += (Math.abs(diff) - scrollSpeed) * 0.1; // Smooth envelope
+          lastScrollY = currentScrollY;
+
           // FLOAT LOGIC
           glowX += (targetGlowX - glowX) * 0.005; // Very slow drift
           glowY += (targetGlowY - glowY) * 0.005;
           if (Math.abs(targetGlowX - glowX) < 100 && Math.abs(targetGlowY - glowY) < 100) {
             targetGlowX = Math.random() * canvas.width;
             targetGlowY = Math.random() * canvas.height;
+          }
+
+          // Boost Glow movement on scroll
+          if (scrollSpeed > 5) {
+            glowY += diff * 0.5; // Drag glow with scroll
           }
 
           ctx.clearRect(0, 0, canvas.width, canvas.height);
