@@ -719,7 +719,7 @@ window.switchOwnerTab = (tab) => {
   if (tab === 'links') loadSmartLinks();
 };
 
-async function loadSmartLinks() {
+window.loadSmartLinks = async function loadSmartLinks() {
   const list = document.getElementById('smartLinksList');
   if (!list) return;
 

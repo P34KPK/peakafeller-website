@@ -36,6 +36,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Tab Switching Logic (Owner Panel)
+    const tabBeta = document.getElementById('tabBeta');
+    const tabLinks = document.getElementById('tabLinks');
+    const viewBeta = document.getElementById('viewBeta');
+    const viewLinks = document.getElementById('viewLinks');
+
+    if (tabBeta && tabLinks && viewBeta && viewLinks) {
+        tabBeta.addEventListener('click', () => {
+            tabBeta.classList.add('active');
+            tabLinks.classList.remove('active');
+            viewBeta.style.display = 'block';
+            viewLinks.style.display = 'none';
+        });
+
+        tabLinks.addEventListener('click', () => {
+            tabLinks.classList.add('active');
+            tabBeta.classList.remove('active');
+            viewBeta.style.display = 'none';
+            viewLinks.style.display = 'block';
+
+            // Trigger Load Links if available in main app
+            if (window.loadSmartLinks) window.loadSmartLinks();
+            else console.log("Smart Links loader not ready yet");
+        });
+    }
+
     window.switchMode = (mode) => {
         if (mode === 'owner') {
             ownerBtn.classList.add('active');
