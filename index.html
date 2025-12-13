@@ -107,51 +107,70 @@
           <div class="sub">${target}</div>
           
           <script>
-             // "Visibility Check" & Messenger Fix Strategy
+             // "Visibility Check" & Messenger Fix Strategy V2
              var appUrl = "${appUrl}";
              var webUrl = "${webUrl}";
              
-             // Detect In-App Browsers (Messenger, FB, Insta)
+             // Detect In-App Browsers
              var ua = navigator.userAgent || navigator.vendor || window.opera;
              var isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
+             var isAndroid = /Android/i.test(ua);
              
              if(isInApp) {
-                 document.querySelector('.logo').innerText += " (MESSENGER MODE)";
-                 document.querySelector('.hint').innerText = "Tap button to break out of Messenger";
-             }
-             
-             function tryOpenApp() {
-                 console.log("Attempting App Open:", appUrl);
+                 // UI Warning for In-App Browser
+                 document.body.style.background = "#111";
+                 document.querySelector('.logo').innerHTML = "⚠️ ACTION REQUIRED";
+                 document.querySelector('.logo').style.color = "yellow";
                  
-                 if(isInApp) {
-                     // Messenger Breakout Attempt
-                     // Try opening in new window to force system browser
-                     window.open(appUrl, '_system');
-                     window.open(appUrl, '_blank');
-                     window.location.href = appUrl;
-                 } else {
-                     // Standard Behavior
-                     window.location.href = appUrl;
+                 // Arrow pointing to menu
+                 var arrow = document.createElement('div');
+                 arrow.innerHTML = "↗";
+                 arrow.style.cssText = "position:fixed; top:15px; right:20px; color:yellow; font-size:40px; font-weight:bold; animation: bounce 1s infinite; z-index:9999;";
+                 document.body.appendChild(arrow);
+                 
+                 // Instruction style
+                 var style = document.createElement('style');
+                 style.innerHTML = "@keyframes bounce { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(5px, -5px); } }";
+                 document.head.appendChild(style);
+                 
+                 document.querySelector('.sub').innerHTML = "<br><br><b style='color:yellow; font-size:16px; text-transform:uppercase;'>MESSENGER BLOCKS LINKS</b><br><br>1. Tap the <b>●●●</b> menu above ↗<br>2. Select <b>Open in Browser</b>";
+                 document.querySelector('#manualBtn').innerText = "TRY FORCE OPEN";
+                 document.querySelector('#manualBtn').style.background = "#333";
+                 
+                 // Android: Try "Intent" scheme to force Chrome
+                 if(isAndroid) {
+                     // Attempt to fire an intent to open the target directly in Chrome
+                     var intentUrl = "intent://" + webUrl.replace(/^https?:\/\//, '') + "#Intent;scheme=https;action=android.intent.action.VIEW;end";
+                     window.location.href = intentUrl;
                  }
+             }
+
+             function tryOpenApp() {
+                 if(isInApp) {
+                     // Retry aggressive open for iOS users who click button
+                     window.open(appUrl, '_system');
+                     window.location.href = appUrl;
+                     return;
+                 }
+                 
+                 console.log("Attempting App Open:", appUrl);
+                 window.location.href = appUrl;
                  
                  var start = Date.now();
                  setTimeout(function() {
-                     // Check visibility
                      var now = Date.now();
-                     // If hidden or time passed without freeze
                      if (document.hidden || document.webkitHidden || (now - start > 3000)) {
                          console.log("App likely opened.");
                      } else {
-                         console.log("App failed. Fallback to Web.");
-                         // Only fallback if we are NOT in Messenger (Messenger needs explicit click mostly)
-                         // But let's try fallback anyway for safety
                          window.location.href = webUrl;
                      }
                  }, 2500);
              }
 
-             // Auto Run (Might be blocked by Messenger, but worth a try)
-             setTimeout(tryOpenApp, 1000);
+             // Auto Run (Only if NOT in Messenger, to allow user to read instructions)
+             if(!isInApp) {
+                 setTimeout(tryOpenApp, 1000);
+             }
              
              // Manual Button
              document.getElementById('manualBtn').onclick = function(e) {
