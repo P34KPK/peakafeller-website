@@ -41,19 +41,40 @@ document.addEventListener('DOMContentLoaded', () => {
             ownerBtn.classList.add('active');
             testerBtn.classList.remove('active');
             if (ownerPanel) ownerPanel.style.display = 'block';
-            // Hide tester stuff
-            testerElements.forEach(el => { if (el) el.style.display = 'none'; });
+
+            // Hide all tester elements
+            if (testerElements[0]) testerElements[0].style.display = 'none'; // Form
+            if (testerElements[1]) testerElements[1].style.display = 'none'; // Grid
+            if (testerElements[2]) testerElements[2].style.display = 'none'; // Donation
+
         } else {
+            // TESTER MODE
             testerBtn.classList.add('active');
             ownerBtn.classList.remove('active');
             if (ownerPanel) ownerPanel.style.display = 'none';
-            // Trigger checkAccess to decide what to show (Form or Grid)
-            if (typeof window.checkAccess === 'function') {
-                window.checkAccess();
+
+            // Check Local Auth State IMMEDIATELLY (Don't wait for DB)
+            const user = JSON.parse(localStorage.getItem('betaUser'));
+            const approval = JSON.parse(localStorage.getItem('approvalData_' + (user ? user.id : '')));
+            const isApproved = user && approval && approval.status === 'approved';
+
+            if (isApproved) {
+                // Show Dashboard
+                if (testerElements[1]) testerElements[1].style.display = 'grid'; // Grid
+                if (testerElements[2]) testerElements[2].style.display = 'block'; // Donation
+                if (testerElements[0]) testerElements[0].style.display = 'none'; // Hide Form
             } else {
-                console.warn("checkAccess function not ready yet.");
-                // Fallback: show form if nothing else
-                if (testerElements[0]) testerElements[0].style.display = 'block';
+                // Show Login/Request Form
+                if (testerElements[0]) testerElements[0].style.display = 'block'; // Show Form
+                if (testerElements[1]) testerElements[1].style.display = 'none'; // Hide Grid
+                if (testerElements[2]) testerElements[2].style.display = 'none'; // Hide Donation
+
+                // Check if pending
+                const pending = JSON.parse(localStorage.getItem('pendingBetaRequest'));
+                if (pending) {
+                    const status = document.getElementById('requestStatus');
+                    if (status) status.innerText = "Request Pending... Check your emails.";
+                }
             }
         }
     };
