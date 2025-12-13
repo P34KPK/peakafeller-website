@@ -55,24 +55,25 @@
 
         // MOBILE DEEP LINK LOGIC
         const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        let finalUrl = target;
+
+        // Standard Web URL (Safe Default)
+        let webUrl = target;
+
+        // Aggressive App URL (For Button)
+        let appUrl = target;
 
         if (isMob) {
           if (target.includes('amazon') || target.includes('amzn')) {
-            // STRATEGY CHANGE: Only force deep link if we have an ASIN.
-            // The generic 'amazon://open?url=' is too flaky and causes errors.
             const asinMatch = target.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
-
             if (asinMatch && asinMatch[1]) {
-              // Robust Deep Link for PRODUCTS
-              finalUrl = 'amazon://content/item?ASIN=' + asinMatch[1];
+              // Best: Direct Item
+              appUrl = 'amazon://content/item?ASIN=' + asinMatch[1];
             } else {
-              // For Search, Home, or Short Links (amzn.to), rely on OS Universal Links.
-              // It's safer to just send the HTTPS link than to send a broken generic deep link.
-              finalUrl = target;
+              // Fallback: Force App with generic URL
+              appUrl = 'amazon://open?url=' + encodeURIComponent(target);
             }
           } else if (target.includes('spotify.com')) {
-            finalUrl = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
+            appUrl = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
           }
         }
 
@@ -90,28 +91,33 @@
             .sub { color: #666; font-size: 13px; margin-top: 40px; max-width: 80%; word-break: break-all; }
             .loader { border: 3px solid #333; border-top: 3px solid #ff6600; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin-top: 20px; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .hint { font-size: 10px; color: #444; margin-top: 10px; }
          </style>
        </head>
        <body>
           <div class="logo">P34K</div>
-          <div>Opening destination...</div>
+          <div>Opening Amazon App...</div>
           <div class="loader"></div>
           
-          <a href="${finalUrl}" class="btn" id="manualBtn">OPEN LINK NOW</a>
+          <a href="${appUrl}" class="btn" id="manualBtn">OPEN APP</a>
+          <div class="hint">(If fails, use link below)</div>
+          
+          <a href="${webUrl}" style="color:#666; font-size:12px; margin-top:20px;">Continue to Browser</a>
           
           <div class="sub">${target}</div>
           
           <script>
-             // Auto Redirect
+             // Auto Redirect Strategy
              setTimeout(function() {
-                 window.location.href = "${finalUrl}";
+                 // Try App First
+                 window.location.href = "${appUrl}";
                  
-                 // Fallback for Amazon Deep Link failure (if app not installed)
-                 if("${finalUrl}".startsWith("amazon:")) {
-                     setTimeout(function() {
-                         window.location.href = "${target}";
-                     }, 1500);
-                 }
+                 // If App fails (timeout), fallback to Web
+                 setTimeout(function() {
+                     // Check if we moved away? No reliable way.
+                     // Just try web.
+                     // window.location.href = "${webUrl}"; 
+                 }, 1500);
              }, 800);
           <\/script>
        </body>
