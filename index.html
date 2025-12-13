@@ -107,29 +107,50 @@
           <div class="sub">${target}</div>
           
           <script>
-             // "Visibility Check" Deep Link Strategy
+             // "Visibility Check" & Messenger Fix Strategy
              var appUrl = "${appUrl}";
              var webUrl = "${webUrl}";
              
+             // Detect In-App Browsers (Messenger, FB, Insta)
+             var ua = navigator.userAgent || navigator.vendor || window.opera;
+             var isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
+             
+             if(isInApp) {
+                 document.querySelector('.logo').innerText += " (MESSENGER MODE)";
+                 document.querySelector('.hint').innerText = "Tap button to break out of Messenger";
+             }
+             
              function tryOpenApp() {
                  console.log("Attempting App Open:", appUrl);
-                 window.location.href = appUrl;
+                 
+                 if(isInApp) {
+                     // Messenger Breakout Attempt
+                     // Try opening in new window to force system browser
+                     window.open(appUrl, '_system');
+                     window.open(appUrl, '_blank');
+                     window.location.href = appUrl;
+                 } else {
+                     // Standard Behavior
+                     window.location.href = appUrl;
+                 }
                  
                  var start = Date.now();
                  setTimeout(function() {
-                     // Check if page is still visible (meaning App didn't open)
+                     // Check visibility
                      var now = Date.now();
-                     // If existing time was short (browser didn't freeze), and page is visible...
+                     // If hidden or time passed without freeze
                      if (document.hidden || document.webkitHidden || (now - start > 3000)) {
                          console.log("App likely opened.");
                      } else {
                          console.log("App failed. Fallback to Web.");
+                         // Only fallback if we are NOT in Messenger (Messenger needs explicit click mostly)
+                         // But let's try fallback anyway for safety
                          window.location.href = webUrl;
                      }
                  }, 2500);
              }
 
-             // Auto Run
+             // Auto Run (Might be blocked by Messenger, but worth a try)
              setTimeout(tryOpenApp, 1000);
              
              // Manual Button
