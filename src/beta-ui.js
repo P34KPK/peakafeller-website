@@ -1,3 +1,4 @@
+import { db, collection, getDocs, doc, setDoc } from './firebase.js';
 
 // --- MODE TOGGLE LOGIC (OWNER vs TESTER) ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -110,17 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (createLinkBtn) {
         createLinkBtn.addEventListener('click', async () => {
 
-            // Auto-Wait for DB
-            if (!window.FB) {
-                createLinkBtn.disabled = true;
-                createLinkBtn.textContent = "CONNECTING DB...";
-                await new Promise(resolve => {
-                    const i = setInterval(() => {
-                        if (window.FB) { clearInterval(i); resolve(); }
-                    }, 500);
-                });
-            }
-
             const target = document.getElementById('linkTarget').value.trim();
             let alias = document.getElementById('linkAlias').value.trim();
 
@@ -132,8 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
             createLinkBtn.textContent = "CREATING...";
 
             try {
-                const { db, getDocs, collection, setDoc, doc } = window.FB;
-
                 // 1. Check Uniqueness
                 const snap = await getDocs(collection(db, "smart_links"));
                 let exists = false;
