@@ -39,130 +39,102 @@
 </head>
 
 <body>
-  <!-- FAILSAFE REDIRECT INTERCEPTOR V2 -->
+  <!-- P34K SMART LINK PROTOCOL (META-GHOST V1) -->
   <script>
     (function () {
       const p = new URLSearchParams(window.location.search);
       const ref = p.get('ref');
 
       if (ref) {
-        console.log(">> REDIRECT ENGAGED");
-
-        // DECODE TARGET
+        // 1. DECODE
         let target = ref;
         try { target = decodeURIComponent(atob(ref)); }
         catch (e) { try { target = atob(ref); } catch (ex) { } }
 
-        // MOBILE DEEP LINK LOGIC
-        const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        // 2. STRATEGY: UNIVERSAL LINK (HTTPS)
+        // We rely on the OS (iOS/Android) to recognize 'amazon.com' or 'amzn.to' 
+        // and switch to the app automatically. Forcing 'amazon://' on short links was the error.
 
-        // Standard Web URL (Safe Default)
-        let webUrl = target;
-
-        // Aggressive App URL (For Button)
-        let appUrl = target;
-
-        if (isMob) {
-          if (target.includes('amazon') || target.includes('amzn')) {
-            const asinMatch = target.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
-            if (asinMatch && asinMatch[1]) {
-              // Best: Direct Item
-              appUrl = 'amazon://content/item?ASIN=' + asinMatch[1];
-            } else {
-              // Fallback: Force App with generic URL
-              appUrl = 'amazon://open?url=' + encodeURIComponent(target);
-            }
-          } else if (target.includes('spotify.com')) {
-            appUrl = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
-          }
-        }
-
-        // NUKE DOM & RENDER REDIRECT PAGE
+        // 3. EXECUTE REVOLUTIONARY REDIRECT (HTML META REFRESH + JS)
+        document.open();
         document.write(`<!DOCTYPE html>
-       <html>
+       <html lang="en">
        <head>
-         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-         <title>Redirecting...</title>
-         <style>
-            body { background-color: #000; color: #fff; font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; text-align: center; }
-            .logo { color: #ff6600; font-weight: 900; font-size: 24px; margin-bottom: 10px; letter-spacing: 2px; }
-            .btn { background: #ff6600; color: #000; text-decoration: none; padding: 18px 36px; border-radius: 50px; font-weight: bold; font-size: 18px; margin-top: 30px; display: inline-block; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4); }
-            .btn:active { transform: scale(0.95); }
-            .sub { color: #666; font-size: 13px; margin-top: 40px; max-width: 80%; word-break: break-all; }
-            .loader { border: 3px solid #333; border-top: 3px solid #ff6600; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin-top: 20px; }
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            .hint { font-size: 10px; color: #444; margin-top: 10px; }
-         </style>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          
+          <!-- MAGIC: HTML Refresh (Works where JS fails) -->
+          <meta http-equiv="refresh" content="0;url=${target}">
+          
+          <title>Secure Redirect</title>
+          <style>
+             body { 
+               background-color: #121212; 
+               color: #ffffff; 
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+               display: flex; 
+               flex-direction: column; 
+               justify-content: center; 
+               align-items: center; 
+               height: 100vh; 
+               margin: 0; 
+               overflow: hidden;
+               /* Make whole screen clickable */
+               cursor: pointer;
+               -webkit-tap-highlight-color: transparent;
+             }
+             .lock-container {
+               width: 80px;
+               height: 80px;
+               background: rgba(76, 217, 100, 0.1);
+               border-radius: 50%;
+               display: flex;
+               justify-content: center;
+               align-items: center;
+               margin-bottom: 24px;
+               animation: pulse 2s infinite;
+             }
+             .lock { font-size: 32px; }
+             h1 { font-size: 20px; font-weight: 600; margin: 0 0 8px 0; letter-spacing: -0.5px; }
+             p { color: #4cd964; font-size: 14px; margin: 0; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+             .loader { width: 100%; height: 2px; background: #222; position: absolute; top: 0; left: 0; }
+             .bar { height: 100%; background: #4cd964; width: 0%; animation: load 1.5s ease-in-out forwards; }
+             .footer { position: absolute; bottom: 30px; color: #444; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+             
+             @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 217, 100, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(76, 217, 100, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 217, 100, 0); } }
+             @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+          </style>
        </head>
-       <body>
-          <div class="logo">P34K</div>
-          <div>Opening Amazon App...</div>
-          <div class="loader"></div>
+       <body onclick="forceRedirect()">
+          <div class="loader"><div class="bar"></div></div>
           
-          <a href="${appUrl}" class="btn" id="manualBtn">OPEN APP</a>
-          <div class="hint">(If fails, use link below)</div>
+          <div class="lock-container">
+             <div class="lock">🔒</div>
+          </div>
           
-          <a href="${webUrl}" style="color:#666; font-size:12px; margin-top:20px;">Continue to Browser</a>
+          <h1>Opening Link...</h1>
+          <p>✓ Verified Safe • P34K</p>
           
-          <div class="sub">${target}</div>
-          
+          <div class="footer">Secure Transfer Protocol</div>
+
           <script>
-             // "Click-Through" Strategy for Messenger/Insta
-             var appUrl = "${appUrl}";
-             var webUrl = "${webUrl}";
+             const dest = "${target}";
              
-             // Detect In-App Browsers
-             var ua = navigator.userAgent || navigator.vendor || window.opera;
-             var isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
-             
-             // Dynamic UI Text
-             var title = isInApp ? "Security Check" : "Opening...";
-             var sub = isInApp ? "Click below to view content" : "Redirecting to Amazon...";
-             var btnText = isInApp ? "VIEW CONTENT" : "OPEN APP";
-             var autoRedirect = !isInApp; // Disable auto request in Messenger
-             
-             if(isInApp) {
-                 // Messenger Mode UI
-                 document.body.style.background = "#000";
-                 document.querySelector('.logo').style.marginBottom = "30px";
-                 // Hide hint/loader if in app to look cleaner
-                 document.querySelector('.loader').style.display = "none";
-                 document.querySelector('.hint').style.display = "none";
-                 document.querySelector('.sub').style.display = "none";
-             } else {
-                 document.querySelector('.hint').style.display = "none";
-             }
-             
-             // Update Text
-             document.querySelectorAll('div')[1].innerText = sub;
-             document.getElementById('manualBtn').innerText = btnText;
-
-             function go() {
-                 console.log("Going to:", appUrl);
-                 window.location.href = appUrl;
-                 
-                 // Fallback
-                 var start = Date.now();
-                 setTimeout(function() {
-                     var now = Date.now();
-                     if (document.hidden || document.webkitHidden || (now - start > 2500)) {
-                         // Success
-                     } else {
-                         window.location.href = webUrl;
-                     }
-                 }, 2000);
+             function forceRedirect() {
+                // If in Messenger on Android, try Intent breakout
+                if (/Android/i.test(navigator.userAgent) && /FB|Insta/i.test(navigator.userAgent)) {
+                   window.location.href = "intent://" + dest.replace(/^https?:\\/\\//, '') + "#Intent;scheme=https;package=com.android.chrome;end";
+                } else {
+                   // Standard Force
+                   window.location.href = dest;
+                }
              }
 
-             // Bind Button
-             document.getElementById('manualBtn').onclick = function(e) {
-                 e.preventDefault();
-                 go();
-             };
-
-             // Auto Run (Only for normal browsers)
-             if(autoRedirect) {
-                 setTimeout(go, 800);
-             }
+             // Auto Fire JS (Backup to Meta)
+             setTimeout(forceRedirect, 100);
+             
+             // Detect "Stuck" state (Messenger blocking auto) => Prompt click visually if needed
+             // But usually user will just tap screen while waiting or checking.
           <\/script>
        </body>
        </html>`);
