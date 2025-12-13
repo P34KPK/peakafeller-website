@@ -107,52 +107,6 @@ function initBetaUI() {
         }
     };
 
-    // Create Smart Link Logic
-    const createLinkBtn = document.getElementById('createLinkBtn');
-    if (createLinkBtn) {
-        createLinkBtn.addEventListener('click', async () => {
-
-            const target = document.getElementById('linkTarget').value.trim();
-            let alias = document.getElementById('linkAlias').value.trim();
-
-            if (!target) { createLinkBtn.disabled = false; createLinkBtn.textContent = "CREATE TRACKING LINK"; return alert("Target URL is required"); }
-            if (!target.startsWith('http')) { createLinkBtn.disabled = false; createLinkBtn.textContent = "CREATE TRACKING LINK"; return alert("URL must start with http:// or https://"); }
-            if (!alias) alias = Math.random().toString(36).substr(2, 6);
-
-            createLinkBtn.disabled = true;
-            createLinkBtn.textContent = "CREATING...";
-
-            try {
-                // 1. Check Uniqueness
-                const snap = await getDocs(collection(db, "smart_links"));
-                let exists = false;
-                snap.forEach(d => { if (d.data().alias === alias) exists = true; });
-                if (exists) throw new Error(`Alias '${alias}' is already taken.`);
-
-                // 2. Create
-                await setDoc(doc(db, "smart_links", "link_" + alias), {
-                    alias: alias,
-                    target: target,
-                    clicks: 0,
-                    createdAt: new Date().toISOString()
-                });
-
-                document.getElementById('linkTarget').value = '';
-                document.getElementById('linkAlias').value = '';
-                alert(`Link Created: /?go=${alias}`);
-
-                if (window.loadSmartLinks) window.loadSmartLinks();
-
-            } catch (e) {
-                console.error(e);
-                alert("Error: " + e.message);
-            } finally {
-                createLinkBtn.disabled = false;
-                createLinkBtn.textContent = "CREATE TRACKING LINK";
-            }
-        });
-    }
-
     // Password Modal Logic
     const pwdInput = document.getElementById('ownerPasswordInput');
     const pwdBtn = document.getElementById('submitPasswordBtn');
