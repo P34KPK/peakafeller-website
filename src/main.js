@@ -387,37 +387,54 @@ if (rawbeatLink) {
       console.log(">> SMART LINK DETECTED:", refParam);
       let target;
       try {
-        // Try Secure Decode
         target = decodeURIComponent(atob(refParam));
       } catch (err) {
-        // Fallback to simple decode (legacy links)
         console.warn("Legacy decode used");
         target = atob(refParam);
       }
 
-      console.log(">> TARGET URL:", target);
+      // Fix Amazon Short Links not opening App
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isAmazon = target.includes('amazon') || target.includes('amzn.to');
 
-      // Visual Feedback
-      document.documentElement.innerHTML = `<body style="background:#000; color:#ff6600; display:flex; flex-direction:column; height:100vh; justify-content:center; align-items:center; font-family:monospace; font-size:1.2rem;">
-            <div>>> SECURE REDIRECT <<</div>
-            <div style="font-size:0.8rem; color:#666; margin-top:10px;">${target}</div>
+      // Visual Feedback with Manual Button (Crucial for Mobile Intent)
+      document.documentElement.innerHTML = `
+         <head><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+         <body style="background:#000; color:#fff; display:flex; flex-direction:column; height:100vh; justify-content:center; align-items:center; font-family:sans-serif;">
+            <div style="margin-bottom:20px; color:#ff6600; font-weight:bold;">PEAKAFELLER REDIRECT</div>
+            <div style="font-size:0.8rem; color:#666; margin-bottom:30px; max-width:80%; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${target}</div>
+            
+            <button id="goBtn" style="background:#ff6600; color:black; border:none; padding:15px 30px; font-size:1rem; font-weight:bold; cursor:pointer; border-radius:4px;">
+                OPEN LINK
+            </button>
+            <div style="margin-top:20px; font-size:0.7rem; color:#444;">Redirecting in 2s...</div>
          </body>`;
 
-      // Mobile Deep Link Logic (Same as before)
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      let deepLink = null;
+      const doRedirect = () => {
+        // Deep Link Attempts
+        if (isMobile) {
+          if (target.includes('amazon') && target.includes('/dp/')) {
+            // Try extraction for full links
+            const asin = target.match(/\/dp\/([A-Z0-9]{10})/)?.[1];
+            if (asin) window.location.href = `amazon://content/item?ASIN=${asin}`;
+            else window.location.href = target;
+          } else {
+            // amzn.to or generic
+            window.location.href = target;
+          }
+        } else {
+          window.location.href = target;
+        }
+      };
 
-      if (isMobile) {
-        if (target.includes('spotify.com')) deepLink = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
-        else if (target.includes('youtube.com') || target.includes('youtu.be')) deepLink = `vnd.youtube:${target.split('v=')[1] || target.split('/').pop()}`;
-      }
+      // Bind Button
+      setTimeout(() => {
+        document.getElementById('goBtn').onclick = doRedirect;
+      }, 50);
 
-      if (deepLink) {
-        window.location.href = deepLink;
-        setTimeout(() => window.location.replace(target), 2000);
-      } else {
-        window.location.replace(target);
-      }
+      // Auto Redirect
+      setTimeout(doRedirect, 2000);
+
       return; // Stop execution
     } catch (e) {
       console.error("Invalid Ref", e);
