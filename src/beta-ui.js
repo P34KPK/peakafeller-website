@@ -1,7 +1,8 @@
 import { db, collection, getDocs, doc, setDoc } from './firebase.js';
 
 // --- MODE TOGGLE LOGIC (OWNER vs TESTER) ---
-document.addEventListener('DOMContentLoaded', () => {
+function initBetaUI() {
+    console.log("Initializing Beta UI...");
     const ownerBtn = document.getElementById('ownerMode');
     const testerBtn = document.getElementById('testerMode');
     const ownerPanel = document.getElementById('ownerPanel');
@@ -175,4 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBetaUI);
+} else {
+    initBetaUI();
+}
