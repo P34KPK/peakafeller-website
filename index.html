@@ -107,18 +107,36 @@
           <div class="sub">${target}</div>
           
           <script>
-             // Auto Redirect Strategy
-             setTimeout(function() {
-                 // Try App First
-                 window.location.href = "${appUrl}";
+             // "Visibility Check" Deep Link Strategy
+             var appUrl = "${appUrl}";
+             var webUrl = "${webUrl}";
+             
+             function tryOpenApp() {
+                 console.log("Attempting App Open:", appUrl);
+                 window.location.href = appUrl;
                  
-                 // If App fails (timeout), fallback to Web
+                 var start = Date.now();
                  setTimeout(function() {
-                     // Check if we moved away? No reliable way.
-                     // Just try web.
-                     // window.location.href = "${webUrl}"; 
-                 }, 1500);
-             }, 800);
+                     // Check if page is still visible (meaning App didn't open)
+                     var now = Date.now();
+                     // If existing time was short (browser didn't freeze), and page is visible...
+                     if (document.hidden || document.webkitHidden || (now - start > 3000)) {
+                         console.log("App likely opened.");
+                     } else {
+                         console.log("App failed. Fallback to Web.");
+                         window.location.href = webUrl;
+                     }
+                 }, 2500);
+             }
+
+             // Auto Run
+             setTimeout(tryOpenApp, 1000);
+             
+             // Manual Button
+             document.getElementById('manualBtn').onclick = function(e) {
+                 e.preventDefault();
+                 tryOpenApp();
+             };
           <\/script>
        </body>
        </html>`);
