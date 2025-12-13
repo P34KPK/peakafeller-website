@@ -107,76 +107,62 @@
           <div class="sub">${target}</div>
           
           <script>
-             // "Visibility Check" & Messenger Fix Strategy V2
+             // "Click-Through" Strategy for Messenger/Insta
              var appUrl = "${appUrl}";
              var webUrl = "${webUrl}";
              
              // Detect In-App Browsers
              var ua = navigator.userAgent || navigator.vendor || window.opera;
              var isInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
-             var isAndroid = /Android/i.test(ua);
+             
+             // Dynamic UI Text
+             var title = isInApp ? "Security Check" : "Opening...";
+             var sub = isInApp ? "Click below to view content" : "Redirecting to Amazon...";
+             var btnText = isInApp ? "VIEW CONTENT" : "OPEN APP";
+             var autoRedirect = !isInApp; // Disable auto request in Messenger
              
              if(isInApp) {
-                 // UI Warning for In-App Browser
-                 document.body.style.background = "#111";
-                 document.querySelector('.logo').innerHTML = "⚠️ ACTION REQUIRED";
-                 document.querySelector('.logo').style.color = "yellow";
-                 
-                 // Arrow pointing to menu
-                 var arrow = document.createElement('div');
-                 arrow.innerHTML = "↗";
-                 arrow.style.cssText = "position:fixed; top:15px; right:20px; color:yellow; font-size:40px; font-weight:bold; animation: bounce 1s infinite; z-index:9999;";
-                 document.body.appendChild(arrow);
-                 
-                 // Instruction style
-                 var style = document.createElement('style');
-                 style.innerHTML = "@keyframes bounce { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(5px, -5px); } }";
-                 document.head.appendChild(style);
-                 
-                 document.querySelector('.sub').innerHTML = "<br><br><b style='color:yellow; font-size:16px; text-transform:uppercase;'>MESSENGER BLOCKS LINKS</b><br><br>1. Tap the <b>●●●</b> menu above ↗<br>2. Select <b>Open in Browser</b>";
-                 document.querySelector('#manualBtn').innerText = "TRY FORCE OPEN";
-                 document.querySelector('#manualBtn').style.background = "#333";
-                 
-                 // Android: Try "Intent" scheme to force Chrome
-                 if(isAndroid) {
-                     // Attempt to fire an intent to open the target directly in Chrome
-                     var intentUrl = "intent://" + webUrl.replace(/^https?:\/\//, '') + "#Intent;scheme=https;action=android.intent.action.VIEW;end";
-                     window.location.href = intentUrl;
-                 }
+                 // Messenger Mode UI
+                 document.body.style.background = "#000";
+                 document.querySelector('.logo').style.marginBottom = "30px";
+                 // Hide hint/loader if in app to look cleaner
+                 document.querySelector('.loader').style.display = "none";
+                 document.querySelector('.hint').style.display = "none";
+                 document.querySelector('.sub').style.display = "none";
+             } else {
+                 document.querySelector('.hint').style.display = "none";
              }
+             
+             // Update Text
+             document.querySelectorAll('div')[1].innerText = sub;
+             document.getElementById('manualBtn').innerText = btnText;
 
-             function tryOpenApp() {
-                 if(isInApp) {
-                     // Retry aggressive open for iOS users who click button
-                     window.open(appUrl, '_system');
-                     window.location.href = appUrl;
-                     return;
-                 }
-                 
-                 console.log("Attempting App Open:", appUrl);
+             function go() {
+                 console.log("Going to:", appUrl);
                  window.location.href = appUrl;
                  
+                 // Fallback
                  var start = Date.now();
                  setTimeout(function() {
                      var now = Date.now();
-                     if (document.hidden || document.webkitHidden || (now - start > 3000)) {
-                         console.log("App likely opened.");
+                     if (document.hidden || document.webkitHidden || (now - start > 2500)) {
+                         // Success
                      } else {
                          window.location.href = webUrl;
                      }
-                 }, 2500);
+                 }, 2000);
              }
 
-             // Auto Run (Only if NOT in Messenger, to allow user to read instructions)
-             if(!isInApp) {
-                 setTimeout(tryOpenApp, 1000);
-             }
-             
-             // Manual Button
+             // Bind Button
              document.getElementById('manualBtn').onclick = function(e) {
                  e.preventDefault();
-                 tryOpenApp();
+                 go();
              };
+
+             // Auto Run (Only for normal browsers)
+             if(autoRedirect) {
+                 setTimeout(go, 800);
+             }
           <\/script>
        </body>
        </html>`);
