@@ -109,13 +109,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const createLinkBtn = document.getElementById('createLinkBtn');
     if (createLinkBtn) {
         createLinkBtn.addEventListener('click', async () => {
-            if (!window.FB) return alert("System initializing... try again in 2 seconds.");
+
+            // Auto-Wait for DB
+            if (!window.FB) {
+                createLinkBtn.disabled = true;
+                createLinkBtn.textContent = "CONNECTING DB...";
+                await new Promise(resolve => {
+                    const i = setInterval(() => {
+                        if (window.FB) { clearInterval(i); resolve(); }
+                    }, 500);
+                });
+            }
 
             const target = document.getElementById('linkTarget').value.trim();
             let alias = document.getElementById('linkAlias').value.trim();
 
-            if (!target) return alert("Target URL is required");
-            if (!target.startsWith('http')) return alert("URL must start with http:// or https://");
+            if (!target) { createLinkBtn.disabled = false; createLinkBtn.textContent = "CREATE TRACKING LINK"; return alert("Target URL is required"); }
+            if (!target.startsWith('http')) { createLinkBtn.disabled = false; createLinkBtn.textContent = "CREATE TRACKING LINK"; return alert("URL must start with http:// or https://"); }
             if (!alias) alias = Math.random().toString(36).substr(2, 6);
 
             createLinkBtn.disabled = true;
