@@ -742,7 +742,7 @@ window.loadSmartLinks = function () {
 
     list.innerHTML = links.map(l => {
       // Reconstruct the link
-      const encoded = btoa(l.target);
+      const encoded = btoa(encodeURIComponent(l.target));
       const smartLink = `${window.location.origin}/?ref=${encoded}`;
 
       return `
@@ -787,7 +787,8 @@ window.createSmartLinkAction = async () => {
 
   try {
     // 1. Generate Stateless Link
-    const encoded = btoa(target); // Base64 Encode
+    // Secure Encoding (supports Unicode/Special Chars)
+    const encoded = btoa(encodeURIComponent(target));
     const fullLink = `${window.location.origin}/?ref=${encoded}`;
 
     // 2. Save to Local Storage (User's Library)

@@ -384,9 +384,24 @@ if (rawbeatLink) {
   // STATELESS REDIRECT (NO DB)
   if (refParam) {
     try {
-      const target = atob(refParam);
+      console.log(">> SMART LINK DETECTED:", refParam);
+      let target;
+      try {
+        // Try Secure Decode
+        target = decodeURIComponent(atob(refParam));
+      } catch (err) {
+        // Fallback to simple decode (legacy links)
+        console.warn("Legacy decode used");
+        target = atob(refParam);
+      }
+
+      console.log(">> TARGET URL:", target);
+
       // Visual Feedback
-      document.documentElement.innerHTML = `<body style="background:#000; color:#ff6600; display:flex; height:100vh; justify-content:center; align-items:center; font-family:monospace; font-size:1.5rem;">>> REDIRECTING...</body>`;
+      document.documentElement.innerHTML = `<body style="background:#000; color:#ff6600; display:flex; flex-direction:column; height:100vh; justify-content:center; align-items:center; font-family:monospace; font-size:1.2rem;">
+            <div>>> SECURE REDIRECT <<</div>
+            <div style="font-size:0.8rem; color:#666; margin-top:10px;">${target}</div>
+         </body>`;
 
       // Mobile Deep Link Logic (Same as before)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
