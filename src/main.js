@@ -413,13 +413,22 @@ if (rawbeatLink) {
       const doRedirect = () => {
         // Deep Link Attempts
         if (isMobile) {
-          if (target.includes('amazon') && target.includes('/dp/')) {
-            // Try extraction for full links
-            const asin = target.match(/\/dp\/([A-Z0-9]{10})/)?.[1];
-            if (asin) window.location.href = `amazon://content/item?ASIN=${asin}`;
-            else window.location.href = target;
+          if (target.includes('amazon') || target.includes('amzn.to')) {
+            // Try to force Amazon App using scheme
+            // This works for both short links (amzn.to) and long links
+            const deep = `amazon://open?url=${encodeURIComponent(target)}`;
+
+            // 1. Try Deep Link
+            window.location.href = deep;
+
+            // 2. Fallback to Web immediately (OS will handle priority)
+            setTimeout(() => {
+              window.location.href = target;
+            }, 800);
+          } else if (target.includes('spotify.com')) {
+            window.location.href = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
+            setTimeout(() => window.location.href = target, 500);
           } else {
-            // amzn.to or generic
             window.location.href = target;
           }
         } else {
