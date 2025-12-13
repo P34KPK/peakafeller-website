@@ -389,34 +389,116 @@
     <script type="module" src="./src/beta.js?v=1005"></script>
     <script type="module" src="./src/beta-ui.js"></script>
 
-    <!-- FAILSAFE TAB LOGIC (INLINE) -->
+    <!-- FAILSAFE SYSTEM (INLINE - NO MODULES) -->
     <script>
         (function () {
-            console.log("Failsafe Tab Logic Loaded");
+            console.log("FAILSAFE SYSTEM ENGAGED");
+
+            // --- SMART LINKS LOGIC (INLINE VERIFIED) ---
+
+            // 1. Load Links
+            window.loadSmartLinks = function () {
+                const list = document.getElementById('smartLinksList');
+                if (!list) return;
+
+                try {
+                    const links = JSON.parse(localStorage.getItem('my_smart_links') || '[]');
+                    if (links.length === 0) {
+                        list.innerHTML = '<div style="padding:1rem; color:#666; font-style:italic;">No links yet. Create one above.<br>(Links are stored safely in your browser)</div>';
+                        return;
+                    }
+
+                    // Sort Newest First
+                    links.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                    list.innerHTML = links.map(l => {
+                        // Secure Encode
+                        const encoded = btoa(encodeURIComponent(l.target));
+                        const fullLink = window.location.origin + '/?ref=' + encoded;
+
+                        return `
+                        <div class="link-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; margin-bottom:5px; border-radius:4px;">
+                            <div class="link-info" style="overflow:hidden;">
+                                <a href="${fullLink}" target="_blank" style="color:#ff6600; font-weight:bold; display:block; text-decoration:none;">/${l.alias} ↗</a>
+                                <div style="font-size:0.75rem; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;">${l.target}</div>
+                            </div>
+                            <div class="link-actions" style="display:flex; gap:5px;">
+                                <button onclick="navigator.clipboard.writeText('${fullLink}').then(()=>alert('Copied!'))" style="background:#333; color:#fff; border:none; padding:5px 10px; cursor:pointer;">COPY</button>
+                                <button onclick="deleteLocalLink('${l.id}')" style="background:#333; color:#ff3333; border:none; padding:5px 10px; cursor:pointer;">DEL</button>
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                } catch (e) { console.error("Load Error", e); }
+            };
+
+            // 2. Create Action (Bound to Button)
+            window.createSmartLinkAction = function () {
+                console.log("Create Action Triggered");
+                const target = document.getElementById('linkTarget').value.trim();
+                let alias = document.getElementById('linkAlias').value.trim();
+
+                if (!target) return alert("Please enter a Target URL (http...)");
+                if (!target.startsWith('http')) return alert("URL must start with http:// or https://");
+
+                if (!alias) alias = "Link_" + Math.floor(Math.random() * 9999);
+
+                try {
+                    const links = JSON.parse(localStorage.getItem('my_smart_links') || '[]');
+
+                    // Add New
+                    links.push({
+                        id: Date.now().toString(),
+                        alias: alias,
+                        target: target,
+                        createdAt: new Date().toISOString()
+                    });
+
+                    localStorage.setItem('my_smart_links', JSON.stringify(links));
+
+                    // Clear & Reload
+                    document.getElementById('linkTarget').value = '';
+                    document.getElementById('linkAlias').value = '';
+
+                    window.loadSmartLinks();
+                    alert("Link Created Successfully!");
+
+                } catch (e) {
+                    alert("Error: " + e.message);
+                }
+            };
+
+            // 3. Delete Action
+            window.deleteLocalLink = function (id) {
+                if (confirm("Delete this link?")) {
+                    const links = JSON.parse(localStorage.getItem('my_smart_links') || '[]');
+                    const newLinks = links.filter(x => x.id !== id);
+                    localStorage.setItem('my_smart_links', JSON.stringify(newLinks));
+                    window.loadSmartLinks();
+                }
+            };
+
+            // --- TAB LOGIC ---
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(btn => {
                 btn.onclick = function (e) {
-                    console.log("Tab Clicked:", this.id);
-                    // 1. Visual Toggle
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
 
-                    // 2. View Toggle
                     const viewBeta = document.getElementById('viewBeta');
                     const viewLinks = document.getElementById('viewLinks');
 
                     if (this.id === 'tabLinks') {
                         if (viewBeta) viewBeta.style.display = 'none';
                         if (viewLinks) viewLinks.style.display = 'block';
-                        // Try load data
-                        if (window.loadSmartLinks) window.loadSmartLinks();
-                        else console.warn("loadSmartLinks not ready");
+                        window.loadSmartLinks();
                     } else {
                         if (viewBeta) viewBeta.style.display = 'block';
                         if (viewLinks) viewLinks.style.display = 'none';
                     }
                 };
             });
+
         })();
     </script>
 </body>
