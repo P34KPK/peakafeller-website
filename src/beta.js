@@ -399,23 +399,26 @@ function initApp() {
       const file = e.target.files[0];
       if (file) {
         console.log('File:', file.name, file.size, file.type);
+        const preview = document.getElementById('coverPreview');
+        preview.innerHTML = '<p style="color:var(--color-accent); font-weight:bold;">PROCESSING...</p>';
+
         try {
-          const preview = document.getElementById('coverPreview');
-          preview.innerHTML = '<p style="color:var(--color-accent); font-weight:bold;">COMPRESSING...</p>';
-
-          coverFile = file;
-
-          // Attempt compression
+          // 1. Try Standard Compression
           try {
-            coverImage = await compressImage(file, 600, 0.7);
-            console.log('Compression success');
+            coverImage = await compressImage(file, 800, 0.7);
+
+            // Check size of base64 roughly (length * 0.75)
+            if (coverImage.length > 1000000) {
+              console.warn("Image still too big, compressing aggressively...");
+              coverImage = await compressImage(file, 600, 0.5);
+            }
+
+            console.log('Compression success, final length:', coverImage.length);
             preview.innerHTML = `<img src="${coverImage}" style="max-width:100%; border-radius:4px; border:1px solid #333;">`;
           } catch (compErr) {
-            console.error("Compression error:", compErr);
-
-            // Fallback if small enough
-            if (file.size < 1024 * 1024) { // 1MB
-              console.log('Falling back to direct base64');
+            console.error("Compression error, trying fallback", compErr);
+            // Fallback: Read as DataURL if size is reasonable (<1.5MB source)
+            if (file.size < 1.5 * 1024 * 1024) {
               const reader = new FileReader();
               reader.onload = (re) => {
                 coverImage = re.target.result;
@@ -423,13 +426,13 @@ function initApp() {
               };
               reader.readAsDataURL(file);
             } else {
-              throw new Error("Image too large and compression failed. Please use a smaller image (<1MB).");
+              throw new Error("Image too large. Please use an image under 1.5MB or a standard JPG/PNG.");
             }
           }
         } catch (err) {
           console.error("Image processing failed completely", err);
           alert("Error: " + err.message);
-          document.getElementById('coverPreview').innerHTML = '<span style="color:red">Upload Failed</span>';
+          preview.innerHTML = '<span style="color:red">Upload Failed</span>';
           coverImage = null;
         }
       }
@@ -481,40 +484,45 @@ function initApp() {
       try {
         const timestamp = Date.now();
 
-        // Map UI tracks to Database Object
-        // No more "Upload", just referencing the file location
+        // 1. Prepare Tracks
         const finalTracks = uploadedTracks.map(t => ({
           name: t.name,
-          url: `./beta-tracks/${t.filename}`, // Local relative path (works on GitHub Pages)
+          url: `./beta-tracks/${t.filename}`,
           comments: []
         }));
 
         const album = {
           id: timestamp,
           title,
-          cover: coverImage, // Base64 cover is fine (small)
+          cover: coverImage,
           tracks: finalTracks,
           publishedAt: new Date().toISOString()
         };
 
+        // 2. Save to DB
+        console.log("Saving to Firestore...", album);
         await DB.save(album);
+        console.log("Save Success");
+
         currentAlbums.push(album);
 
-        // Reset UI
+        // 3. Reset UI only on success
         document.getElementById('albumTitle').value = '';
         document.getElementById('coverPreview').innerHTML = '';
         uploadedTracks = [];
         coverImage = null;
         renderTracksList();
-        loadOwnerAlbums();
+
+        // 4. Reload List to Confirm
+        await loadOwnerAlbums();
 
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
-        alert('Album Published! (Ensure files are in public/beta-tracks folder)');
+        alert('Album Published Successfully!');
 
       } catch (e) {
         console.error("Publish Error:", e);
-        alert('Failed: ' + e.message);
+        alert('Failed to Save: ' + e.message + "\n\nTry again.");
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
       }
