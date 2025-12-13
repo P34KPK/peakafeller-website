@@ -738,7 +738,7 @@ async function loadSmartLinks() {
       return `
             <div class="link-item">
                 <div class="link-info">
-                    <div class="link-alias">/${l.alias}</div>
+                    <a href="${shortLink}" target="_blank" class="link-alias" style="color:var(--color-accent); text-decoration:underline; display:block; margin-bottom:0.2rem; cursor:pointer; font-weight:bold;">/${l.alias} ↗</a>
                     <a href="${l.target}" target="_blank" class="link-target">${l.target}</a>
                     <div class="link-stats">Clicks: ${l.clicks || 0} • Created: ${new Date(l.createdAt).toLocaleDateString()}</div>
                 </div>
