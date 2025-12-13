@@ -39,7 +39,7 @@
 </head>
 
 <body>
-  <!-- P34K SMART LINK PROTOCOL (META-GHOST V1) -->
+  <!-- P34K SMART LINK PROTOCOL (AMAZON-FORCE V3) -->
   <script>
     (function () {
       const p = new URLSearchParams(window.location.search);
@@ -51,90 +51,91 @@
         try { target = decodeURIComponent(atob(ref)); }
         catch (e) { try { target = atob(ref); } catch (ex) { } }
 
-        // 2. STRATEGY: UNIVERSAL LINK (HTTPS)
-        // We rely on the OS (iOS/Android) to recognize 'amazon.com' or 'amzn.to' 
-        // and switch to the app automatically. Forcing 'amazon://' on short links was the error.
+        // 2. CONSTRUCT DEEP LINK (THE "MAGIC" SCHEMES)
+        let deepLink = target;
+        const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
 
-        // 3. EXECUTE REVOLUTIONARY REDIRECT (HTML META REFRESH + JS)
+        if (isMobile) {
+          if (target.includes('amazon') || target.includes('amzn')) {
+            const asin = target.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
+            if (asin && asin[1]) {
+              // METHOD A: Direct Product (Most reliable for Item links)
+              deepLink = 'amazon://content/item?ASIN=' + asin[1];
+            } else {
+              // METHOD B: Internal Webview (For amzn.to / Search)
+              // Forces App to open and load the URL itself
+              deepLink = 'amazon://content/view?currentUrl=' + encodeURIComponent(target);
+            }
+          }
+        }
+
+        // 3. RENDER UI
         document.open();
         document.write(`<!DOCTYPE html>
        <html lang="en">
        <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-          
-          <!-- MAGIC: HTML Refresh (Works where JS fails) -->
-          <meta http-equiv="refresh" content="0;url=${target}">
-          
-          <title>Secure Redirect</title>
+          <title>Opening App...</title>
           <style>
              body { 
-               background-color: #121212; 
-               color: #ffffff; 
-               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+               background-color: #000; 
+               color: #fff; 
+               font-family: -apple-system, system-ui, sans-serif; 
                display: flex; 
                flex-direction: column; 
                justify-content: center; 
                align-items: center; 
                height: 100vh; 
                margin: 0; 
-               overflow: hidden;
-               /* Make whole screen clickable */
                cursor: pointer;
                -webkit-tap-highlight-color: transparent;
              }
-             .lock-container {
-               width: 80px;
-               height: 80px;
-               background: rgba(76, 217, 100, 0.1);
-               border-radius: 50%;
-               display: flex;
-               justify-content: center;
-               align-items: center;
-               margin-bottom: 24px;
+             .btn {
+               background: #FF9900; /* Amazon Orange */
+               color: #000;
+               font-weight: 800;
+               padding: 20px 40px;
+               border-radius: 50px;
+               font-size: 20px;
+               text-transform: uppercase;
+               box-shadow: 0 4px 20px rgba(255, 153, 0, 0.4);
+               margin-bottom: 30px;
                animation: pulse 2s infinite;
              }
-             .lock { font-size: 32px; }
-             h1 { font-size: 20px; font-weight: 600; margin: 0 0 8px 0; letter-spacing: -0.5px; }
-             p { color: #4cd964; font-size: 14px; margin: 0; font-weight: 500; display: flex; align-items: center; gap: 6px; }
-             .loader { width: 100%; height: 2px; background: #222; position: absolute; top: 0; left: 0; }
-             .bar { height: 100%; background: #4cd964; width: 0%; animation: load 1.5s ease-in-out forwards; }
-             .footer { position: absolute; bottom: 30px; color: #444; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-             
-             @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 217, 100, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(76, 217, 100, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 217, 100, 0); } }
-             @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+             p { color: #666; font-size: 12px; margin-top: 20px; }
+             @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
           </style>
        </head>
-       <body onclick="forceRedirect()">
-          <div class="loader"><div class="bar"></div></div>
+       <body onclick="launch()">
+       
+          <div class="btn">OPEN AMAZON APP</div>
           
-          <div class="lock-container">
-             <div class="lock">🔒</div>
-          </div>
+          <div style="font-size:14px; color:#999;">Tap above if not redirected</div>
           
-          <h1>Opening Link...</h1>
-          <p>✓ Verified Safe • P34K</p>
-          
-          <div class="footer">Secure Transfer Protocol</div>
+          <p>Verified Link • P34K</p>
 
           <script>
-             const dest = "${target}";
+             const deep = "${deepLink}";
+             const web = "${target}";
              
-             function forceRedirect() {
-                // If in Messenger on Android, try Intent breakout
-                if (/Android/i.test(navigator.userAgent) && /FB|Insta/i.test(navigator.userAgent)) {
-                   window.location.href = "intent://" + dest.replace(/^https?:\\/\\//, '') + "#Intent;scheme=https;package=com.android.chrome;end";
-                } else {
-                   // Standard Force
-                   window.location.href = dest;
-                }
+             function launch() {
+                 console.log("Launching:", deep);
+                 
+                 // 1. Try Deep Link (Force App)
+                 window.location.href = deep;
+                 
+                 // 2. Fallback to Web (after delay) if App not installed
+                 setTimeout(function() {
+                     // Only verify passing if we are still here
+                     if (!document.hidden) {
+                        window.location.href = web;
+                     }
+                 }, 1500);
              }
 
-             // Auto Fire JS (Backup to Meta)
-             setTimeout(forceRedirect, 100);
-             
-             // Detect "Stuck" state (Messenger blocking auto) => Prompt click visually if needed
-             // But usually user will just tap screen while waiting or checking.
+             // Auto Launch
+             setTimeout(launch, 500);
           <\/script>
        </body>
        </html>`);
