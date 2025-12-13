@@ -39,70 +39,84 @@
 </head>
 
 <body>
-  <!-- URGENT REDIRECT INTERCEPTOR -->
+  <!-- FAILSAFE REDIRECT INTERCEPTOR V2 -->
   <script>
     (function () {
       const p = new URLSearchParams(window.location.search);
       const ref = p.get('ref');
 
-      // ONLY INTERCEPT IF 'ref' IS PRESENT (ignore 'go' to let legacy handle or migrated)
       if (ref) {
-        console.log(">> INTERCEPTOR ACTIVE: ", ref);
+        console.log(">> REDIRECT ENGAGED");
 
-        // 1. Wipe DOM to prevent Site Load
-        document.documentElement.innerHTML = '<head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#000;color:#ff6600;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:monospace;font-size:16px;text-align:center;"><div>>> P34K LINK PROTOCOL <<</div><div id="status" style="margin-top:10px;color:#666;">DECODING...</div></body>';
-
-        // 2. Decode
+        // DECODE TARGET
         let target = ref;
-        try {
-          target = decodeURIComponent(atob(ref));
-        } catch (e) {
-          // Fallback Legacy
-          try { target = atob(ref); } catch (ex) { console.error(ex); target = "error"; }
-        }
+        try { target = decodeURIComponent(atob(ref)); }
+        catch (e) { try { target = atob(ref); } catch (ex) { } }
 
-        if (target === 'error') {
-          document.getElementById('status').innerText = "LINK CORRUPTED";
-          return;
-        }
+        // MOBILE DEEP LINK LOGIC
+        const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        let finalUrl = target;
 
-        // 3. Update UI
-        document.body.innerHTML += `
-            <div style="margin:20px 0; color:#fff; word-break:break-all; padding:0 20px; max-width:100%;">${target}</div>
-            <button id="openBtn" style="padding:15px 30px; font-size:18px; font-weight:bold; background:#ff6600; border:none; border-radius:4px; cursor:pointer;">OPEN LINK</button>
-            <div style="margin-top:20px; font-size:12px; color:#444;">Auto-redirecting...</div>
-       `;
+        if (isMob) {
+          if (target.includes('amazon') || target.includes('amzn')) {
+            // STRATEGY CHANGE: Only force deep link if we have an ASIN.
+            // The generic 'amazon://open?url=' is too flaky and causes errors.
+            const asinMatch = target.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
 
-        const doRedirect = () => {
-          const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-          if (isMob) {
-            if (target.includes('amazon') || target.includes('amzn')) {
-              // FORCE AMAZON APP
-              const deep = 'amazon://open?url=' + encodeURIComponent(target);
-              window.location.href = deep;
-              setTimeout(() => window.location.href = target, 1000);
-            } else if (target.includes('spotify.com')) {
-              // FORCE SPOTIFY
-              const deep = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
-              window.location.href = deep;
-              setTimeout(() => window.location.href = target, 500);
+            if (asinMatch && asinMatch[1]) {
+              // Robust Deep Link for PRODUCTS
+              finalUrl = 'amazon://content/item?ASIN=' + asinMatch[1];
             } else {
-              window.location.href = target;
+              // For Search, Home, or Short Links (amzn.to), rely on OS Universal Links.
+              // It's safer to just send the HTTPS link than to send a broken generic deep link.
+              finalUrl = target;
             }
-          } else {
-            window.location.href = target;
+          } else if (target.includes('spotify.com')) {
+            finalUrl = target.replace('https://open.spotify.com/', 'spotify:').replace(/\//g, ':');
           }
-        };
+        }
 
-        document.getElementById('openBtn').onclick = doRedirect;
-
-        // Auto trigger
-        setTimeout(doRedirect, 1500);
-
-        // Stop parser from loading the rest of the original index.html
-        // This effectively "kills" the main site load for this session
-        throw new Error("REDIRECT_INTERCEPT_SUCCESS");
+        // NUKE DOM & RENDER REDIRECT PAGE
+        document.write(`<!DOCTYPE html>
+       <html>
+       <head>
+         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         <title>Redirecting...</title>
+         <style>
+            body { background-color: #000; color: #fff; font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; text-align: center; }
+            .logo { color: #ff6600; font-weight: 900; font-size: 24px; margin-bottom: 10px; letter-spacing: 2px; }
+            .btn { background: #ff6600; color: #000; text-decoration: none; padding: 18px 36px; border-radius: 50px; font-weight: bold; font-size: 18px; margin-top: 30px; display: inline-block; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4); }
+            .btn:active { transform: scale(0.95); }
+            .sub { color: #666; font-size: 13px; margin-top: 40px; max-width: 80%; word-break: break-all; }
+            .loader { border: 3px solid #333; border-top: 3px solid #ff6600; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin-top: 20px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+         </style>
+       </head>
+       <body>
+          <div class="logo">P34K</div>
+          <div>Opening destination...</div>
+          <div class="loader"></div>
+          
+          <a href="${finalUrl}" class="btn" id="manualBtn">OPEN LINK NOW</a>
+          
+          <div class="sub">${target}</div>
+          
+          <script>
+             // Auto Redirect
+             setTimeout(function() {
+                 window.location.href = "${finalUrl}";
+                 
+                 // Fallback for Amazon Deep Link failure (if app not installed)
+                 if("${finalUrl}".startsWith("amazon:")) {
+                     setTimeout(function() {
+                         window.location.href = "${target}";
+                     }, 1500);
+                 }
+             }, 800);
+          <\/script>
+       </body>
+       </html>`);
+        document.close();
       }
     })();
   </script>
