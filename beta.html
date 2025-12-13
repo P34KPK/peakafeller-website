@@ -414,7 +414,18 @@
                     list.innerHTML = links.map(l => {
                         // Secure Encode
                         const encoded = btoa(encodeURIComponent(l.target));
-                        const fullLink = window.location.origin + '/?ref=' + encoded;
+
+                        // FIX: Include full path (repository name) for GitHub Pages
+                        let basePath = window.location.origin + window.location.pathname;
+                        // Remove 'beta.html' if present and trailing slashes
+                        basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1);
+
+                        // If we are in /peakafeller-website/beta.html, basePath is /peakafeller-website/
+                        // But wait, theREDIRECT happens on index.html usually.
+                        // So we want the link to point to ROOT of the app.
+                        // Ideally: https://user.github.io/repo/?ref=...
+
+                        const fullLink = basePath.replace('beta.html', '') + '?ref=' + encoded;
 
                         return `
                         <div class="link-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; margin-bottom:5px; border-radius:4px;">
