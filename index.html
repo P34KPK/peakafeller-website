@@ -300,7 +300,7 @@
     <main>
       <section class="hero">
         <div class="hero-content">
-          <h1 class="hero-title" data-scramble>PΞΛKΛFΞLLΞR</h1>
+          <h1 class="hero-title notranslate" data-scramble translate="no">PΞΛKΛFΞLLΞR</h1>
           <p class="hero-subtitle">SONIC ARCHITECT & VISUAL ALCHEMIST</p>
         </div>
 
@@ -752,7 +752,7 @@
             <div class="monitor-status"
               style="display: flex; justify-content: space-between; font-family: 'Courier New', monospace; font-size: 0.8rem; color: var(--color-accent); margin-top: 0.5rem;">
               <span id="videoStatus">> STATUS: READY</span>
-              <span id="videoTitleDisplay">FORGET YOU - PEAKAFELLER</span>
+              <span id="videoTitleDisplay" class="notranslate" translate="no">FORGET YOU - PEAKAFELLER</span>
             </div>
           </div>
 
@@ -939,7 +939,8 @@
         <h2 class="footer-title">LET'S CREATE</h2>
         <img src="./rabbit-logo.jpg" alt="Rabbit Logo" class="footer-rabbit-logo"
           style="height: 50px; width: auto; display: block; margin: 0 auto 1.5rem auto; border-radius: 4px; filter: grayscale(100%); transition: filter 0.3s;">
-        <p class="copyright">&copy; 2025 PEAKAFELLER. ALL RIGHTS RESERVED.</p>
+        <p class="copyright">&copy; 2025 <span class="notranslate" translate="no">PEAKAFELLER</span>. ALL RIGHTS
+          RESERVED.</p>
       </div>
     </footer>
   </div>
@@ -1005,6 +1006,7 @@
       if (canvas) {
         const ctx = canvas.getContext('2d');
         let particles = [];
+        let plusParticles = []; // New array for the grid '+' elements
         let glowX = window.innerWidth / 2;
         let glowY = window.innerHeight / 2;
         let targetGlowX = Math.random() * window.innerWidth;
@@ -1013,10 +1015,14 @@
         let lastScrollY = window.scrollY;
         let scrollSpeed = 0;
 
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
         window.addEventListener('resize', resize);
         resize();
 
+        // Existing Particle Class
         class Particle {
           constructor() {
             this.reset();
@@ -1060,7 +1066,54 @@
           }
         }
 
+        // New PlusParticle Class - Aligned to Grid
+        class PlusParticle {
+          constructor() {
+            this.reset();
+            // Start at random phase to avoid syncing
+            this.life = Math.random() * this.maxLife;
+            this.fadingOut = Math.random() > 0.5;
+          }
+          reset() {
+            // Grid size is 40px
+            const gridSize = 40;
+            const cols = Math.ceil(canvas.width / gridSize);
+            const rows = Math.ceil(canvas.height / gridSize);
+
+            // Snap to grid intersection
+            this.x = Math.floor(Math.random() * cols) * gridSize;
+            this.y = Math.floor(Math.random() * rows) * gridSize;
+
+            this.maxLife = 0.4 + Math.random() * 0.4; // Varied brightness
+            this.life = 0;
+            this.fadeSpeed = 0.005 + Math.random() * 0.01; // Varied speed (dance style)
+            this.fadingOut = false;
+          }
+          update() {
+            if (this.fadingOut) {
+              this.life -= this.fadeSpeed;
+              if (this.life <= 0) {
+                this.reset();
+              }
+            } else {
+              this.life += this.fadeSpeed;
+              if (this.life >= this.maxLife) {
+                this.fadingOut = true;
+              }
+            }
+          }
+          draw() {
+            const a = Math.max(0, this.life);
+            ctx.fillStyle = `rgba(255, 120, 0, ${a})`;
+            ctx.font = '10px monospace';
+            // Slight offset to center '+' on the grid line intersection
+            ctx.fillText('+', this.x - 3, this.y + 3);
+          }
+        }
+
         for (let i = 0; i < 60; i++) particles.push(new Particle());
+        // Add 20 grid aligned '+' particles
+        for (let i = 0; i < 20; i++) plusParticles.push(new PlusParticle());
 
         function animate() {
           // Scroll Physics
@@ -1093,6 +1146,8 @@
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
           particles.forEach(p => { p.update(); p.draw(); });
+          plusParticles.forEach(p => { p.update(); p.draw(); });
+
           requestAnimationFrame(animate);
         }
         animate();
