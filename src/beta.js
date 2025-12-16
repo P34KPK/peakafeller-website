@@ -1,3 +1,5 @@
+// Backup Key
+const BACKUP_KEY = 'beta_albums_backup_v1';
 import { db, storage, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, getDoc, ref, uploadBytesResumable, getDownloadURL } from './firebase.js';
 import WaveSurfer from 'wavesurfer.js';
 
@@ -398,24 +400,25 @@ function initApp() {
   if (coverUpload) {
     console.log('Cover Upload input found, attaching listener...');
     coverUpload.addEventListener('change', async (e) => {
-      console.log('File selected...');
+      console.log('File selected for upload...');
       const file = e.target.files[0];
       if (file) {
-        console.log('File:', file.name, file.size, file.type);
+        console.log('File detected:', file.name, file.size, file.type);
         const preview = document.getElementById('coverPreview');
         preview.innerHTML = '<p style="color:var(--color-accent); font-weight:bold;">PROCESSING...</p>';
 
+        // Safe Fallback Placeholder (Gradient)
+        const SAFE_PLACEHOLDER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKwOqAAAAABJRU5ErkJggg==";
+
         try {
-          // SIMPLE & ROBUST: Force resize to 300px max, JPEG 0.6
-          // This creates a tiny file (~20KB) that ALWAYS saves instantly.
-          coverImage = await compressImage(file, 300, 0.6);
-          console.log('Processed Cover Size:', coverImage.length);
-          preview.innerHTML = `<img src="${coverImage}" style="max-width:100%; border-radius:4px; border:1px solid #333;">`;
-        } catch (err) {
-          console.error("Compression Failed, using placeholder", err);
-          // Emergency Fallback: 1x1 Grey Dot (Technically valid image)
-          coverImage = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k=";
-          preview.innerHTML = `<span style="color:yellow">Image Error - Using Placeholder</span>`;
+          // Try to compress to 200px (Extra Small for Safety)
+          coverImage = await compressImage(file, 200, 0.6);
+          console.log('Compression Successful. Size:', coverImage.length);
+          preview.innerHTML = `<img src="${coverImage}" style="max-width:100%; border-radius:4px; border:1px solid #0f0;">`;
+        } catch (compErr) {
+          console.warn("Compression Failed. Using Safe Placeholder.", compErr);
+          coverImage = SAFE_PLACEHOLDER;
+          preview.innerHTML = `<div style="width:100%; height:100px; background:#333; color:#fff; display:flex; align-items:center; justify-content:center; border:1px solid orange;">Cover Error (Using Default)</div>`;
         }
       }
     });
@@ -431,17 +434,9 @@ function initApp() {
     addTrackBtn.onclick = () => {
       const val = trackInput.value.trim();
       if (!val) return;
-
-      // Simple heuristic: if it has no extension, assume mp3
       const filename = val.includes('.') ? val : val + '.mp3';
-      const nameDisplay = filename.replace(/\.[^/.]+$/, ""); // Name without extension
-
-      uploadedTracks.push({
-        name: nameDisplay,
-        filename: filename, // STore filename for URL construction
-        comments: []
-      });
-
+      const nameDisplay = filename.replace(/\.[^/.]+$/, "");
+      uploadedTracks.push({ name: nameDisplay, filename: filename, comments: [] });
       trackInput.value = '';
       renderTracksList();
     };
@@ -452,28 +447,57 @@ function initApp() {
   if (publishBtn) {
     publishBtn.addEventListener('click', async () => {
       const title = document.getElementById('albumTitle').value;
+      const trackInputVal = document.getElementById('trackNameInput').value.trim();
 
-      console.log('Publish Clicked. Title:', title);
-
-      if (!title || !coverImage || uploadedTracks.length === 0) {
-        alert('Please fill Title, Cover, and add at least one Track filename.');
-        return;
+      if (uploadedTracks.length === 0 && trackInputVal) {
+        if (confirm(`You typed "${trackInputVal}" but didn't click "+ ADD TRACK". Add it now?`)) {
+          document.getElementById('addManualTrackBtn').click();
+          await new Promise(r => setTimeout(r, 100));
+        }
       }
 
+      console.log('--- PUBLISH CHECK ---');
+      if (!title) return alert('❌ ERROR: Album Title is missing.');
+
+      // Auto-recover cover if missing but present in DOM
+      if (!coverImage) {
+        const prev = document.getElementById('coverPreview');
+        const imgTag = prev ? prev.querySelector('img') : null;
+        if (imgTag && imgTag.src.startsWith('data:')) {
+          coverImage = imgTag.src;
+        } else {
+          // PLAN B: No cover? Use placeholder automatically
+          if (confirm("❌ Cover Missing. Use Default Placeholder?")) {
+            coverImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKwOqAAAAABJRU5ErkJggg==";
+          } else {
+            return;
+          }
+        }
+      }
+
+      if (uploadedTracks.length === 0) return alert('❌ ERROR: No tracks added.');
+
       publishBtn.disabled = true;
-      publishBtn.textContent = 'SAVING...';
+      publishBtn.textContent = 'SAVING (PLAN B active)...';
 
       try {
         const timestamp = Date.now();
+        console.log("Preparing Save...");
 
-        // 1. Prepare Tracks
+        // PLAN B ENFORCER: If cover is huge (>800KB), kill it.
+        if (coverImage.length > 800000) {
+          console.warn("Cover too big for DB. Using Safe Placeholder.");
+          alert("⚠️ Cover image too large. Using default cover to ensure save.");
+          coverImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKwOqAAAAABJRU5ErkJggg==";
+        }
+
         const finalTracks = uploadedTracks.map(t => ({
           name: t.name,
           url: `./beta-tracks/${t.filename}`,
           comments: []
         }));
 
-        const album = {
+        let album = {
           id: timestamp,
           title,
           cover: coverImage,
@@ -481,30 +505,29 @@ function initApp() {
           publishedAt: new Date().toISOString()
         };
 
-        // 2. Save to DB
-        console.log("Saving to Firestore...", album);
-        await DB.save(album);
-        console.log("Save Success");
+        // Standard Save
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000));
+        await Promise.race([DB.save(album), timeout]);
 
+        console.log("Save Success");
         currentAlbums.push(album);
 
-        // 3. Reset UI only on success
+        // Reset UI
         document.getElementById('albumTitle').value = '';
         document.getElementById('coverPreview').innerHTML = '';
         uploadedTracks = [];
         coverImage = null;
         renderTracksList();
 
-        // 4. Reload List to Confirm
         await loadOwnerAlbums();
 
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
-        alert('Album Published Successfully!');
+        alert('✅ Saved Successfully!');
 
       } catch (e) {
         console.error("Publish Error:", e);
-        alert('Failed to Save: ' + e.message + "\n\nTry again.");
+        alert('Failed: ' + e.message);
         publishBtn.textContent = 'PUBLISH FOR TESTING';
         publishBtn.disabled = false;
       }
@@ -541,8 +564,20 @@ function initApp() {
     if (adminLink) {
       adminLink.addEventListener('click', (e) => {
         e.preventDefault();
-        const modal = document.getElementById('ownerPasswordModal');
-        if (modal) modal.style.display = 'flex';
+        // Simulate Approved Tester Session
+        const userId = 'admin_tester_' + Date.now();
+        const user = { id: userId, name: "Admin Tester", email: "admin@peakafeller.com" };
+        localStorage.setItem('betaUser', JSON.stringify(user));
+
+        // precise expiration 24h
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        const approvalData = { status: 'approved', expiresAt: expiresAt.toISOString() };
+        localStorage.setItem('approvalData_' + userId, JSON.stringify(approvalData));
+
+        alert("Simulating Approved Tester Mode...");
+        window.location.reload();
       });
     }
   }
@@ -613,11 +648,19 @@ function initShareLink() {
   if (shareLinkInput) shareLinkInput.value = shareUrl;
 }
 
-function checkAccess() {
+// --- CHECK ACCESS Logic (Updated) ---
+window.checkAccess = async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
 
-  if (token) {
+  // 1. Handle Invite Links (Unique Tokens)
+  if (token && token.startsWith('inv_')) {
+    await handleInviteToken(token);
+    return;
+  }
+
+  // 2. Handle Old Legacy Base64 Tokens (if any still exist)
+  if (token && !token.startsWith('inv_')) {
     try {
       const data = JSON.parse(atob(token));
       if (data.s === 'approved') {
@@ -642,10 +685,16 @@ function checkAccess() {
   const donationSection = document.getElementById('donationSection');
   const albumsGrid = document.getElementById('albumsGrid');
 
-  if (currentUser && approvalData && approvalData.status === 'approved' && new Date() < new Date(approvalData.expiresAt)) {
+  // ACCESS RULE: Approved Tester OR Owner Session
+  const isOwner = sessionStorage.getItem('peak_owner_session') === 'active';
+  const isTester = currentUser && approvalData && approvalData.status === 'approved' && new Date() < new Date(approvalData.expiresAt);
+
+  if (isOwner || isTester) {
     if (accessRequestForm) accessRequestForm.style.display = 'none';
     if (albumsGrid) albumsGrid.style.display = 'grid';
     if (donationSection) donationSection.style.display = 'block';
+
+    console.log("Access Granted via:", isOwner ? "Owner Session" : "Tester Token");
     loadAlbums();
   } else {
     if (accessRequestForm) accessRequestForm.style.display = 'block';
@@ -670,24 +719,69 @@ function checkAccess() {
   }
 }
 
+// --- INVITE SYSTEM LOGIC ---
+
 async function loadAccessRequests() {
   const list = document.getElementById('accessRequestsList');
   if (!list) return;
-  const snap = await getDocs(collection(db, "requests"));
-  let reqs = [];
-  snap.forEach(d => reqs.push(d.data()));
-  reqs = reqs.filter(r => r.status === 'pending').sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
 
-  if (reqs.length === 0) { list.innerHTML = '<p style="color:#666">No pending requests</p>'; return; }
-  list.innerHTML = reqs.map(r => `
-      <div class="access-request-item">
-        <div>${escapeHTML(r.name)} <span style="color:#666">${escapeHTML(r.email)}</span></div>
-        <div>
-           <button onclick="approveRequest('${r.userId}')">APPROVE</button>
-           <button onclick="denyRequest('${r.userId}')">DENY</button>
-        </div>
-      </div>
-    `).join('');
+  // 1. Fetch Requests & Invites
+  const reqSnap = await getDocs(collection(db, "requests"));
+  const invSnap = await getDocs(collection(db, "invites"));
+
+  let items = [];
+
+  // Sort Requests
+  reqSnap.forEach(d => {
+    const data = d.data();
+    if (data.status === 'pending') items.push({ type: 'request', ...data });
+  });
+
+  // Sort Invites
+  invSnap.forEach(d => {
+    items.push({ type: 'invite', ...d.data() });
+  });
+
+  // Sort Newest First
+  items.sort((a, b) => new Date(b.date || b.requestedAt) - new Date(a.date || a.requestedAt));
+
+  if (items.length === 0) { list.innerHTML = '<p style="color:#666">No pending activity.</p>'; return; }
+
+  list.innerHTML = items.map(item => {
+    if (item.type === 'request') {
+      // REQUEST CARD
+      return `
+           <div class="access-request-item" style="border-left: 3px solid #ff6600;">
+             <div>
+                <span style="display:inline-block; background:#ff6600; color:#000; font-size:0.6rem; padding:2px 4px; border-radius:2px; margin-right:5px;">REQUEST</span>
+                ${escapeHTML(item.name)} <span style="color:#666">${escapeHTML(item.email)}</span>
+             </div>
+             <div>
+                <button onclick="approveRequest('${item.userId}')">APPROVE</button>
+                <button onclick="denyRequest('${item.userId}')">DENY</button>
+             </div>
+           </div>`;
+    } else {
+      // INVITE CARD with STATUS
+      let statusColor = '#888';
+      let statusText = 'SENT';
+      if (item.status === 'seen') { statusColor = '#0f0'; statusText = 'SEEN / JOINED'; }
+
+      return `
+           <div class="access-request-item" style="border-left: 3px solid #00ccff;">
+             <div style="flex:1;">
+                <span style="display:inline-block; background:#00ccff; color:#000; font-size:0.6rem; padding:2px 4px; border-radius:2px; margin-right:5px;">INVITE</span>
+                <span style="color:#fff">${escapeHTML(item.email)}</span>
+                <div style="font-size:0.75rem; color:${statusColor}; margin-top:4px;">
+                    STATUS: ${statusText} • ${new Date(item.date).toLocaleDateString()}
+                </div>
+             </div>
+             <div>
+                <button onclick="copyInviteLink('${item.token}')" style="font-size:0.7rem;">COPY LINK</button>
+             </div>
+           </div>`;
+    }
+  }).join('');
 }
 
 window.approveRequest = async (userId) => {
@@ -696,7 +790,7 @@ window.approveRequest = async (userId) => {
   snap.forEach(d => { if (d.data().userId === userId) docId = d.id; });
   if (docId) {
     await updateDoc(doc(db, "requests", docId), { status: 'approved', approvedAt: new Date().toISOString() });
-    loadAccessRequests(); loadTesterDashboard();
+    loadAccessRequests();
     alert('User Approved');
   }
 };
@@ -707,9 +801,76 @@ window.denyRequest = async (userId) => {
   snap.forEach(d => { if (d.data().userId === userId) docId = d.id; });
   if (docId) {
     await updateDoc(doc(db, "requests", docId), { status: 'denied' });
-    loadAccessRequests(); loadTesterDashboard();
+    loadAccessRequests();
   }
 };
+
+
+// --- SEND INVITE (New Feature) ---
+window.sendAccessEmail = async () => {
+  // We repurpose the "Send Access" UI or add a button logic here
+  const email = prompt("Enter email to invite:");
+  if (!email || !email.includes('@')) return;
+
+  const token = 'inv_' + Date.now() + Math.random().toString(36).substr(2, 5);
+  const link = `${window.location.origin}${window.location.pathname}?token=${token}`;
+
+  // Save Invite
+  await setDoc(doc(db, "invites", token), {
+    email: email,
+    token: token,
+    date: new Date().toISOString(),
+    status: 'sent'
+  });
+
+  // Try to open Mail Client automatically
+  const subject = "Beta Access - Peakafeller";
+  const body = `You are invited to the Beta Beat.\n\nClick here to access: ${link}`;
+  window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  alert(`Invite Generated!\n\nThe status will update to 'SEEN' when they click the link.\n\n(If mail app didn't open, copy this link manually:\n${link})`);
+
+  loadAccessRequests();
+};
+
+window.copyInviteLink = (token) => {
+  const link = `${window.location.origin}${window.location.pathname}?token=${token}`;
+  navigator.clipboard.writeText(link).then(() => alert("Link Copied!"));
+};
+
+// Update checkAccess to handle Invite Tokens
+async function handleInviteToken(token) {
+  try {
+    const docRef = doc(db, "invites", token);
+    const snap = await getDoc(docRef);
+
+    if (snap.exists()) {
+      // Update Status
+      await updateDoc(docRef, { status: 'seen', seenAt: new Date().toISOString() });
+
+      // Auto Login as Tester
+      const data = snap.data();
+      const user = { id: 'user_' + token, name: 'Invited User', email: data.email };
+      localStorage.setItem('betaUser', JSON.stringify(user));
+
+      // Set Approval
+      const approvalData = { status: 'approved', expiresAt: new Date(Date.now() + 86400000 * 30).toISOString() }; // 30 Days
+      localStorage.setItem('approvalData_' + user.id, JSON.stringify(approvalData));
+
+      alert(`Welcome Beta Tester! (${data.email})`);
+
+      // Strip token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      window.location.reload();
+      return true;
+    }
+  } catch (e) { console.error("Invite Error", e); }
+  return false;
+}
+
+// Hook into existing checkAccess (insert at start)
+const originalCheckAccess = window.checkAccess; // (Not defined globally like that, we modify the function directly below)
+
 
 // --- SMART LINKS LOGIC ---
 window.switchOwnerTab = (tab) => {
@@ -862,168 +1023,454 @@ window.loadTesterDashboard = async () => {
   list.innerHTML = testers.map(t => `<div class="tester-item">${escapeHTML(t.name)} (${escapeHTML(t.email)})</div>`).join('');
 };
 
+
+
 async function loadOwnerAlbums() {
   const list = document.getElementById('ownerAlbumsList');
   if (!list) return;
-  currentAlbums = await DB.getAll();
+
+  console.log("Loading Owner Albums...");
+  let allAlbums = [];
+  let source = 'Cloud';
+
+  try {
+    allAlbums = await DB.getAll();
+    console.log(`Cloud returned ${allAlbums.length} albums.`);
+
+    if (allAlbums && allAlbums.length > 0) {
+      try { localStorage.setItem(BACKUP_KEY, JSON.stringify(allAlbums)); } catch (e) { }
+    } else {
+      // If cloud is empty, check backup. It might be a network glitch returning []
+      const backup = localStorage.getItem(BACKUP_KEY);
+      if (backup) {
+        const localData = JSON.parse(backup);
+        if (localData.length > 0) {
+          console.warn("Cloud empty, but Backup found. Using Backup.");
+          allAlbums = localData;
+          source = 'Backup';
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Cloud Error. Switching to Backup.", e);
+    const backup = localStorage.getItem(BACKUP_KEY);
+    if (backup) { allAlbums = JSON.parse(backup); source = 'Backup'; }
+  }
+
+  // Sort Newest First (Robust Fallback)
+  currentAlbums = allAlbums.sort((a, b) => {
+    const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : (a.id || 0);
+    const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : (b.id || 0);
+    return dateB - dateA;
+  });
+
+  if (currentAlbums.length === 0) {
+    list.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">No albums found. <button onclick="loadOwnerAlbums()">Retry</button></div>';
+    return;
+  }
+
   list.innerHTML = currentAlbums.map(a => `
       <div class="owner-album-item">
         <img src="${escapeHTML(a.cover)}" class="owner-album-cover">
-        <div>${escapeHTML(a.title)} (${a.tracks.length} tracks)</div>
-        <button onclick="deleteAlbum(${a.id})">DELETE</button>
-      </div>
+        <div class="owner-album-info">
+            <div class="owner-album-title">
+                ${escapeHTML(a.title)} 
+                ${source === 'Backup' ? '<span style="color:orange; font-size:0.7em;">(OFFLINE)</span>' : ''}
+            </div>
+            <div class="owner-album-meta">
+                ${a.tracks.length} tracks • ${a.publishedAt ? new Date(a.publishedAt).toLocaleDateString() : 'No Date'}
+                <!-- VISIBILITY TOGGLE -->
+                <div style="margin-top:5px; display:flex; align-items:center;">
+                    <span style="font-size:0.8rem; color:${a.hidden ? '#666' : '#0f0'}">
+                        ${a.hidden ? 'HIDDEN' : 'VISIBLE'} TO TESTERS
+                    </span>
+                    <label class="switch">
+                      <input type="checkbox" ${!a.hidden ? 'checked' : ''} onchange="toggleAlbumVisibility(${a.id}, this.checked)">
+                      <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <button class="delete-album-btn" onclick="deleteAlbum(${a.id})">DELETE</button>
+  </div>
     `).join('');
 }
-window.deleteAlbum = async (id) => { if (confirm('Delete?')) { await DB.delete(id); loadOwnerAlbums(); } };
+
+
+window.toggleAlbumVisibility = async (id, isVisible) => {
+  // ATOMIC UPDATE PATTERN
+  // 1. Fetch fresh from DB to avoid staleness
+  console.log(`Toggling album ${id} to ${isVisible ? 'VISIBLE' : 'HIDDEN'}...`);
+
+  try {
+    const docRef = doc(db, "albums", String(id));
+    const snap = await getDoc(docRef);
+
+    if (snap.exists()) {
+      const album = snap.data();
+      album.hidden = !isVisible; // If visible=true, hidden=false
+
+      await setDoc(docRef, album);
+      console.log("Visibility Saved to Cloud.");
+
+      // Update local backup if needed
+      await loadOwnerAlbums();
+    } else {
+      alert("Album not found in database.");
+    }
+  } catch (e) {
+    console.error("Toggle Failed", e);
+    alert("Error updating visibility: " + e.message);
+  }
+};
+
+window.deleteAlbum = async (id) => {
+  if (confirm('Delete this album permanently?')) {
+    await DB.delete(id);
+    loadOwnerAlbums();
+  }
+};
 
 async function loadAlbums() {
-  currentAlbums = await DB.getAll();
+  console.log("Loading Tester View...");
   const grid = document.getElementById('albumsGrid');
   if (!grid) return;
-  if (currentAlbums.length === 0) { grid.innerHTML = '<div class="empty-state">No albums</div>'; return; }
-  grid.innerHTML = currentAlbums.map(a => `
-        <div class="album-card" onclick="openAlbum(${a.id})">
-           <img src="${escapeHTML(a.cover)}" class="album-cover">
-           <h3>${escapeHTML(a.title)}</h3>
-        </div>
-      `).join('');
+  grid.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">Loading albums...</div>';
+
+  try {
+    // 1. Fetch
+    const allAlbums = await DB.getAll();
+
+    // 2. Sort Newest First
+    const sortedAlbums = allAlbums.sort((a, b) => {
+      const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : (a.id || 0);
+      const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : (b.id || 0);
+      return dateB - dateA;
+    });
+
+    // Update global state for Player to find them later
+    currentAlbums = sortedAlbums;
+
+    // 3. FILTER
+    // Logic: Show ONLY if hidden is explicitly NOT true.
+    // If 'hidden' is undefined, it defaults to visible.
+    // If 'hidden' is false, it is visible.
+    // If 'hidden' is true, it is hidden.
+    const validAlbums = sortedAlbums.filter(a => {
+      // Debug check
+      // console.log(`Album ${a.id}: hidden = ${a.hidden} (${typeof a.hidden})`);
+      return a.hidden !== true;
+    });
+
+    console.log(`Tester View: Found ${allAlbums.length}, Showing ${validAlbums.length}`);
+
+    if (validAlbums.length === 0) {
+      grid.innerHTML = '<div class="empty-state">No albums currently available for testing.</div>';
+      return;
+    }
+
+    grid.innerHTML = validAlbums.map(a => `
+            <div class="album-card" onclick="openAlbum(${a.id})">
+            <img src="${escapeHTML(a.cover)}" class="album-cover">
+            <div class="album-info">
+                <h3 class="album-title">${escapeHTML(a.title)}</h3>
+                <div class="album-meta">${a.tracks.length} tracks</div>
+            </div>
+            </div>
+        `).join('');
+  } catch (e) {
+    console.error("Load Albums Error:", e);
+    grid.innerHTML = `<div style="color:red">Error loading albums: ${e.message}</div>`;
+  }
+}
+
+
+// --- MASTER PLAYER STATE ---
+let currentPlaylist = [];
+let currentTrackIndex = 0;
+let activeWaveSurfer = null;
+let activeAlbumId = null;
+
+// Helper to format seconds to MM:SS
+function formatTime(seconds) {
+  if (!seconds || isNaN(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 window.openAlbum = (id) => {
   const album = currentAlbums.find(a => a.id === id);
   if (!album) return;
-  const user = JSON.parse(localStorage.getItem('betaUser'));
+  activeAlbumId = id;
+  currentPlaylist = album.tracks;
+  currentTrackIndex = 0;
 
-  const tracksHTML = album.tracks.map((t, i) => {
-    const myRating = (t.ratings || []).find(r => r.userId === user?.id)?.rating || 0;
-    const stars = [1, 2, 3, 4, 5].map(s => `<span style="color:${s <= myRating ? '#ff6600' : '#444'}; cursor:pointer" onclick="rateTrack(${id},${i},${s})">★</span>`).join('');
-    const myComments = (t.comments || []).filter(c => c.userId === user?.id);
+  // 1. Render The Master Player Layout
+  const modalContent = `
+    <div class="master-player-container">
+      <!-- FIXED HEADER: Waveform & Controls -->
+      <div class="player-header">
+         <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+             <h2 style="color:var(--color-accent); font-family:var(--font-main); margin:0;">${escapeHTML(album.title)}</h2>
+             <button class="modal-close" onclick="closeModal()" style="position:static;">×</button>
+         </div>
 
-    return `
-          <div class="track-wrapper" style="margin-bottom:2rem;">
-             <div class="track-head" style="display:flex; justify-content:space-between; color:#fff;">
-                <span>${escapeHTML(t.name)}</span>
-                <div>${stars}</div>
-             </div>
-             <div id="waveform-${i}" style="width:100%; margin:1rem 0;"></div>
-             <button id="playBtn-${i}" class="play-btn-custom">PLAY</button>
-             
-             <!-- Comments -->
-             <div style="background:#111; padding:1rem; margin-top:1rem;">
-                ${myComments.map(c => `<div style="font-size:0.8rem; color:#ccc; border-bottom:1px solid #333; padding:0.5rem 0;">${escapeHTML(c.text)} <button onclick="deleteComment(${id},${i},'${c.id}')" style="color:red; float:right;">x</button></div>`).join('')}
-                <div style="margin-top:1rem; display:flex;">
-                   <input id="comment-${i}" placeholder="Private feedback..." style="flex:1; background:#000; border:1px solid #333; color:#fff; padding:0.5rem;">
-                   <button onclick="addComment(${id},${i})">SAVE</button>
-                </div>
-             </div>
+         <div class="player-main-info">
+             <div class="player-track-title" id="mp-track-title">Loading...</div>
+             <div style="font-size:0.8rem; color:#888;" id="mp-time-display">0:00 / 0:00</div>
+         </div>
+
+         <!-- SINGLE HUGE WAVEFORM -->
+         <div id="master-waveform" class="large-waveform-container"></div>
+
+         <div class="player-controls">
+             <button class="ctrl-btn" onclick="prevTrack()">⏮</button>
+             <button class="ctrl-btn play-btn-large" id="mp-play-btn" onclick="togglePlay()">▶</button>
+             <button class="ctrl-btn" onclick="nextTrack()">⏭</button>
+         </div>
+      </div>
+
+      <!-- SCROLLABLE CONTENT: Playlist & Comments -->
+      <div class="player-content-scroll">
+          <!-- LEFT: Playlist -->
+          <div class="playlist-side" id="mp-playlist"></div>
+
+          <!-- RIGHT: Comments for current track -->
+          <div class="comments-side">
+              <h3 style="font-size:0.9rem; color:#fff; border-bottom:1px solid #333; padding-bottom:0.5rem; margin-bottom:0.5rem;">
+                COMMENTS <span id="mp-comment-count" style="color:#666; font-size:0.7rem;">(0)</span>
+              </h3>
+              <div id="mp-comments-feed" class="comment-feed"></div>
+              
+              <div class="comment-input-area">
+                  <input type="text" id="mp-comment-input" class="input-field" placeholder="Type feedback at current time..." style="flex:1;">
+                  <button class="comment-btn" onclick="postTimestampComment()">POST</button>
+              </div>
           </div>
-        `;
-  }).join('');
+      </div>
+    </div>
+  `;
 
-  document.getElementById('albumDetail').innerHTML = `
-      <h2 style="color:var(--color-accent);">${escapeHTML(album.title)}</h2>
-      ${tracksHTML}
-    `;
+  document.getElementById('albumDetail').innerHTML = modalContent;
   document.getElementById('albumModal').classList.add('active');
 
-  // Init WaveSurfer
-  window.activeWaveSurfers = window.activeWaveSurfers || [];
-  window.activeWaveSurfers.forEach(ws => ws.destroy());
-  window.activeWaveSurfers = [];
+  // 2. Initialize Single WaveSurfer Instance
+  if (activeWaveSurfer) activeWaveSurfer.destroy();
 
-  album.tracks.forEach(async (t, i) => {
-    const container = document.getElementById(`waveform-${i}`);
-    if (!container) return;
+  activeWaveSurfer = WaveSurfer.create({
+    container: '#master-waveform',
+    waveColor: 'rgba(255, 255, 255, 0.3)',
+    progressColor: '#ff6600',
+    cursorColor: '#fff',
+    barWidth: 2,
+    barGap: 3,
+    height: 128,
+    backend: 'WebAudio', // Necessary for visualizer connection
+    responsive: true,
+  });
 
-    const ws = WaveSurfer.create({
-      container: container,
-      waveColor: '#444',
-      progressColor: '#ff6600',
-      height: 50,
-      backend: 'WebAudio'
-    });
+  // Events
+  activeWaveSurfer.on('play', () => {
+    document.getElementById('mp-play-btn').innerHTML = '⏸';
+    try { window.connectAudioVisualizer(activeWaveSurfer.getMediaElement()); } catch (e) { }
+  });
+  activeWaveSurfer.on('pause', () => document.getElementById('mp-play-btn').innerHTML = '▶');
+  activeWaveSurfer.on('audioprocess', () => {
+    const cur = activeWaveSurfer.getCurrentTime();
+    const dur = activeWaveSurfer.getDuration();
+    document.getElementById('mp-time-display').innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+  });
+  activeWaveSurfer.on('finish', () => nextTrack());
 
-    if (t.chunkIds) {
-      const btn = document.getElementById(`playBtn-${i}`);
-      // Initial Loading State
-      btn.textContent = 'BUFFERING [░░░░░] 0%';
-      btn.disabled = true;
+  // 3. Load First Track
+  loadTrack(0);
+};
 
-      try {
-        const audioData = await loadAudioFile(t.chunkIds, (percent) => {
-          // PROGRESS BAR VISUAL
-          const bars = Math.floor(percent / 20); // 0 to 5 bars
-          const visual = '█'.repeat(bars) + '░'.repeat(5 - bars);
-          btn.textContent = `LOADING [${visual}] ${Math.floor(percent)}%`;
-        });
+// --- MASTER PLAYER ADDICIONAL LOGIC ---
 
-        ws.load(audioData);
-        btn.textContent = 'PLAY';
-        btn.disabled = false;
+window.loadTrack = async (index) => {
+  if (index < 0 || index >= currentPlaylist.length) return;
+  currentTrackIndex = index;
+  const track = currentPlaylist[index];
 
-      } catch (err) {
-        console.error("Load failed", err);
-        btn.textContent = 'ERROR';
-        btn.style.color = 'red';
-      }
-    } else {
-      ws.load(t.url || t.data);
+  // Update UI Titles
+  document.getElementById('mp-track-title').innerText = `${index + 1}. ${track.name}`;
+
+  // Update Playlist Highlight
+  renderPlaylist();
+  // Render Comments
+  renderComments();
+
+  // Load Audio
+  const playBtn = document.getElementById('mp-play-btn');
+  playBtn.disabled = true;
+  playBtn.style.opacity = '0.5';
+
+  if (track.chunkIds) {
+    try {
+      const audioData = await loadAudioFile(track.chunkIds, (pct) => {
+        document.getElementById('mp-track-title').innerText = `Loading... ${Math.floor(pct)}%`;
+      });
+      activeWaveSurfer.load(audioData);
+      document.getElementById('mp-track-title').innerText = `${index + 1}. ${track.name}`;
+    } catch (e) {
+      console.error(e);
+      alert("Error loading track audio");
     }
+  } else {
+    // Legacy or direct URL
+    activeWaveSurfer.load(track.url || track.data);
+  }
 
-    const btn = document.getElementById(`playBtn-${i}`);
-
-    // Safety check just in case
-    if (btn) {
-      btn.onclick = () => {
-        if (ws.isPlaying()) ws.pause();
-        else ws.play();
-      };
-    }
-
-    ws.on('ready', () => {
-      // Auto-play if desired or just ready state
-      // btn.disabled = false;
-    });
-
-    ws.on('play', () => {
-      if (btn) btn.textContent = 'PAUSE';
-      try { window.connectAudioVisualizer(ws.getMediaElement()); } catch (e) { }
-    });
-    ws.on('pause', () => { if (btn) btn.textContent = 'PLAY'; });
-
-    window.activeWaveSurfers.push(ws);
+  // Auto-play when ready
+  activeWaveSurfer.once('ready', () => {
+    playBtn.disabled = false;
+    playBtn.style.opacity = '1';
+    activeWaveSurfer.play();
+    const dur = activeWaveSurfer.getDuration();
+    document.getElementById('mp-time-display').innerText = `0:00 / ${formatTime(dur)}`;
   });
 };
 
-window.closeModal = () => document.getElementById('albumModal').classList.remove('active');
+window.togglePlay = () => {
+  if (activeWaveSurfer.isPlaying()) activeWaveSurfer.pause();
+  else activeWaveSurfer.play();
+};
 
-window.rateTrack = async (aid, ti, r) => {
+window.prevTrack = () => loadTrack(currentTrackIndex - 1);
+window.nextTrack = () => loadTrack(currentTrackIndex + 1);
+
+window.seekTo = (seconds) => {
+  if (activeWaveSurfer) {
+    activeWaveSurfer.setTime(seconds);
+    activeWaveSurfer.play();
+  }
+};
+
+function renderPlaylist() {
+  const list = document.getElementById('mp-playlist');
   const user = JSON.parse(localStorage.getItem('betaUser'));
-  const album = currentAlbums.find(a => a.id === aid);
-  const track = album.tracks[ti];
+
+  list.innerHTML = currentPlaylist.map((t, i) => {
+    const isActive = i === currentTrackIndex ? 'active' : '';
+    const myRating = (t.ratings || []).find(r => r.userId === user?.id)?.rating || 0;
+
+    // Stars Logic
+    const stars = [1, 2, 3, 4, 5].map(s => `
+            <span onclick="event.stopPropagation(); rateMasterTrack(${i},${s})" 
+                  style="color:${s <= myRating ? '#ff6600' : '#444'}; cursor:pointer; font-size:1.2rem;">★</span>
+        `).join('');
+
+    return `
+        <div class="playlist-item ${isActive}" onclick="loadTrack(${i})">
+            <div>
+                <div style="font-weight:600; color:#fff;">${i + 1}. ${escapeHTML(t.name)}</div>
+                <div style="font-size:0.75rem; color:#666;">${t.comments?.length || 0} comments</div>
+            </div>
+            <div title="Rate this track">${stars}</div>
+        </div>
+        `;
+  }).join('');
+}
+
+function renderComments() {
+  const container = document.getElementById('mp-comments-feed');
+  container.innerHTML = '';
+  const track = currentPlaylist[currentTrackIndex];
+  const comments = track.comments || [];
+
+  // Sort by timestamp if available (legacy comments might not have seconds)
+  comments.sort((a, b) => (a.seconds || 0) - (b.seconds || 0));
+
+  document.getElementById('mp-comment-count').innerText = `(${comments.length})`;
+
+  if (comments.length === 0) {
+    container.innerHTML = '<div style="color:#666; font-style:italic; padding:1rem;">No comments yet. Be the first!</div>';
+    return;
+  }
+
+  const user = JSON.parse(localStorage.getItem('betaUser'));
+
+  container.innerHTML = comments.map(c => {
+    const timeStr = c.formattedTime || c.timestamp || "0:00";
+    const seconds = c.seconds || 0;
+    const isMine = c.userId === user?.id;
+
+    return `
+        <div class="comment-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span class="timestamp-badge" onclick="seekTo(${seconds})">▶ ${timeStr}</span>
+                ${isMine ? `<button onclick="deleteMasterComment('${c.id}')" style="color:#ff3333; background:none; border:none; cursor:pointer;">×</button>` : ''}
+            </div>
+            <div style="color:#ccc;">${escapeHTML(c.text)}</div>
+        </div>
+        `;
+  }).join('');
+}
+
+
+// --- ACTIONS ---
+
+window.rateMasterTrack = async (trackIndex, rating) => {
+  const user = JSON.parse(localStorage.getItem('betaUser'));
+  const album = currentAlbums.find(a => a.id === activeAlbumId);
+  const track = album.tracks[trackIndex];
+
   if (!track.ratings) track.ratings = [];
   const existing = track.ratings.find(rt => rt.userId === user.id);
-  if (existing) existing.rating = r; else track.ratings.push({ userId: user.id, rating: r });
+  if (existing) existing.rating = rating; else track.ratings.push({ userId: user.id, rating });
+
   await DB.save(album);
-  openAlbum(aid);
+  currentPlaylist = album.tracks; // Update local state
+  renderPlaylist(); // Re-render only playlist UI
 };
 
-window.addComment = async (aid, ti) => {
-  const text = document.getElementById(`comment-${ti}`).value;
+window.postTimestampComment = async () => {
+  const input = document.getElementById('mp-comment-input');
+  const text = input.value.trim();
   if (!text) return;
+
+  const currentTime = activeWaveSurfer.getCurrentTime();
+  const formattedTime = formatTime(currentTime);
+
   const user = JSON.parse(localStorage.getItem('betaUser'));
-  const album = currentAlbums.find(a => a.id === aid);
-  if (!album.tracks[ti].comments) album.tracks[ti].comments = [];
-  album.tracks[ti].comments.push({ id: Date.now().toString(), userId: user.id, text, timestamp: '0:00' });
+  const album = currentAlbums.find(a => a.id === activeAlbumId);
+  const track = album.tracks[currentTrackIndex];
+
+  if (!track.comments) track.comments = [];
+
+  track.comments.push({
+    id: Date.now().toString(),
+    userId: user.id,
+    text: text,
+    timestamp: formattedTime, // Legacy support
+    formattedTime: formattedTime,
+    seconds: currentTime
+  });
+
   await DB.save(album);
-  openAlbum(aid);
+  currentPlaylist = album.tracks;
+
+  input.value = '';
+  renderComments();
 };
 
-window.deleteComment = async (aid, ti, cid) => {
-  const album = currentAlbums.find(a => a.id === aid);
-  album.tracks[ti].comments = album.tracks[ti].comments.filter(c => c.id !== cid);
+window.deleteMasterComment = async (commentId) => {
+  if (!confirm("Delete comment?")) return;
+  const album = currentAlbums.find(a => a.id === activeAlbumId);
+  const track = album.tracks[currentTrackIndex];
+  track.comments = track.comments.filter(c => c.id !== commentId);
+
   await DB.save(album);
-  openAlbum(aid);
+  currentPlaylist = album.tracks;
+  renderComments();
+};
+
+window.closeModal = () => {
+  if (activeWaveSurfer) activeWaveSurfer.destroy();
+  activeWaveSurfer = null;
+  document.getElementById('albumModal').classList.remove('active');
 };
 
 // Hover Interactions

@@ -29,13 +29,11 @@ function initBetaUI() {
         });
     }
 
-    // Admin Link in Tester Form
+    // Admin Link in Tester Form handled in beta.js
     const adminLink = document.getElementById('adminTesterLogin');
     if (adminLink) {
-        adminLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('ownerPasswordModal').style.display = 'flex';
-        });
+        // Optional: Visual cue or console log if needed, but logic is centralized in beta.js
+        console.log("Admin link active");
     }
 
     // Tab Switching Logic (Owner Panel)

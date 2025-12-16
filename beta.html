@@ -286,6 +286,14 @@
             <div class="modal-content">
                 <button class="modal-close"
                     onclick="document.getElementById('testerStatsModal').classList.remove('active')">×</button>
+                <div class="dashboard-actions" style="margin-top:2rem;">
+                    <h3>Actions</h3>
+                    <button class="upload-btn"
+                        onclick="document.getElementById('uploadSection').scrollIntoView({behavior:'smooth'})">+ NEW
+                        ALBUM</button>
+                    <button class="upload-btn" onclick="sendAccessEmail()"
+                        style="border-color:#00ccff; color:#00ccff;">+ SEND INVITE</button>
+                </div>
                 <div id="testerStatsContent"></div>
             </div>
         </div>
@@ -307,12 +315,12 @@
 
             const style = document.createElement('style');
             style.innerHTML = `
-            * { cursor: none !important; }
-            #cursor { position: fixed; top: 0; left: 0; width: 8px; height: 8px; background: #ff6600; border-radius: 50%; pointer-events: none; z-index: 9999999; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background 0.2s; }
-            #cursor-border { position: fixed; top: 0; left: 0; width: 30px; height: 30px; border: 1px solid #ff6600; border-radius: 50%; pointer-events: none; z-index: 9999998; transform: translate(-50%, -50%); transition: top 0.05s, left 0.05s, width 0.2s, height 0.2s; }
-            body.hovering #cursor { width: 40px; height: 40px; background: transparent; }
-            body.hovering #cursor-border { width: 50px; height: 50px; background: rgba(255,102,0,0.1); }
-        `;
+                * {cursor: none !important; }
+                #cursor {position: fixed; top: 0; left: 0; width: 8px; height: 8px; background: #ff6600; border-radius: 50%; pointer-events: none; z-index: 9999999; transform: translate(-50%, -50%); transition: width 0.2s, height 0.2s, background 0.2s; }
+                #cursor-border {position: fixed; top: 0; left: 0; width: 30px; height: 30px; border: 1px solid #ff6600; border-radius: 50%; pointer-events: none; z-index: 9999998; transform: translate(-50%, -50%); transition: top 0.05s, left 0.05s, width 0.2s, height 0.2s; }
+                body.hovering #cursor {width: 40px; height: 40px; background: transparent; }
+                body.hovering #cursor-border {width: 50px; height: 50px; background: rgba(255,102,0,0.1); }
+                `;
             document.head.appendChild(style);
             document.body.appendChild(cursor);
             document.body.appendChild(border);
@@ -334,59 +342,105 @@
             });
 
             // 2. UI TABS & PASSWORD LOGIC (Frontend Only)
-            window.unlockOwnerMode = async function () {
-                const input = document.getElementById('ownerPasswordInput');
-                if (!input) return;
 
-                const pass = input.value;
-                // SHA-256 of 'peakafeller' (example) or whatever the password is
-                // Using a simple hardcoded hash check for the UI unlock
+            // Helper function to check password hash
+            async function checkPassword(pass) {
+                if (!pass) return false;
                 const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
                 const hashArray = Array.from(new Uint8Array(hashBuffer));
                 const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                return hashHex === '94f7188ada6d383c589a8066f29c7f3772f6e6132fd55b30056dd5896fc2e8bc';
+            }
 
-                if (hashHex === '94f7188ada6d383c589a8066f29c7f3772f6e6132fd55b30056dd5896fc2e8bc') {
-                    // Correct Password
-                    document.getElementById('ownerPasswordModal').style.display = 'none';
-                    document.getElementById('ownerMode').classList.add('active');
-                    document.getElementById('testerMode').classList.remove('active');
-                    document.getElementById('ownerPanel').style.display = 'block';
-                    document.getElementById('testerPanel').style.display = 'none';
+            // Owner Unlock Logic
+            window.unlockOwnerMode = async (force = false) => {
+                const passInput = document.getElementById('ownerPasswordInput');
+                // If forced (auto-login), we don't need input
+                const pass = passInput ? passInput.value : '';
+
+                // Check pass OR persistent session
+                if (force || sessionStorage.getItem('peak_owner_session') === 'active' || await checkPassword(pass)) {
+
+                    // Save session
+                    sessionStorage.setItem('peak_owner_session', 'active');
+
+                    const modal = document.getElementById('ownerPasswordModal');
+                    if (modal) modal.style.display = 'none';
+
+                    const ownerBtn = document.getElementById('ownerMode');
+                    const testerBtn = document.getElementById('testerMode');
+                    const ownerPanel = document.getElementById('ownerPanel');
+                    const testerPanel = document.getElementById('testerPanel');
+                    const canvas = document.getElementById('bg-canvas');
+
+                    if (ownerBtn) ownerBtn.classList.add('active');
+                    if (testerBtn) testerBtn.classList.remove('active');
+                    if (ownerPanel) ownerPanel.style.display = 'block';
+                    if (testerPanel) testerPanel.style.display = 'none';
+
+                    // DISABLE ANIMATION FOR OWNER
+                    if (canvas) canvas.style.display = 'none';
 
                     // Trigger Data Load if available
-                    if (window.loadOwnerData) window.loadOwnerData();
+                    // We use a small timeout to ensure beta.js is fully loaded
+                    setTimeout(() => {
+                        if (window.loadOwnerData) {
+                            console.log("Auto-loading Owner Data...");
+                            window.loadOwnerData();
+                        } else {
+                            // Retry once more
+                            setTimeout(() => { if (window.loadOwnerData) window.loadOwnerData(); }, 1000);
+                        }
+                    }, 500);
                 } else {
                     alert('ACCESS DENIED');
                 }
             };
 
+            // Auto-Run if session exists - Wait for DOM
+            if (sessionStorage.getItem('peak_owner_session') === 'active') {
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", () => window.unlockOwnerMode(true));
+                } else {
+                    window.unlockOwnerMode(true);
+                }
+            }
+
             // Attach Listeners
-            const ownerBtn = document.getElementById('ownerMode');
-            const testerBtn = document.getElementById('testerMode');
-            const passSubmit = document.getElementById('ownerPasswordSubmit');
-            const passInput = document.getElementById('ownerPasswordInput');
+            // Wrapping in DOMContentLoaded to be safe
+            document.addEventListener("DOMContentLoaded", () => {
+                const ownerBtn = document.getElementById('ownerMode');
+                const testerBtn = document.getElementById('testerMode');
+                const passSubmit = document.getElementById('ownerPasswordSubmit');
+                const passInput = document.getElementById('ownerPasswordInput');
+                const canvas = document.getElementById('bg-canvas');
 
-            if (ownerBtn) ownerBtn.onclick = () => document.getElementById('ownerPasswordModal').style.display = 'flex';
-            if (testerBtn) testerBtn.onclick = () => {
-                testerBtn.classList.add('active');
-                ownerBtn.classList.remove('active');
-                document.getElementById('testerPanel').style.display = 'block';
-                document.getElementById('ownerPanel').style.display = 'none';
-                if (window.checkAccess) window.checkAccess();
-            };
+                if (ownerBtn) ownerBtn.onclick = () => document.getElementById('ownerPasswordModal').style.display = 'flex';
+                if (testerBtn) testerBtn.onclick = () => {
+                    testerBtn.classList.add('active');
+                    ownerBtn.classList.remove('active');
+                    document.getElementById('testerPanel').style.display = 'block';
+                    document.getElementById('ownerPanel').style.display = 'none';
 
-            const adminLink = document.getElementById('adminTesterLogin');
-            if (adminLink) adminLink.onclick = (e) => {
-                e.preventDefault();
-                document.getElementById('ownerPasswordModal').style.display = 'flex';
-            };
+                    // ENABLE ANIMATION FOR TESTER
+                    if (canvas) canvas.style.display = 'block';
 
-            if (passSubmit) passSubmit.onclick = window.unlockOwnerMode;
-            if (passInput) passInput.onkeypress = (e) => { if (e.key === 'Enter') window.unlockOwnerMode(); };
+                    if (window.checkAccess) window.checkAccess();
+                };
+
+                const adminLink = document.getElementById('adminTesterLogin');
+                if (adminLink) adminLink.onclick = (e) => {
+                    e.preventDefault();
+                    document.getElementById('ownerPasswordModal').style.display = 'flex';
+                };
+
+                if (passSubmit) passSubmit.onclick = () => window.unlockOwnerMode(false);
+                if (passInput) passInput.onkeypress = (e) => { if (e.key === 'Enter') window.unlockOwnerMode(false); };
+            });
 
         })();
     </script>
-    <script type="module" src="./src/beta.js?v=1005"></script>
+    <script type="module" src="./src/beta.js?v=1024"></script>
     <script type="module" src="./src/beta-ui.js"></script>
 
     <!-- FAILSAFE SYSTEM (INLINE - NO MODULES) -->
@@ -428,16 +482,16 @@
                         const fullLink = basePath.replace('beta.html', '') + '?ref=' + encoded;
 
                         return `
-                        <div class="link-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; margin-bottom:5px; border-radius:4px;">
-                            <div class="link-info" style="overflow:hidden;">
-                                <a href="${fullLink}" target="_blank" style="color:#ff6600; font-weight:bold; display:block; text-decoration:none;">/${l.alias} ↗</a>
-                                <div style="font-size:0.75rem; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;">${l.target}</div>
-                            </div>
-                            <div class="link-actions" style="display:flex; gap:5px;">
-                                <button onclick="navigator.clipboard.writeText('${fullLink}').then(()=>alert('Copied!'))" style="background:#333; color:#fff; border:none; padding:5px 10px; cursor:pointer;">COPY</button>
-                                <button onclick="deleteLocalLink('${l.id}')" style="background:#333; color:#ff3333; border:none; padding:5px 10px; cursor:pointer;">DEL</button>
-                            </div>
-                        </div>`;
+        <div class="link-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px; margin-bottom:5px; border-radius:4px;">
+            <div class="link-info" style="overflow:hidden;">
+                <a href="${fullLink}" target="_blank" style="color:#ff6600; font-weight:bold; display:block; text-decoration:none;">/${l.alias} ↗</a>
+                <div style="font-size:0.75rem; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;">${l.target}</div>
+            </div>
+            <div class="link-actions" style="display:flex; gap:5px;">
+                <button onclick="navigator.clipboard.writeText('${fullLink}').then(()=>alert('Copied!'))" style="background:#333; color:#fff; border:none; padding:5px 10px; cursor:pointer;">COPY</button>
+                <button onclick="deleteLocalLink('${l.id}')" style="background:#333; color:#ff3333; border:none; padding:5px 10px; cursor:pointer;">DEL</button>
+            </div>
+        </div>`;
                     }).join('');
 
                 } catch (e) { console.error("Load Error", e); }

@@ -857,3 +857,232 @@ audio {
         padding: 2rem 1.5rem;
     }
 }
+
+
+/* --- SEMPLY-STYLE MASTER PLAYER --- */
+.master-player-container {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    /* Fixed height for sticky header effect */
+    color: #fff;
+    font-family: var(--font-mono);
+}
+
+.player-header {
+    flex: 0 0 auto;
+    background: #000;
+    border-bottom: 1px solid var(--color-border);
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.player-main-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.player-track-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--color-accent);
+}
+
+.large-waveform-container {
+    width: 100%;
+    height: 128px;
+    background: rgba(255, 102, 0, 0.05);
+    border-radius: 4px;
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 0.5rem;
+}
+
+.ctrl-btn {
+    background: none;
+    border: 1px solid #333;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.ctrl-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.play-btn-large {
+    width: 60px;
+    height: 60px;
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    font-size: 1.5rem;
+}
+
+.player-content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    /* Playlist vs Comments */
+    gap: 2rem;
+}
+
+/* Playlist Side */
+.playlist-side {
+    border-right: 1px solid #222;
+    padding-right: 1rem;
+}
+
+.playlist-item {
+    padding: 1rem;
+    border-bottom: 1px solid #222;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.playlist-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.playlist-item.active {
+    background: rgba(255, 102, 0, 0.1);
+    border-left: 2px solid var(--color-accent);
+}
+
+/* Comments Side */
+.comments-side {
+    display: flex;
+    flex-direction: column;
+}
+
+.comment-feed {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    margin-bottom: 1rem;
+}
+
+.timestamp-badge {
+    background: #222;
+    color: var(--color-accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    margin-right: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.timestamp-badge:hover {
+    border-color: var(--color-accent);
+    background: #000;
+}
+
+.comment-card {
+    background: #111;
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    border-left: 2px solid #333;
+}
+
+.comment-input-area {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .player-content-scroll {
+        grid-template-columns: 1fr;
+    }
+
+    .playlist-side {
+        border-right: none;
+        border-bottom: 1px solid #222;
+        padding-bottom: 1rem;
+    }
+}
+
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 34px;
+    border: 1px solid #555;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+input:focus+.slider {
+    box-shadow: 0 0 1px var(--color-accent);
+}
+
+input:checked+.slider:before {
+    -webkit-transform: translateX(20px);
+    -ms-transform: translateX(20px);
+    transform: translateX(20px);
+}
