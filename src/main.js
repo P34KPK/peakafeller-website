@@ -139,6 +139,16 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
+// Scroll Detection for Animation
+let isScrollingTimer;
+window.addEventListener('scroll', () => {
+  document.body.classList.add('is-scrolling');
+  clearTimeout(isScrollingTimer);
+  isScrollingTimer = setTimeout(() => {
+    document.body.classList.remove('is-scrolling');
+  }, 100);
+});
+
 // Custom SoundCloud Player Initialization
 window.addEventListener('load', () => {
   // Wait for SC API to be available
@@ -371,6 +381,80 @@ if (rawbeatLink) {
       document.body.classList.remove('system-failure');
     }, 1000);
   });
+}
+
+// Shop Modal Logic
+// Shop Modal Logic
+document.addEventListener('DOMContentLoaded', () => {
+  const shopOverlay = document.getElementById('shop-modal');
+  const shopTrigger = document.getElementById('nav-shop-trigger');
+  const shopCloseKey = document.getElementById('closeShopBtn');
+
+  if (shopTrigger && shopOverlay) {
+    shopTrigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      shopOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    });
+
+    const closeShop = () => {
+      shopOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    };
+
+    if (shopCloseKey) shopCloseKey.addEventListener('click', closeShop);
+
+    // Close on outside click
+    shopOverlay.addEventListener('click', (e) => {
+      if (e.target === shopOverlay) closeShop();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && shopOverlay.classList.contains('active')) {
+        closeShop();
+      }
+    });
+  }
+});
+
+// Shop Price Scanner Simulation
+const scannerElements = document.querySelectorAll('.shop-price-scanner');
+if (scannerElements.length > 0) {
+  const scanObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        if (!el.classList.contains('scanned')) {
+          el.classList.add('scanned');
+          simulateScan(el);
+        }
+      }
+    });
+  }, { threshold: 0.5 });
+
+  scannerElements.forEach(el => scanObserver.observe(el));
+
+  function simulateScan(element) {
+    let iterations = 0;
+    const maxIterations = 20; // 2 seconds approx
+    const originalText = element.getAttribute('data-original');
+
+    const interval = setInterval(() => {
+      // Generate random price like format: 000.00
+      const r1 = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+      const r2 = Math.floor(Math.random() * 99).toString().padStart(2, '0');
+      element.innerText = `[ ${r1}.${r2} $ ]`;
+
+      iterations++;
+      if (iterations >= maxIterations) {
+        clearInterval(interval);
+        element.innerText = originalText;
+        element.style.color = '#fff'; // Flash white/accent
+        setTimeout(() => element.style.color = '', 500);
+      }
+    }, 80);
+  }
 }
 
 // --- LOW PRIORITY LOGIC (Load Last) ---

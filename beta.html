@@ -72,13 +72,15 @@
 
                     <div class="form-group">
                         <label>Tracks (Files must be in 'public/beta-tracks')</label>
-                        <div class="manual-track-entry"
+                        <div class="file-upload-section"
                             style="background:rgba(255,255,255,0.05); padding:1rem; border-radius:4px;">
-                            <input type="text" id="trackNameInput" placeholder="Enter filename (e.g. song.mp3)"
-                                class="input-field" style="margin-bottom:0.5rem;">
-                            <button id="addManualTrackBtn" class="upload-btn" style="width:100%; text-align:center;">+
-                                ADD
-                                TRACK TO LIST</button>
+                            <input type="file" id="trackFiles" multiple accept="audio/mp3,audio/wav" hidden>
+                            <button onclick="document.getElementById('trackFiles').click()" class="upload-btn"
+                                style="width:100%; text-align:center;">
+                                + SELECT AUDIO FILES
+                            </button>
+                            <div id="uploadStatus"
+                                style="font-size:0.8rem; color:#aaa; margin-top:5px; text-align:center;"></div>
                         </div>
                         <div id="tracksList" class="tracks-list" style="margin-top:1rem;"></div>
                     </div>
