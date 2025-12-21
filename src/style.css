@@ -417,35 +417,25 @@ a {
   /* Optional: if you want slight rounding */
 }
 
-.btn-beta {
-  background: transparent;
-  color: #fff;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid #fff;
-  border-radius: 4px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  transition: all 0.2s;
-  letter-spacing: 0.15em;
+.beta-logo-link {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.1rem;
-  line-height: 1;
-  min-width: 60px;
+  transition: transform 0.2s;
+  height: 48px;
+  /* Matches approximate height of text buttons */
 }
 
-.beta-line {
-  display: block;
-  text-align: center;
+.beta-logo-link:hover {
+  transform: translateY(-2px) scale(1.05);
 }
 
-.btn-beta:hover {
-  background: #fff;
-  color: #000;
-  transform: translateY(-2px);
+.beta-logo-img {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  /* Ensure it looks crisp */
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .hero-visual {
@@ -875,10 +865,43 @@ body.hovering #cursor-border {
   width: 100%;
   aspect-ratio: 1;
   margin-bottom: 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.5),
+    0 2px 5px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    /* Top highlight */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  /* Bottom shadow */
   border-radius: 4px;
   overflow: hidden;
   position: relative;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+}
+
+/* Glassy/Glossy Sheen */
+.spotify-cover-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.1) 40%,
+      rgba(255, 255, 255, 0) 50%,
+      transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.spotify-card:hover .spotify-cover-wrap {
+  transform: perspective(1000px) rotateX(5deg) scale(1.02);
+  box-shadow:
+    0 25px 50px rgba(0, 0, 0, 0.7),
+    0 5px 15px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .card-play-btn {
