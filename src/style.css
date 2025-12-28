@@ -422,8 +422,8 @@ a {
   align-items: center;
   justify-content: center;
   transition: transform 0.2s;
-  height: 48px;
-  /* Matches approximate height of text buttons */
+  height: 60px;
+  /* Matches Le Recycleur button height */
 }
 
 .beta-logo-link:hover {
@@ -1649,8 +1649,8 @@ body.hovering #cursor-border {
   }
 }
 
-/* Additional Mobile Tweaks */
-@media (max-width: 480px) {
+/* Additional Mobile Tweaks - Force 2 Column Grid */
+@media (max-width: 768px) {
 
   .lr-header-left,
   .lr-header-right {
