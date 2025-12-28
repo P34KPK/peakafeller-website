@@ -660,8 +660,10 @@ body.is-scrolling .triangle-loader {
 }
 
 .grid-container {
-  /* Reset grid for single item centered */
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
 }
 
 /* Custom Cursor */
