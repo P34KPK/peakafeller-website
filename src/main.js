@@ -1,4 +1,3 @@
-import './style.css';
 import { db, doc, getDoc, updateDoc, increment } from "./firebase.js";
 
 // --- INTERACTIVE ELEMENTS (Scramble, Menu, etc.) ---
