@@ -457,6 +457,88 @@ if (scannerElements.length > 0) {
   }
 }
 
+// --- VISUAL ENHANCEMENTS (3D Tilt & Scroll Reveal) ---
+
+// 1. 3D Tilt Effect for Cards
+const cards = document.querySelectorAll('.spotify-card');
+
+cards.forEach(card => {
+  // Add glare element dynamically if not exists
+  if (!card.querySelector('.glare')) {
+    const glare = document.createElement('div');
+    glare.classList.add('glare');
+    card.appendChild(glare);
+  }
+
+  const glare = card.querySelector('.glare');
+
+  card.addEventListener('mousemove', (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left; // x position within the element.
+    const y = e.clientY - rect.top;  // y position within the element.
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = ((y - centerY) / centerY) * -10; // Max rotation deg
+    const rotateY = ((x - centerX) / centerX) * 10;
+
+    // Apply rotation
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+
+    // Move Glare
+    if (glare) {
+      glare.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 80%)`;
+      glare.style.opacity = '1';
+    }
+  });
+
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+    if (glare) {
+      glare.style.opacity = '0';
+    }
+  });
+});
+
+
+// 2. Scroll Reveal Animation
+// Target more specific elements for better effect
+const revealTargets = document.querySelectorAll('section, .spotify-card, .section-title, .gallery-item, .shop-item, .footer');
+console.log('REVEAL: Found targets:', revealTargets.length);
+
+const revealObserver = new IntersectionObserver((entries, observer) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      // console.log('REVEAL: Revealing', entry.target);
+      entry.target.classList.remove('pending');
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target); // Reveal only once for performance
+    }
+  });
+}, {
+  root: null,
+  threshold: 0.01, // Trigger as soon as 1% is visible (Very Safe)
+  rootMargin: "0px" // Standard margin
+});
+
+revealTargets.forEach(el => {
+  // Add base class safely
+  el.classList.add('reveal');
+
+  // Don't hide Hero or elements currently in viewport on load
+  const rect = el.getBoundingClientRect();
+  const inView = (rect.top < window.innerHeight);
+
+  if (!inView && !el.closest('.hero')) {
+    el.classList.add('pending');
+    revealObserver.observe(el);
+  } else {
+    el.classList.add('visible');
+  }
+});
+
+
 // --- LOW PRIORITY LOGIC (Load Last) ---
 
 // Smart Link Redirector (Isolated at Bottom)
