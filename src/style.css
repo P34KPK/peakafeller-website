@@ -2634,7 +2634,7 @@ body.hovering #cursor-border {
   /* Scroll Indicator - ABSOLUTE FORCE CENTER */
   .scroll-indicator {
     position: absolute;
-    left: 50vw;
+    left: 50%;
     bottom: 1rem;
     transform: translateX(-50%);
     width: auto;
@@ -2813,8 +2813,8 @@ body.hovering #cursor-border {
 
   /* Pull it up if needed to reduce Hero gap */
   .hero {
-    min-height: auto;
-    /* Allow hero to shrink to content on mobile? */
+    min-height: 100vh;
+    /* Ensure full viewport height to prevent content bleeding */
     height: auto;
     padding-bottom: 2rem;
   }
