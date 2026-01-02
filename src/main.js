@@ -261,10 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
           scApiUrl = encodeURIComponent(trackId);
         }
 
-        // Revert to Visual Player (Proven to work)
-        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+        // Use Classic Player (visual=false) to avoid 'Open in App' interstitial on mobile
+        // This is the most reliable way to get immediate playback
+        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false`;
 
-        embedContainer.innerHTML = `<iframe width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
+        // Classic player needs 166px to show controls properly without scrolling
+        embedContainer.innerHTML = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
       } else if (source === 'spotify') {
         // Spotify Logic
         const trackId = btn.getAttribute('data-track-id');
