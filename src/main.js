@@ -240,7 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardPlayBtns = document.querySelectorAll('.card-play-btn');
 
   cardPlayBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    // Handler function
+    const handlePlay = (e) => {
       e.preventDefault();
       e.stopPropagation(); // Stop parent anchor click
 
@@ -289,6 +290,14 @@ document.addEventListener('DOMContentLoaded', () => {
           embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless allow="autoplay *"></iframe>`;
         }
       }
+    };
+
+    // Attach listeners
+    btn.addEventListener('click', handlePlay);
+    btn.addEventListener('touchend', (e) => {
+      // Prevent ghost click firing after touchend
+      e.preventDefault();
+      handlePlay(e);
     });
   });
 

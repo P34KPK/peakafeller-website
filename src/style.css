@@ -1242,6 +1242,11 @@ body.hovering #cursor-border {
     font-size: 0.65rem;
     margin-top: 2rem;
   }
+
+  .beta-logo-link {
+    height: 60px;
+    /* Increase from 45px on mobile */
+  }
 }
 
 /* Extra small devices */
@@ -3695,17 +3700,51 @@ body.hovering #cursor-border {
 .about-section {
   margin-top: 15vh;
 }
+
 /* Agent D: Glitch Animation */
 .hero-title {
   animation: visualGlitch 5s infinite;
 }
 
 @keyframes visualGlitch {
-  0%, 90% { transform: skew(0); text-shadow: none; opacity: 1; }
-  91% { transform: skew(0.8deg); text-shadow: 2px 0 var(--color-accent), -2px 0 blue; opacity: 0.9; }
-  92% { transform: skew(-0.8deg); text-shadow: -2px 0 var(--color-accent), 2px 0 blue; opacity: 0.9; }
-  93% { transform: skew(0); text-shadow: none; opacity: 1; }
-  96% { transform: skew(0.4deg); text-shadow: 1px 0 var(--color-accent); }
-  97% { transform: skew(-0.4deg); text-shadow: -1px 0 var(--color-accent); }
-  100% { transform: skew(0); text-shadow: none; }
+
+  0%,
+  90% {
+    transform: skew(0);
+    text-shadow: none;
+    opacity: 1;
+  }
+
+  91% {
+    transform: skew(0.8deg);
+    text-shadow: 2px 0 var(--color-accent), -2px 0 blue;
+    opacity: 0.9;
+  }
+
+  92% {
+    transform: skew(-0.8deg);
+    text-shadow: -2px 0 var(--color-accent), 2px 0 blue;
+    opacity: 0.9;
+  }
+
+  93% {
+    transform: skew(0);
+    text-shadow: none;
+    opacity: 1;
+  }
+
+  96% {
+    transform: skew(0.4deg);
+    text-shadow: 1px 0 var(--color-accent);
+  }
+
+  97% {
+    transform: skew(-0.4deg);
+    text-shadow: -1px 0 var(--color-accent);
+  }
+
+  100% {
+    transform: skew(0);
+    text-shadow: none;
+  }
 }

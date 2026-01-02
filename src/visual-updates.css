@@ -134,6 +134,20 @@
     transition: color 0.2s;
 }
 
-.spotify-card:hover .spotify-title {
-    color: var(--color-accent);
+/* Card Play Button Overlay */
+.card-play-btn {
+    /* Existing styles assumed somewhere, adding critical overrides */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 900;
+    /* High z-index to sit on top of everything */
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    /* Ensure it captures taps */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
