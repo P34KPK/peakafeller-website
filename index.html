@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+  <link rel="icon" type="image/png" href="./header-logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PEAKAFELLER | Electronic Music Producer & DJ • Québec, Canada</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +37,24 @@
   <link rel="stylesheet" href="./src/rawbeat.css">
   <link rel="stylesheet" href="./src/style.css">
   <link rel="stylesheet" href="./src/visual-updates.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    "name": "Peakafeller",
+    "url": "https://peakafeller.com",
+    "logo": "https://peakafeller.com/header-logo.png",
+    "image": "https://peakafeller.com/profile.png",
+    "sameAs": [
+      "https://www.youtube.com/peakpk",
+      "https://www.instagram.com/peakafeller",
+      "https://www.facebook.com/PeakafellerMusic",
+      "https://soundcloud.com/peakafeller",
+      "https://open.spotify.com/artist/7asuXHs3Z97oQtE7HKed2R"
+    ],
+    "description": "Electronic Music Producer & DJ based in Québec, Canada. Known for 'Le Recycleur' series and experimental beats."
+  }
+  </script>
 </head>
 
 <body>
@@ -144,11 +162,12 @@
       }
     })();
   </script>
+  <div id="bg-glow"></div>
   <canvas id="bg-canvas"></canvas>
 
   <!-- Boot Sequence Overlay (Restored & Functional) -->
   <div id="boot-overlay"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; padding: 2rem; font-family: 'Courier New', monospace; font-size: 14px; color: var(--color-accent); flex-direction: column; justify-content: flex-start; align-items: flex-start; overflow: hidden;">
+    style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; padding: 2rem; font-family: 'Courier New', monospace; font-size: 14px; color: var(--color-accent); flex-direction: column; justify-content: flex-start; align-items: flex-start; overflow: hidden;">
     <div id="boot-text" style="white-space: pre-wrap; line-height: 1.5;"></div>
     <div class="boot-cursor"
       style="display: inline-block; width: 10px; height: 18px; background: var(--color-accent); animation: blink 0.8s infinite; margin-top: 5px;">
@@ -194,6 +213,15 @@
       document.addEventListener('DOMContentLoaded', () => {
         const bootText = document.getElementById('boot-text');
         const overlay = document.getElementById('boot-overlay');
+
+        // Check for skip_intro param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('skip_intro') === 'true') {
+          if (overlay) overlay.remove();
+          document.body.classList.remove('booting');
+          return;
+        }
+
         const lines = [
           "> BIOS CHECK... OK",
           "> LOADING KERNEL... 100%",
@@ -243,7 +271,7 @@
     <header class="floating-header">
       <div class="header-inner">
         <div class="header-logo">
-          <img src="./logo.png" alt="PEAKAFELLER" />
+          <img src="./header-logo.png" alt="PEAKAFELLER" />
         </div>
         <nav class="header-nav">
           <!-- MUSIC CATEGORY -->
@@ -320,9 +348,8 @@
             <!-- Right Side Controls Cluster -->
             <div class="nav-cluster" style="display: flex; gap: 1.5rem; align-items: center;">
               <!-- Rabbit Logo Removed -->
-              <a href="#" class="rawbeat-link">
-                <img src="./rawbeat-logo.png" alt="Rawbeat Logo" class="rawbeat-logo">
-              </a>
+              <!-- Rabbit Logo Removed -->
+
               <a href="recycleur.html" class="btn-smplr">LE RECYCLEUR</a>
               <a href="https://beta-beat-app.vercel.app/" class="beta-logo-link" target="_blank">
                 <img src="./beta-beat-logo.png" alt="Beta Beat" class="beta-logo-img">
@@ -810,7 +837,7 @@
         <div class="visual-accordion">
           <!-- Item 1 -->
           <div class="visual-accordion-card">
-            <img src="./visual_skull.jpg" class="visual-accordion-img">
+            <img src="./visual_skull.jpg" class="visual-accordion-img" loading="lazy">
             <div class="visual-label-vertical">01 // MIND_EXPANSION</div>
             <div class="visual-accordion-overlay">
               <h3 class="visual-title">MIND_EXPANSION</h3>
@@ -820,7 +847,7 @@
 
           <!-- Item 2 -->
           <div class="visual-accordion-card">
-            <img src="./visual_robot.jpg" class="visual-accordion-img">
+            <img src="./visual_robot.jpg" class="visual-accordion-img" loading="lazy">
             <div class="visual-label-vertical">02 // SELF_PORTRAIT_V2</div>
             <div class="visual-accordion-overlay">
               <h3 class="visual-title">SELF_PORTRAIT_V2</h3>
@@ -830,7 +857,7 @@
 
           <!-- Item 3 -->
           <div class="visual-accordion-card">
-            <img src="./visual_graffiti.jpg" class="visual-accordion-img">
+            <img src="./visual_graffiti.jpg" class="visual-accordion-img" loading="lazy">
             <div class="visual-label-vertical">03 // URBAN_GLITCH</div>
             <div class="visual-accordion-overlay">
               <h3 class="visual-title">URBAN_GLITCH</h3>
@@ -840,7 +867,7 @@
 
           <!-- Item 4 -->
           <div class="visual-accordion-card">
-            <img src="./visual_cyborg.jpg" class="visual-accordion-img">
+            <img src="./visual_cyborg.jpg" class="visual-accordion-img" loading="lazy">
             <div class="visual-label-vertical">04 // FLORA_CYBERNETICA</div>
             <div class="visual-accordion-overlay">
               <h3 class="visual-title">FLORA_CYBERNETICA</h3>
@@ -1205,35 +1232,25 @@
         // Add 20 grid aligned '+' particles
         for (let i = 0; i < 20; i++) plusParticles.push(new PlusParticle());
 
+
         function animate() {
           // Scroll Physics
           const currentScrollY = window.scrollY;
           const diff = currentScrollY - lastScrollY;
-          scrollSpeed += (Math.abs(diff) - scrollSpeed) * 0.1; // Smooth envelope
+          scrollSpeed += (Math.abs(diff) - scrollSpeed) * 0.1;
           lastScrollY = currentScrollY;
 
-          // FLOAT LOGIC
-          glowX += (targetGlowX - glowX) * 0.005; // Very slow drift
-          glowY += (targetGlowY - glowY) * 0.005;
-          if (Math.abs(targetGlowX - glowX) < 100 && Math.abs(targetGlowY - glowY) < 100) {
-            targetGlowX = Math.random() * canvas.width;
-            targetGlowY = Math.random() * canvas.height;
-          }
-
-          // Boost Glow movement on scroll
-          if (scrollSpeed > 5) {
-            glowY += diff * 0.5; // Drag glow with scroll
-          }
-
+          // Clear Canvas (Transparent)
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // GLOW EFFECT
-          const r = Math.max(canvas.width, canvas.height) * 0.5;
-          const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, r);
-          grad.addColorStop(0, 'rgba(255, 85, 0, 0.12)'); // Center Glow
-          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          // Update CSS Glow instead of Canvas Repaint
+          const glow = document.getElementById('bg-glow');
+          if (glow) {
+            // Subtle shift based on scroll
+            const moveY = diff * 0.5;
+            // We can use transform too if we want, but CSS gradient is static for now to save perf
+            // Or simple translate
+          }
 
           particles.forEach(p => { p.update(); p.draw(); });
           plusParticles.forEach(p => { p.update(); p.draw(); });

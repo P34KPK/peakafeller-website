@@ -677,3 +677,49 @@ revealTargets.forEach(el => {
     }
   }
 })();
+
+// --- 4. SOUND FX (Agent A) ---
+class SoundController {
+  constructor() {
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.isMuted = false;
+    // Init sounds on first interaction
+    window.addEventListener('click', () => {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+    }, { once: true });
+  }
+
+  playTone(freq, type, duration, vol = 0.5) {
+    if (this.isMuted || this.ctx.state === 'suspended') return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    gain.gain.setValueAtTime(vol * 0.1, this.ctx.currentTime); // Low volume default
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  }
+
+  hover() {
+    // High tech chirp
+    this.playTone(800, 'sine', 0.05, 0.2);
+  }
+
+  click() {
+    // Lower confirm beep
+    this.playTone(400, 'square', 0.1, 0.3);
+  }
+}
+
+const sfx = new SoundController();
+
+// Bind to interactive elements (Wrapped in timeout to ensuring DOM is ready)
+setTimeout(() => {
+  document.querySelectorAll('a, button, .nav-item, .term-file').forEach(el => {
+    el.addEventListener('mouseenter', () => sfx.hover());
+    el.addEventListener('click', () => sfx.click());
+  });
+}, 1000);

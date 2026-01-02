@@ -2,18 +2,17 @@
 .reveal {
     opacity: 1;
     transform: translateY(0);
-    transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-    /* Punchy ease-out */
+    /* Smoother, less mechanical ease (Exponential Out) */
+    transition: opacity 1.0s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity, transform;
 }
 
 /* Hidden state applied by JS */
 .reveal.pending {
     opacity: 0;
-    transform: translateY(80px);
-    /* More movement (was 50px) */
-    filter: blur(10px);
-    /* Add blur for cinematic entry */
+    transform: translateY(30px);
+    /* Subtler movement (was 80px) */
+    /* Blur removed for performance */
 }
 
 /* When revealed */

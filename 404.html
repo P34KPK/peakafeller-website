@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM FAILURE | 404</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #ff3333;
+            /* Red for Error */
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 5rem;
+            margin: 0;
+            text-shadow: 2px 2px 0 #fff;
+            animation: glitch 1s infinite alternate;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            color: #fff;
+        }
+
+        .error-code {
+            font-size: 10rem;
+            font-weight: bold;
+            opacity: 0.1;
+            position: absolute;
+            z-index: -1;
+        }
+
+        .btn {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: transparent;
+            border: 1px solid #ff3333;
+            color: #ff3333;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #ff3333;
+            color: #000;
+            box-shadow: 0 0 20px #ff3333;
+        }
+
+        @keyframes glitch {
+            0% {
+                transform: skew(0deg);
+            }
+
+            20% {
+                transform: skew(-20deg);
+            }
+
+            40% {
+                transform: skew(20deg);
+            }
+
+            60% {
+                transform: skew(-5deg);
+            }
+
+            80% {
+                transform: skew(5deg);
+            }
+
+            100% {
+                transform: skew(0deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-code">404</div>
+    <h1>SYSTEM FAILURE</h1>
+    <p>> ERROR: SECTOR_NOT_FOUND<br>> THE REQUESTED DATA HAS BEEN PURGED.</p>
+    <a href="index.html" class="btn">REBOOT_SYSTEM (HOME)</a>
+</body>
+
+</html>

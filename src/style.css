@@ -25,7 +25,6 @@
 
 
 html {
-  overflow-y: auto !important;
   height: 100%;
 }
 
@@ -33,9 +32,6 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-main);
-  overflow-x: hidden;
-  overflow-y: auto !important;
-  /* FORCE SCROLL */
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   background-image:
@@ -43,6 +39,22 @@ body {
     linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
   background-size: 40px 40px;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* GPU Accelerated Background Glow */
+#bg-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 85, 0, 0.08), transparent 70%);
+  opacity: 0.8;
+  transition: transform 0.5s ease-out;
+  will-change: transform;
 }
 
 
@@ -86,7 +98,7 @@ a {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
-  padding: 0.8rem 1.5rem;
+  padding: 0.3rem 1.5rem;
   border-radius: 4px;
   /* More square with slight rounding */
   display: flex;
@@ -96,10 +108,9 @@ a {
 }
 
 .header-logo img {
-  height: 20px;
+  height: 42px;
   width: auto;
   display: block;
-  filter: invert(1);
 }
 
 .header-nav {
@@ -422,8 +433,8 @@ a {
   align-items: center;
   justify-content: center;
   transition: transform 0.2s;
-  height: 60px;
-  /* Matches Le Recycleur button height */
+  height: 45px;
+  /* Matches Le Recycleur button height (approx 45px) */
 }
 
 .beta-logo-link:hover {
@@ -3683,4 +3694,18 @@ body.hovering #cursor-border {
 /* Spacing fix specifically for User Profile to separate from Visuals */
 .about-section {
   margin-top: 15vh;
+}
+/* Agent D: Glitch Animation */
+.hero-title {
+  animation: visualGlitch 5s infinite;
+}
+
+@keyframes visualGlitch {
+  0%, 90% { transform: skew(0); text-shadow: none; opacity: 1; }
+  91% { transform: skew(0.8deg); text-shadow: 2px 0 var(--color-accent), -2px 0 blue; opacity: 0.9; }
+  92% { transform: skew(-0.8deg); text-shadow: -2px 0 var(--color-accent), 2px 0 blue; opacity: 0.9; }
+  93% { transform: skew(0); text-shadow: none; opacity: 1; }
+  96% { transform: skew(0.4deg); text-shadow: 1px 0 var(--color-accent); }
+  97% { transform: skew(-0.4deg); text-shadow: -1px 0 var(--color-accent); }
+  100% { transform: skew(0); text-shadow: none; }
 }
