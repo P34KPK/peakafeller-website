@@ -250,59 +250,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const source = btn.getAttribute('data-source');
 
-      if (source === 'soundcloud') {
-        // SoundCloud Logic
-        const trackId = btn.getAttribute('data-track-id');
-        let scApiUrl = '';
+      // SoundCloud Logic
+      const trackId = btn.getAttribute('data-track-id');
+      let scApiUrl = '';
 
-        if (/^\d+$/.test(trackId)) {
-          scApiUrl = `https%3A//api.soundcloud.com/tracks/${trackId}`;
-        } else {
-          scApiUrl = encodeURIComponent(trackId);
-        }
-
-        // Revert to Visual Player (Safe Mode) - "Nothing works" with classic, so we backtrack.
-        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
-
-        embedContainer.innerHTML = `<iframe width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
-      } else if (source === 'spotify') {
-        // Spotify Logic
-        const trackId = btn.getAttribute('data-track-id');
-        // Add autoplay=1
-        const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0&autoplay=1`;
-        embedContainer.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay *; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+      if (/^\d+$/.test(trackId)) {
+        scApiUrl = `https%3A//api.soundcloud.com/tracks/${trackId}`;
       } else {
-        // Bandcamp Logic (Default)
-        const albumId = btn.getAttribute('data-album-id');
-        const bcTrackId = btn.getAttribute('data-bc-track-id');
-
-        let embedUrl = '';
-
-        if (bcTrackId) {
-          // Track Embed - Add autoplay=true
-          embedUrl = `https://bandcamp.com/EmbeddedPlayer/track=${bcTrackId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
-        } else if (albumId) {
-          // Album Embed - Add autoplay=true
-          embedUrl = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
-        }
-
-        // Inject Iframe
-        if (embedUrl) {
-          embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless allow="autoplay *"></iframe>`;
-        }
+        scApiUrl = encodeURIComponent(trackId);
       }
-    };
 
-    // Attach listeners
-    // Reverted to simple click to ensure stability. 
-    // The CSS z-index fix should handle the touch overlap issues.
-    btn.addEventListener('click', handlePlay);
-  });
+      const existingIframe = embedContainer.querySelector('iframe');
+      // Check if we already have a SoundCloud iframe we can reuse
+      if (existingIframe && existingIframe.src.includes('soundcloud.com')) {
+        // Reuse Widget for Seamless Playback
+        try {
+          const widget = SC.Widget(existingIframe);
+          widget.load(scApiUrl, {
+            auto_play: true,
+            visual: true,
+            hide_related: false,
+            show_comments: true,
+            show_user: true
+          });
+        } catch (err) {
+          console.error("SC Widget Error", err);
+        }
+      } else {
+        // First Load (Visual Player)
+        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+        embedContainer.innerHTML = `<iframe id="sc-widget-iframe" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
+      }
+    } else if (source === 'spotify') {
+      // Spotify Logic
+      const trackId = btn.getAttribute('data-track-id');
+      // Add autoplay=1
+      const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0&autoplay=1`;
+      embedContainer.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay *; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+    } else {
+      // Bandcamp Logic (Default)
+      const albumId = btn.getAttribute('data-album-id');
+      const bcTrackId = btn.getAttribute('data-bc-track-id');
 
-  closePlayerBtn.addEventListener('click', () => {
-    stickyPlayer.classList.remove('active');
-    embedContainer.innerHTML = ''; // Stop music
-  });
+      let embedUrl = '';
+
+      if (bcTrackId) {
+        // Track Embed - Add autoplay=true
+        embedUrl = `https://bandcamp.com/EmbeddedPlayer/track=${bcTrackId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
+      } else if (albumId) {
+        // Album Embed - Add autoplay=true
+        embedUrl = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
+      }
+
+      // Inject Iframe
+      if (embedUrl) {
+        embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless allow="autoplay *"></iframe>`;
+      }
+    }
+  };
+
+  // Attach listeners
+  // Reverted to simple click to ensure stability. 
+  // The CSS z-index fix should handle the touch overlap issues.
+  btn.addEventListener('click', handlePlay);
+});
+
+closePlayerBtn.addEventListener('click', () => {
+  stickyPlayer.classList.remove('active');
+  embedContainer.innerHTML = ''; // Stop music
+});
 });
 
 
@@ -686,47 +702,92 @@ revealTargets.forEach(el => {
 })();
 
 // --- 4. SOUND FX (Agent A) ---
+// --- 4. SOUND FX (Agent A) ---
 class SoundController {
   constructor() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.isMuted = false;
-    // Init sounds on first interaction
-    window.addEventListener('click', () => {
-      if (this.ctx.state === 'suspended') this.ctx.resume();
-    }, { once: true });
+    this.initialized = false;
+
+    // Resume AudioContext on first user interaction
+    const initAudio = () => {
+      if (!this.initialized) {
+        this.ctx.resume().then(() => {
+          console.log("AudioContext Resumed");
+          this.initialized = true;
+        });
+        // Remove listeners once initialized
+        ['click', 'touchstart', 'keydown'].forEach(evt =>
+          window.removeEventListener(evt, initAudio)
+        );
+      }
+    };
+
+    ['click', 'touchstart', 'keydown'].forEach(evt =>
+      window.addEventListener(evt, initAudio)
+    );
   }
 
   playTone(freq, type, duration, vol = 0.5) {
-    if (this.isMuted || this.ctx.state === 'suspended') return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    gain.gain.setValueAtTime(vol * 0.1, this.ctx.currentTime); // Low volume default
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + duration);
+    // Force resume on every attempt if suspended (robustness)
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(e => console.log("Audio resume failed", e));
+    }
+
+    if (this.ctx.state !== 'running') return;
+
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+      // Standard Volume
+      gain.gain.setValueAtTime(vol * 0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch (e) {
+      // console.warn("SFX Error:", e);
+    }
   }
 
   hover() {
-    // High tech chirp
+    // Revert to original High Tech Chirp
     this.playTone(800, 'sine', 0.05, 0.2);
   }
 
   click() {
-    // Lower confirm beep
+    // Revert to original Confirm Beep
     this.playTone(400, 'square', 0.1, 0.3);
   }
 }
 
+// Global SFX Instance
 const sfx = new SoundController();
 
-// Bind to interactive elements (Wrapped in timeout to ensuring DOM is ready)
-setTimeout(() => {
-  document.querySelectorAll('a, button, .nav-item, .term-file').forEach(el => {
-    el.addEventListener('mouseenter', () => sfx.hover());
-    el.addEventListener('click', () => sfx.click());
-  });
-}, 1000);
+// Unlock Audio Context Globallly on ANY interaction
+const unlockAudio = () => {
+  if (sfx.ctx.state === 'suspended') {
+    sfx.ctx.resume();
+  }
+  // Don't remove listener immediately, keep it to ensure it catches eventually
+};
+['click', 'touchstart', 'keydown'].forEach(evt => window.addEventListener(evt, unlockAudio, { passive: true }));
+
+
+// Event Delegation
+document.addEventListener('mouseover', (e) => {
+  if (e.target.closest('a, button, .nav-item, .term-file, .product-card')) {
+    sfx.hover();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a, button, .nav-item, .term-file, .product-card')) {
+    sfx.click();
+  }
+});
