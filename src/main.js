@@ -261,9 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
           scApiUrl = encodeURIComponent(trackId);
         }
 
-        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+        // Use Classic Player (visual=false) to avoid 'Open in App' interstitial on mobile
+        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false`;
 
-        embedContainer.innerHTML = `<iframe width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
+        // Standard player height is usually 166px, fitting into our 120px container (might need slight scroll or crop, or we increase container)
+        // Let's set iframe to 166px but we might need to adjust the sticky player CSS to accommodate if it cuts off.
+        // Actually, let's keep it tight or use the mini player? No, standard is safer for 'Open in browser' avoidance.
+        embedContainer.innerHTML = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
       } else if (source === 'spotify') {
         // Spotify Logic
         const trackId = btn.getAttribute('data-track-id');
