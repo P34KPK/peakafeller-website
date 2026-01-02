@@ -250,75 +250,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const source = btn.getAttribute('data-source');
 
-      // SoundCloud Logic
-      const trackId = btn.getAttribute('data-track-id');
-      let scApiUrl = '';
+      if (source === 'soundcloud') {
+        // SoundCloud Logic
+        const trackId = btn.getAttribute('data-track-id');
+        let scApiUrl = '';
 
-      if (/^\d+$/.test(trackId)) {
-        scApiUrl = `https%3A//api.soundcloud.com/tracks/${trackId}`;
-      } else {
-        scApiUrl = encodeURIComponent(trackId);
-      }
-
-      const existingIframe = embedContainer.querySelector('iframe');
-      // Check if we already have a SoundCloud iframe we can reuse
-      if (existingIframe && existingIframe.src.includes('soundcloud.com')) {
-        // Reuse Widget for Seamless Playback
-        try {
-          const widget = SC.Widget(existingIframe);
-          widget.load(scApiUrl, {
-            auto_play: true,
-            visual: true,
-            hide_related: false,
-            show_comments: true,
-            show_user: true
-          });
-        } catch (err) {
-          console.error("SC Widget Error", err);
+        if (/^\d+$/.test(trackId)) {
+          scApiUrl = `https%3A//api.soundcloud.com/tracks/${trackId}`;
+        } else {
+          scApiUrl = encodeURIComponent(trackId);
         }
+
+        const existingIframe = embedContainer.querySelector('iframe');
+        // Check if we already have a SoundCloud iframe we can reuse
+        if (existingIframe && existingIframe.src.includes('soundcloud.com')) {
+          // Reuse Widget for Seamless Playback
+          try {
+            const widget = SC.Widget(existingIframe);
+            widget.load(scApiUrl, {
+              auto_play: true,
+              visual: true,
+              hide_related: false,
+              show_comments: true,
+              show_user: true
+            });
+          } catch (err) {
+            console.error("SC Widget Error", err);
+          }
+        } else {
+          // First Load (Visual Player)
+          const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+          embedContainer.innerHTML = `<iframe id="sc-widget-iframe" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
+        }
+      } else if (source === 'spotify') {
+        // Spotify Logic
+        const trackId = btn.getAttribute('data-track-id');
+        // Add autoplay=1
+        const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0&autoplay=1`;
+        embedContainer.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay *; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
       } else {
-        // First Load (Visual Player)
-        const embedUrl = `https://w.soundcloud.com/player/?url=${scApiUrl}&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
-        embedContainer.innerHTML = `<iframe id="sc-widget-iframe" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay *" src="${embedUrl}"></iframe>`;
+        // Bandcamp Logic (Default)
+        const albumId = btn.getAttribute('data-album-id');
+        const bcTrackId = btn.getAttribute('data-bc-track-id');
+
+        let embedUrl = '';
+
+        if (bcTrackId) {
+          // Track Embed - Add autoplay=true
+          embedUrl = `https://bandcamp.com/EmbeddedPlayer/track=${bcTrackId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
+        } else if (albumId) {
+          // Album Embed - Add autoplay=true
+          embedUrl = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
+        }
+
+        // Inject Iframe
+        if (embedUrl) {
+          embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless allow="autoplay *"></iframe>`;
+        }
       }
-    } else if (source === 'spotify') {
-      // Spotify Logic
-      const trackId = btn.getAttribute('data-track-id');
-      // Add autoplay=1
-      const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0&autoplay=1`;
-      embedContainer.innerHTML = `<iframe style="border-radius:12px" src="${embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay *; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
-    } else {
-      // Bandcamp Logic (Default)
-      const albumId = btn.getAttribute('data-album-id');
-      const bcTrackId = btn.getAttribute('data-bc-track-id');
+    };
 
-      let embedUrl = '';
+    // Attach listeners
+    // Reverted to simple click to ensure stability. 
+    // The CSS z-index fix should handle the touch overlap issues.
+    btn.addEventListener('click', handlePlay);
+  });
 
-      if (bcTrackId) {
-        // Track Embed - Add autoplay=true
-        embedUrl = `https://bandcamp.com/EmbeddedPlayer/track=${bcTrackId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
-      } else if (albumId) {
-        // Album Embed - Add autoplay=true
-        embedUrl = `https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=333333/linkcol=0f9159/artwork=small/transparent=true/autoplay=true/`;
-      }
-
-      // Inject Iframe
-      if (embedUrl) {
-        embedContainer.innerHTML = `<iframe style="border: 0; width: 100%; height: 120px;" src="${embedUrl}" seamless allow="autoplay *"></iframe>`;
-      }
-    }
-  };
-
-  // Attach listeners
-  // Reverted to simple click to ensure stability. 
-  // The CSS z-index fix should handle the touch overlap issues.
-  btn.addEventListener('click', handlePlay);
-});
-
-closePlayerBtn.addEventListener('click', () => {
-  stickyPlayer.classList.remove('active');
-  embedContainer.innerHTML = ''; // Stop music
-});
+  closePlayerBtn.addEventListener('click', () => {
+    stickyPlayer.classList.remove('active');
+    embedContainer.innerHTML = ''; // Stop music
+  });
 });
 
 
