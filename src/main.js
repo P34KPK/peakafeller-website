@@ -70,31 +70,53 @@ class ScrambleText {
 }
 
 // --- SOUND FX (Restored) ---
+// --- SOUND FX (Persistent AudioContext) ---
 const SoundFX = {
-  playBeep: () => {
+  ctx: null,
+  init: function () {
+    // Create context only once
+    if (!this.ctx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioContext();
+    }
+  },
+  playBeep: function () {
+    if (!this.ctx) this.init();
+
+    // Resume context if suspended (common browser policy)
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => { });
+    }
+
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.ctx.destination);
 
       // High-tech short blip
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.05);
+      osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
 
-      gain.gain.setValueAtTime(0.1, ctx.currentTime); // Boosted from 0.03 to 0.1
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
 
       osc.start();
-      osc.stop(ctx.currentTime + 0.1);
+      osc.stop(this.ctx.currentTime + 0.1);
     } catch (e) {
-      // Ignore audio policy errors
+      console.warn("SoundFX Error:", e);
     }
   }
 };
+
+// Global Unlocker for AudioContext
+document.addEventListener('click', () => {
+  if (SoundFX.ctx && SoundFX.ctx.state === 'suspended') {
+    SoundFX.ctx.resume();
+  }
+}, { once: false }); // Check on every click just to be safe
 
 // Bind Sounds to Interactive Elements
 document.addEventListener('DOMContentLoaded', () => {
