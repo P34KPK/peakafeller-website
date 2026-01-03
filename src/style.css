@@ -1117,8 +1117,8 @@ body.hovering #cursor-border {
   /* Hero */
   .hero {
     justify-content: flex-start;
-    padding-top: 30vh;
-    /* Start content at 30% from top */
+    padding-top: 25vh;
+    /* Move title/subtitle higher */
   }
 
   .hero-title {
@@ -1152,17 +1152,13 @@ body.hovering #cursor-border {
     gap: 1.5rem;
     background: transparent;
     justify-content: flex-end;
-    padding-bottom: 4rem;
-    /* Lift the bottom UI controls a bit */
+    padding-bottom: 8rem;
+    /* Lift the bottom UI controls significantly */
   }
 
   .scroll-indicator {
     position: absolute;
     /* Revert to absolute to center it properly irrespective of flex */
-    left: 50%;
-    bottom: 5rem;
-    /* Position above simple bottom edge */
-    transform: translateX(-50%);
     text-align: center;
     font-size: 0.7rem;
     opacity: 0.6;
@@ -1172,8 +1168,8 @@ body.hovering #cursor-border {
     left: 0;
     transform: none;
     /* Reset transform */
-    bottom: 8rem;
-    /* Place correctly between content and buttons */
+    bottom: 12rem;
+    /* Place correctly between content and buttons (8rem + 4rem lift) */
   }
 
   .bottom-controls {
