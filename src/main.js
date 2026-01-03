@@ -69,6 +69,41 @@ class ScrambleText {
   }
 }
 
+// --- SOUND FX (Restored) ---
+const SoundFX = {
+  playBeep: () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      // High-tech short blip
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.05);
+
+      gain.gain.setValueAtTime(0.03, ctx.currentTime); // Very subtle
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
+    } catch (e) {
+      // Ignore audio policy errors
+    }
+  }
+};
+
+// Bind Sounds to Interactive Elements
+document.addEventListener('DOMContentLoaded', () => {
+  const interactives = document.querySelectorAll('a, button, .nav-item, .clickable');
+  interactives.forEach(el => {
+    el.addEventListener('mouseenter', () => SoundFX.playBeep());
+  });
+});
+
 // Initialization of Scramble on Titles
 const titles = document.querySelectorAll('[data-scramble]');
 const observerConfig = { threshold: 0.1 };
