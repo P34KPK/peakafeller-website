@@ -268,13 +268,12 @@ a {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  /* Centered visually but slightly biased upwards */
   justify-content: center;
+  align-items: center;
+  /* Centered visually */
   position: relative;
   overflow: hidden;
   text-align: center;
-  padding-bottom: 20vh;
-  /* Visual offset to shift center of gravity up */
 }
 
 .hero-content {
@@ -1116,6 +1115,12 @@ body.hovering #cursor-border {
   }
 
   /* Hero */
+  .hero {
+    justify-content: flex-start;
+    padding-top: 30vh;
+    /* Start content at 30% from top */
+  }
+
   .hero-title {
     font-size: 11vw;
     /* Smaller than 13vw to reduce cramping */
