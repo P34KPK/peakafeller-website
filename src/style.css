@@ -1116,13 +1116,16 @@ body.hovering #cursor-border {
 
   /* Hero */
   .hero-title {
-    font-size: 13vw;
+    font-size: 11vw;
+    /* Smaller than 13vw to reduce cramping */
     line-height: 0.9;
     white-space: nowrap;
     /* Force single line */
     overflow: hidden;
     /* Hide overflow if any */
     text-overflow: clip;
+    margin-bottom: 2rem;
+    /* Add specific margin for mobile */
   }
 
   .hero-subtitle {
@@ -1132,22 +1135,33 @@ body.hovering #cursor-border {
 
   /* Hero Bottom UI */
   .hero-bottom-ui {
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
+    /* Reduce top/bottom padding */
     bottom: 0;
-    position: relative;
+    position: absolute;
+    /* Keep absolute to anchor to bottom */
+    width: 100%;
     /* Unfix for cleaner flow */
     flex-direction: column;
     gap: 1.5rem;
     background: transparent;
+    justify-content: flex-end;
+    /* Push content down */
   }
 
   .scroll-indicator {
-    position: static;
-    transform: none;
+    position: absolute;
+    /* Revert to absolute to center it properly irrespective of flex */
+    left: 50%;
+    bottom: 5rem;
+    /* Position above simple bottom edge */
+    transform: translateX(-50%);
     text-align: center;
-    margin-bottom: 0.5rem;
     font-size: 0.7rem;
     opacity: 0.6;
+    width: auto;
+    /* Allow auto width */
+    margin: 0;
   }
 
   .bottom-controls {
@@ -1155,8 +1169,13 @@ body.hovering #cursor-border {
     /* Keep row on mobile if possible, or allow wrap */
     flex-wrap: wrap;
     align-items: flex-end;
-    justify-content: space-between;
+    justify-content: center;
+    /* Center the buttons */
     width: 100%;
+    margin-bottom: 2rem;
+    /* Give space for scroll indicator possibly or just spacing from bottom */
+    padding-bottom: 0;
+    gap: 1rem;
   }
 
   /* Reset hero-socials grid from previous step, use the new list style */
