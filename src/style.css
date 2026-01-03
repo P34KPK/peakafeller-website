@@ -268,12 +268,13 @@ a {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Centered visually but slightly biased upwards */
   justify-content: center;
-  align-items: center;
-  /* Centered visually */
   position: relative;
   overflow: hidden;
   text-align: center;
+  padding-bottom: 20vh;
+  /* Visual offset to shift center of gravity up */
 }
 
 .hero-content {
@@ -1146,7 +1147,8 @@ body.hovering #cursor-border {
     gap: 1.5rem;
     background: transparent;
     justify-content: flex-end;
-    /* Push content down */
+    padding-bottom: 4rem;
+    /* Lift the bottom UI controls a bit */
   }
 
   .scroll-indicator {
@@ -1159,9 +1161,14 @@ body.hovering #cursor-border {
     text-align: center;
     font-size: 0.7rem;
     opacity: 0.6;
-    width: auto;
-    /* Allow auto width */
     margin: 0;
+    width: 100%;
+    /* Take full width to ensure text-align center works if transform fails */
+    left: 0;
+    transform: none;
+    /* Reset transform */
+    bottom: 8rem;
+    /* Place correctly between content and buttons */
   }
 
   .bottom-controls {
