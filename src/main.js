@@ -85,11 +85,11 @@ const SoundFX = {
       osc.frequency.setValueAtTime(1200, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.05);
 
-      gain.gain.setValueAtTime(0.03, ctx.currentTime); // Very subtle
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime); // Boosted from 0.03 to 0.1
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
 
       osc.start();
-      osc.stop(ctx.currentTime + 0.05);
+      osc.stop(ctx.currentTime + 0.1);
     } catch (e) {
       // Ignore audio policy errors
     }
