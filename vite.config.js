@@ -10,6 +10,7 @@ export default defineConfig({
                 main: 'index.html',
                 beta: 'beta.html',
                 sampler: 'sampler.html',
+                recycleur: 'recycleur.html',
             },
         },
     },

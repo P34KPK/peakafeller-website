@@ -1,4 +1,5 @@
 import { db, doc, getDoc, updateDoc, increment } from "./firebase.js";
+import "./visual-reveal.js";
 
 // --- INTERACTIVE ELEMENTS (Scramble, Menu, etc.) ---
 
