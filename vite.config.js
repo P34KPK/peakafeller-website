@@ -11,6 +11,7 @@ export default defineConfig({
                 beta: 'beta.html',
                 sampler: 'sampler.html',
                 recycleur: 'recycleur.html',
+                notFound: '404.html',
             },
         },
     },
