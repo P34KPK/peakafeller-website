@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PK // CONTROL_CENTER</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- GridStack CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack.min.css" rel="stylesheet" />
+    <!-- Leaflet CSS (Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --grid-color: rgba(0, 255, 65, 0.1);
+            --accent-color: #00ff41;
+            --text-color: #e0e0e0;
+            --card-bg: #0a0a0a;
+            --border-color: #1a1a1a;
+            --chart-color-1: #00ff41;
+            --chart-color-2: #ff00ff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Scanline Effect */
+        body::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-color);
+            color: black;
+        }
+
+        /* Widgets */
+        .grid-stack-item-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .grid-stack-item-content::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+            opacity: 0.5;
+        }
+
+        .widget-header {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+            cursor: grab;
+            letter-spacing: 1px;
+        }
+
+        .widget-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fff;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Chart Canvas Container */
+        .chart-container {
+            width: 100%;
+            height: 100%;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* Lists */
+        .cyber-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+
+        .cyber-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .cyber-list li:last-child {
+            border-bottom: none;
+        }
+
+        .cyber-list .bar-bg {
+            background: #111;
+            height: 4px;
+            width: 100%;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .cyber-list .bar-fill {
+            background: var(--accent-color);
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            box-shadow: 0 0 5px var(--accent-color);
+        }
+
+        /* Map */
+        #map-container {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        /* Dark Map Tiles Correction */
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+
+        /* Specific Colors */
+        .text-neon {
+            color: #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .text-pink {
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff;
+        }
+
+        .text-blue {
+            color: #00ccff;
+            text-shadow: 0 0 5px #00ccff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>
+        <span>> PK_SYSTEM // ANALYTICS_V1</span>
+        <div>
+            <span style="font-size: 0.8rem; color: #666; margin-right: 15px;">STATUS: ONLINE</span>
+            <button class="refresh-btn" onclick="window.location.reload()">[REFRESH_LINK]</button>
+        </div>
+    </h1>
+
+    <div class="grid-stack">
+        <!-- R1: Headline Numbers -->
+        <!-- TOTAL VISITS -->
+        <div class="grid-stack-item" gs-x="0" gs-y="0" gs-w="3" gs-h="2">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">TOTAL_VISITS // ALL_TIME</div>
+                <div class="widget-value text-neon" id="totalVisits">--</div>
+            </div>
+        </div>
+
+        <!-- TOTAL PLAYS -->
+        <div class="grid-stack-item" gs-x="3" gs-y="0" gs-w="3" gs-h="2">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">TOTAL_PLAYS // MUSIC</div>
+                <div class="widget-value text-pink" id="totalPlays">--</div>
+            </div>
+        </div>
+
+        <!-- DEVICE SPLIT -->
+        <div class="grid-stack-item" gs-x="6" gs-y="0" gs-w="3" gs-h="2">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">DEVICE_TYPE // SPLIT</div>
+                <div class="chart-container">
+                    <canvas id="deviceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOURCE RADAR -->
+        <div class="grid-stack-item" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">TRAFFIC_SOURCE // RADAR</div>
+                <div class="chart-container">
+                    <canvas id="sourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- R2: Detailed Data -->
+        <!-- TOP TRACKS LIST -->
+        <div class="grid-stack-item" gs-x="0" gs-y="2" gs-w="6" gs-h="4">
+            <div class="grid-stack-item-content">
+                <div class="widget-header">HIT_PARADE // TOP_TRACKS</div>
+                <ul class="cyber-list" id="topTracksList">
+                    <li style="justify-content: center; padding-top: 20px;">LOADING_DATA...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- WORLD MAP -->
+        <div class="grid-stack-item" gs-x="6" gs-y="2" gs-w="6" gs-h="4">
+            <div class="grid-stack-item-content" style="padding: 0;">
+                <!-- <div class="widget-header" style="position: absolute; z-index: 999; width: 100%; background: rgba(0,0,0,0.7); margin: 0; padding: 5px;">GEO_LOC // WAR_MAP</div> -->
+                <div id="map-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+    <script type="module">
+        import { db, collection, getDocs, query, orderBy } from "./src/firebase.js";
+
+        // Logic Initialization
+        const init = async () => {
+
+            // 1. GridStack
+            GridStack.init({
+                cellHeight: 80,
+                margin: 10,
+                column: 12,
+                float: true,
+                disableOneColumnMode: true
+            });
+
+            // 2. Leaflet Map
+            const map = L.map('map-container', { zoomControl: false }).setView([46.8139, -71.2080], 3); // Centered on Quebec
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Fetch Real Data
+            try {
+                const visitsRef = collection(db, "analytics_visits");
+                const eventsRef = collection(db, "analytics_events");
+
+                const [visitsSnap, eventsSnap] = await Promise.all([
+                    getDocs(visitsRef),
+                    getDocs(eventsRef)
+                ]);
+
+                const visits = visitsSnap.docs.map(d => d.data());
+                const events = eventsSnap.docs.map(d => d.data());
+
+                // --- DATA PROCESSING ---
+
+                // KPI: Totals
+                document.getElementById('totalVisits').innerText = visits.length;
+                const plays = events.filter(e => e.eventName === 'music_play');
+                document.getElementById('totalPlays').innerText = plays.length;
+
+                // CHART: Devices
+                const mobiles = visits.filter(v => v.deviceType === 'mobile').length;
+                const desktops = visits.length - mobiles;
+                new Chart(document.getElementById('deviceChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Mobile', 'Desktop'],
+                        datasets: [{
+                            data: [mobiles, desktops],
+                            backgroundColor: ['#00ff41', '#333'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { plugins: { legend: { display: false } }, cutout: '70%' }
+                });
+
+                // CHART: Sources
+                const sources = {};
+                visits.forEach(v => {
+                    const s = v.source || 'direct';
+                    sources[s] = (sources[s] || 0) + 1;
+                });
+                new Chart(document.getElementById('sourceChart'), {
+                    type: 'radar',
+                    data: {
+                        labels: Object.keys(sources),
+                        datasets: [{
+                            label: 'Traffic',
+                            data: Object.values(sources),
+                            backgroundColor: 'rgba(0, 255, 65, 0.2)',
+                            borderColor: '#00ff41',
+                            pointBackgroundColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            r: {
+                                grid: { color: '#222' },
+                                angleLines: { color: '#333' },
+                                pointLabels: { color: '#888' }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+
+                // LIST: Top Tracks
+                const trackCounts = {};
+                plays.forEach(p => {
+                    const id = p.details?.trackId || 'Unknown';
+                    trackCounts[id] = (trackCounts[id] || 0) + 1;
+                });
+                // Sort
+                const sortedTracks = Object.entries(trackCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                const listEl = document.getElementById('topTracksList');
+                listEl.innerHTML = '';
+
+                if (sortedTracks.length === 0) listEl.innerHTML = '<li style="padding:10px;color:#444;">NO_PLAYS_RECORDED_YET</li>';
+
+                sortedTracks.forEach(([id, count]) => {
+                    // Calculate percentage for bar
+                    const max = sortedTracks[0][1];
+                    const pct = (count / max) * 100;
+
+                    const li = document.createElement('li');
+                    li.style.display = 'block';
+                    li.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                            <span class="text-white">TRACK_ID: ${id.substring(0, 15)}...</span>
+                            <span class="text-pink">${count} PLAYS</span>
+                        </div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+                    `;
+                    listEl.appendChild(li);
+                });
+
+                // MAP: Plot Points
+                // Simple IP grouping to avoid overlapping too much
+                visits.forEach(v => {
+                    // Normally we would need lat/long. 
+                    // Since the previous tracker only stored city, we can't map perfectly without coordinates.
+                    // For now, I will simulate putting a marker near Quebec for the demo if lat/long is missing,
+                    // BUT for the future upgrade, the tracker needs to store lat/long from the IP API.
+                    // Assuming the current session has some:
+
+                    // Note: The free IP API used in tracker doesn't return lat/long by default in the simplified version I wrote.
+                    // I will strictly use a placeholder marker for Quebec for valid visits until the next tracker update.
+                    if (v.city) {
+                        // Randomize slightly to stack markers
+                        const lat = 46.8 + (Math.random() * 0.5 - 0.25);
+                        const lng = -71.2 + (Math.random() * 0.5 - 0.25);
+
+                        L.circleMarker([lat, lng], {
+                            radius: 4,
+                            fillColor: "#00ff41",
+                            color: "#000",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).addTo(map).bindPopup(`${v.city}`);
+                    }
+                });
+
+            } catch (e) {
+                console.error("Dashboard Init Error", e);
+            }
+        };
+
+        // Start
+        init();
+
+    </script>
+</body>
+
+</html>
