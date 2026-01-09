@@ -291,22 +291,19 @@
     <script type="module">
         import { db, collection, getDocs, query, orderBy } from "./src/firebase.js";
 
-        // PASSWORD PROTECTION
-        const ACCESS_HASH = "7df9d9d93a315a6a9e4f1878e02a896614b27271d05cac05b62b318328f5e263"; // P34K-S3CUR3-V1
+        // PASSWORD PROTECTION (SIMPLIFIED FOR COMPATIBILITY)
+        const ACCESS_KEY = "P34K-S3CUR3-V1";
 
-        async function checkPass() {
+        function checkPass() {
             const input = document.getElementById('pwd-input').value;
-            const msg = new TextEncoder().encode(input);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msg);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-            if (hashHex === ACCESS_HASH) {
+            if (input === ACCESS_KEY) {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('dashboard-content').style.display = 'block';
                 // Trigger GridStack resize just in case
                 window.dispatchEvent(new Event('resize'));
-                init(); // Call init after successful login
+                // Call init after successful login to ensure charts render correctly
+                init();
             } else {
                 document.getElementById('error-msg').style.display = 'block';
                 document.getElementById('pwd-input').value = '';
@@ -468,7 +465,7 @@
         };
 
         // Start
-        init();
+        // init is now called after login
 
     </script>
 </body>
