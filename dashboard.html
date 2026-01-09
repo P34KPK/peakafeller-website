@@ -208,7 +208,7 @@
             AUTHENTICATION_REQUIRED</h2>
         <input type="password" id="pwd-input" placeholder="ENTER_ACCESS_KEY"
             style="background:#111; border:1px solid var(--accent-color); color:#fff; padding:10px 20px; font-size:1.2rem; outline:none; text-align:center; font-family:inherit; margin-bottom:20px; width: 300px;">
-        <button id="login-btn"
+        <button id="login-btn" onclick="attemptLogin()"
             style="background:var(--accent-color); color:#000; border:none; padding:10px 30px; font-weight:bold; cursor:pointer; font-family:inherit;">UNLOCK_SYSTEM</button>
         <p id="error-msg" style="color:red; display:none; margin-top:15px; font-size:0.8rem;">> ACCESS_DENIED.
             INVALID_KEY.</p>
@@ -276,68 +276,88 @@
             <!-- WORLD MAP -->
             <div class="grid-stack-item" gs-x="6" gs-y="2" gs-w="6" gs-h="4">
                 <div class="grid-stack-item-content" style="padding: 0;">
-                    <!-- <div class="widget-header" style="position: absolute; z-index: 999; width: 100%; background: rgba(0,0,0,0.7); margin: 0; padding: 5px;">GEO_LOC // WAR_MAP</div> -->
                     <div id="map-container"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts (Libraries) -->
     <script src="https://cdn.jsdelivr.net/npm/gridstack@7.2.3/dist/gridstack-all.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-    <script type="module">
-        import { db, collection, getDocs, query, orderBy } from "./src/firebase.js";
-
+    <!-- UI Controller Script (Non-Module) -->
+    <script>
         // PASSWORD PROTECTION (SIMPLIFIED FOR COMPATIBILITY)
-        const ACCESS_KEY = "P34K-S3CUR3-V1";
+        var ACCESS_KEY = "P34K-S3CUR3-V1";
 
-        function checkPass() {
-            const input = document.getElementById('pwd-input').value;
+        function attemptLogin() {
+            console.log("Attempting login...");
+            const input = document.getElementById('pwd-input').value.trim();
 
             if (input === ACCESS_KEY) {
+                console.log("Access Granted");
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('dashboard-content').style.display = 'block';
-                // Trigger GridStack resize just in case
-                window.dispatchEvent(new Event('resize'));
-                // Call init after successful login to ensure charts render correctly
-                init();
+
+                // Try to init dashboard if module is loaded
+                if (window.initDashboard) {
+                    window.initDashboard();
+                } else {
+                    console.warn("Dashboard module not loaded yet, waiting...");
+                    // Retry mechanism
+                    setTimeout(function () {
+                        if (window.initDashboard) window.initDashboard();
+                    }, 500);
+                }
             } else {
+                console.log("Access Denied");
                 document.getElementById('error-msg').style.display = 'block';
                 document.getElementById('pwd-input').value = '';
             }
         }
 
-        document.getElementById('login-btn').addEventListener('click', checkPass);
-        document.getElementById('pwd-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkPass();
+        // Bind Enter Key
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('pwd-input').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') attemptLogin();
+            });
         });
+    </script>
 
+    <!-- Data Logic Script (Module) -->
+    <script type="module">
+        import { db, collection, getDocs, query, orderBy } from "./src/firebase.js";
 
         // Logic Initialization
-        const init = async () => {
+        // We attach this to window so the UI script can call it
+        window.initDashboard = async () => {
+            console.log("Initializing Dashboard...");
 
-            // 1. GridStack
-            GridStack.init({
-                cellHeight: 80,
-                margin: 10,
-                column: 12,
-                float: true,
-                disableOneColumnMode: true
-            });
-
-            // 2. Leaflet Map
-            const map = L.map('map-container', { zoomControl: false }).setView([46.8139, -71.2080], 3); // Centered on Quebec
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-
-            // Fetch Real Data
             try {
+                // 1. GridStack
+                GridStack.init({
+                    cellHeight: 80,
+                    margin: 10,
+                    column: 12,
+                    float: true,
+                    disableOneColumnMode: true
+                });
+
+                // 2. Leaflet Map
+                const map = L.map('map-container', { zoomControl: false }).setView([46.8139, -71.2080], 3); // Centered on Quebec
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(map);
+
+                // Force resize to ensure map and charts render correctly after unhide
+                window.dispatchEvent(new Event('resize'));
+                setTimeout(() => { map.invalidateSize(); }, 100);
+
+                // Fetch Real Data
                 const visitsRef = collection(db, "analytics_visits");
                 const eventsRef = collection(db, "analytics_events");
 
@@ -433,18 +453,8 @@
                 });
 
                 // MAP: Plot Points
-                // Simple IP grouping to avoid overlapping too much
                 visits.forEach(v => {
-                    // Normally we would need lat/long. 
-                    // Since the previous tracker only stored city, we can't map perfectly without coordinates.
-                    // For now, I will simulate putting a marker near Quebec for the demo if lat/long is missing,
-                    // BUT for the future upgrade, the tracker needs to store lat/long from the IP API.
-                    // Assuming the current session has some:
-
-                    // Note: The free IP API used in tracker doesn't return lat/long by default in the simplified version I wrote.
-                    // I will strictly use a placeholder marker for Quebec for valid visits until the next tracker update.
                     if (v.city) {
-                        // Randomize slightly to stack markers
                         const lat = 46.8 + (Math.random() * 0.5 - 0.25);
                         const lng = -71.2 + (Math.random() * 0.5 - 0.25);
 
@@ -463,10 +473,6 @@
                 console.error("Dashboard Init Error", e);
             }
         };
-
-        // Start
-        // init is now called after login
-
     </script>
 </body>
 
