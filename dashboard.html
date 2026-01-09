@@ -201,68 +201,84 @@
 
 <body>
 
-    <h1>
-        <span>> PK_SYSTEM // ANALYTICS_V1</span>
-        <div>
-            <span style="font-size: 0.8rem; color: #666; margin-right: 15px;">STATUS: ONLINE</span>
-            <button class="refresh-btn" onclick="window.location.reload()">[REFRESH_LINK]</button>
-        </div>
-    </h1>
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:'JetBrains Mono', monospace;">
+        <h2 style="color:var(--accent-color); margin-bottom:20px; text-shadow: 0 0 10px var(--accent-color);">>
+            AUTHENTICATION_REQUIRED</h2>
+        <input type="password" id="pwd-input" placeholder="ENTER_ACCESS_KEY"
+            style="background:#111; border:1px solid var(--accent-color); color:#fff; padding:10px 20px; font-size:1.2rem; outline:none; text-align:center; font-family:inherit; margin-bottom:20px; width: 300px;">
+        <button id="login-btn"
+            style="background:var(--accent-color); color:#000; border:none; padding:10px 30px; font-weight:bold; cursor:pointer; font-family:inherit;">UNLOCK_SYSTEM</button>
+        <p id="error-msg" style="color:red; display:none; margin-top:15px; font-size:0.8rem;">> ACCESS_DENIED.
+            INVALID_KEY.</p>
+    </div>
 
-    <div class="grid-stack">
-        <!-- R1: Headline Numbers -->
-        <!-- TOTAL VISITS -->
-        <div class="grid-stack-item" gs-x="0" gs-y="0" gs-w="3" gs-h="2">
-            <div class="grid-stack-item-content">
-                <div class="widget-header">TOTAL_VISITS // ALL_TIME</div>
-                <div class="widget-value text-neon" id="totalVisits">--</div>
+    <!-- MAIN DASHBOARD CONTENT (HIDDEN BY DEFAULT) -->
+    <div id="dashboard-content" style="display:none; height: 100%;">
+        <h1>
+            <span>> PK_SYSTEM // ANALYTICS_V1</span>
+            <div>
+                <span style="font-size: 0.8rem; color: #666; margin-right: 15px;">STATUS: ONLINE</span>
+                <button class="refresh-btn" onclick="window.location.reload()">[REFRESH_LINK]</button>
             </div>
-        </div>
+        </h1>
 
-        <!-- TOTAL PLAYS -->
-        <div class="grid-stack-item" gs-x="3" gs-y="0" gs-w="3" gs-h="2">
-            <div class="grid-stack-item-content">
-                <div class="widget-header">TOTAL_PLAYS // MUSIC</div>
-                <div class="widget-value text-pink" id="totalPlays">--</div>
-            </div>
-        </div>
-
-        <!-- DEVICE SPLIT -->
-        <div class="grid-stack-item" gs-x="6" gs-y="0" gs-w="3" gs-h="2">
-            <div class="grid-stack-item-content">
-                <div class="widget-header">DEVICE_TYPE // SPLIT</div>
-                <div class="chart-container">
-                    <canvas id="deviceChart"></canvas>
+        <div class="grid-stack">
+            <!-- R1: Headline Numbers -->
+            <!-- TOTAL VISITS -->
+            <div class="grid-stack-item" gs-x="0" gs-y="0" gs-w="3" gs-h="2">
+                <div class="grid-stack-item-content">
+                    <div class="widget-header">TOTAL_VISITS // ALL_TIME</div>
+                    <div class="widget-value text-neon" id="totalVisits">--</div>
                 </div>
             </div>
-        </div>
 
-        <!-- SOURCE RADAR -->
-        <div class="grid-stack-item" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
-            <div class="grid-stack-item-content">
-                <div class="widget-header">TRAFFIC_SOURCE // RADAR</div>
-                <div class="chart-container">
-                    <canvas id="sourceChart"></canvas>
+            <!-- TOTAL PLAYS -->
+            <div class="grid-stack-item" gs-x="3" gs-y="0" gs-w="3" gs-h="2">
+                <div class="grid-stack-item-content">
+                    <div class="widget-header">TOTAL_PLAYS // MUSIC</div>
+                    <div class="widget-value text-pink" id="totalPlays">--</div>
                 </div>
             </div>
-        </div>
 
-        <!-- R2: Detailed Data -->
-        <!-- TOP TRACKS LIST -->
-        <div class="grid-stack-item" gs-x="0" gs-y="2" gs-w="6" gs-h="4">
-            <div class="grid-stack-item-content">
-                <div class="widget-header">HIT_PARADE // TOP_TRACKS</div>
-                <ul class="cyber-list" id="topTracksList">
-                    <li style="justify-content: center; padding-top: 20px;">LOADING_DATA...</li>
-                </ul>
+            <!-- DEVICE SPLIT -->
+            <div class="grid-stack-item" gs-x="6" gs-y="0" gs-w="3" gs-h="2">
+                <div class="grid-stack-item-content">
+                    <div class="widget-header">DEVICE_TYPE // SPLIT</div>
+                    <div class="chart-container">
+                        <canvas id="deviceChart"></canvas>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <!-- WORLD MAP -->
-        <div class="grid-stack-item" gs-x="6" gs-y="2" gs-w="6" gs-h="4">
-            <div class="grid-stack-item-content" style="padding: 0;">
-                <!-- <div class="widget-header" style="position: absolute; z-index: 999; width: 100%; background: rgba(0,0,0,0.7); margin: 0; padding: 5px;">GEO_LOC // WAR_MAP</div> -->
-                <div id="map-container"></div>
+            <!-- SOURCE RADAR -->
+            <div class="grid-stack-item" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
+                <div class="grid-stack-item-content">
+                    <div class="widget-header">TRAFFIC_SOURCE // RADAR</div>
+                    <div class="chart-container">
+                        <canvas id="sourceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- R2: Detailed Data -->
+            <!-- TOP TRACKS LIST -->
+            <div class="grid-stack-item" gs-x="0" gs-y="2" gs-w="6" gs-h="4">
+                <div class="grid-stack-item-content">
+                    <div class="widget-header">HIT_PARADE // TOP_TRACKS</div>
+                    <ul class="cyber-list" id="topTracksList">
+                        <li style="justify-content: center; padding-top: 20px;">LOADING_DATA...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- WORLD MAP -->
+            <div class="grid-stack-item" gs-x="6" gs-y="2" gs-w="6" gs-h="4">
+                <div class="grid-stack-item-content" style="padding: 0;">
+                    <!-- <div class="widget-header" style="position: absolute; z-index: 999; width: 100%; background: rgba(0,0,0,0.7); margin: 0; padding: 5px;">GEO_LOC // WAR_MAP</div> -->
+                    <div id="map-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -274,6 +290,34 @@
 
     <script type="module">
         import { db, collection, getDocs, query, orderBy } from "./src/firebase.js";
+
+        // PASSWORD PROTECTION
+        const ACCESS_HASH = "7df9d9d93a315a6a9e4f1878e02a896614b27271d05cac05b62b318328f5e263"; // P34K-S3CUR3-V1
+
+        async function checkPass() {
+            const input = document.getElementById('pwd-input').value;
+            const msg = new TextEncoder().encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msg);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            if (hashHex === ACCESS_HASH) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                // Trigger GridStack resize just in case
+                window.dispatchEvent(new Event('resize'));
+                init(); // Call init after successful login
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+                document.getElementById('pwd-input').value = '';
+            }
+        }
+
+        document.getElementById('login-btn').addEventListener('click', checkPass);
+        document.getElementById('pwd-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPass();
+        });
+
 
         // Logic Initialization
         const init = async () => {
